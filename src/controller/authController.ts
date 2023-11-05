@@ -9,12 +9,10 @@ const signIn: RequestHandler = async (req: Request, res: Response) => {
     log.info("Sign in api called");
     const { email, password } = req.query;
 
-    console.log('d:', email, password);
     useAirTable('Users', 'get', {
         'Email': email,
         'Password': password,
     })?.then(data => {
-        console.log('dat:', data.data);
         return res.status(StatusCodes.OK).json(data.data);
     }).catch(error => {
         console.log('err:', error.message);
