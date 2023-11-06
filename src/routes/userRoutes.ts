@@ -6,7 +6,7 @@ router.get('/', (req: Request, res: Response) => {
     res.send('Welcome to user route!');
 });
 
-router.get('/profile', (req: Request, res: Response) => {
+router.get('/profile', (_req: Request, res: Response) => {
     res.send('User profile page');
 });
 

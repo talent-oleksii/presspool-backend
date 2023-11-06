@@ -1,6 +1,5 @@
 import { RequestHandler, Request, Response } from "express";
 import { StatusCodes } from "http-status-codes/build/cjs/status-codes";
-import axios from 'axios';
 
 import useAirTable from "../util/useAirTable";
 import log from "../util/logger";
