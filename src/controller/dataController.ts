@@ -8,16 +8,26 @@ const getNewsletter: RequestHandler = async (_req: Request, res: Response) => {
     log.info('get newsletter called');
 
     useAirTable('Newsletters', 'get')?.then(data => {
-        console.log('data:', data.data);
         return res.status(StatusCodes.OK).json(data.data);
     }).catch(error => {
         console.log('err:', error.message);
         return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ message: error.message });
-    })
+    });
+};
+
+const getPricing: RequestHandler = async (_req: Request, res: Response) => {
+    log.info('get pricing called');
+    useAirTable('Pricing', 'get')?.then(data => {
+        return res.status(StatusCodes.OK).json(data.data);
+    }).catch(error => {
+        log.error('get pricig error:', error.message);
+        return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ message: error.message });
+    });
 };
 
 const data = {
     getNewsletter,
+    getPricing,
 };
 
 export default data;
