@@ -1,5 +1,6 @@
 import { RequestHandler, Request, Response } from "express";
 import { StatusCodes } from "http-status-codes/build/cjs/status-codes";
+import axios from 'axios';
 
 import useAirTable from "../util/useAirTable";
 import log from "../util/logger";
@@ -35,7 +36,7 @@ const clientSignUp: RequestHandler = async (req: Request, res: Response) => {
         console.log('dat:', data);
         return res.status(StatusCodes.OK).json(data.data);
     }).catch(error => {
-        console.log('err:', error.message);
+        console.log('err:', error);
         return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ message: error.message });
     });
 };

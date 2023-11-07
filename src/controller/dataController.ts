@@ -25,9 +25,16 @@ const getPricing: RequestHandler = async (_req: Request, res: Response) => {
     });
 };
 
+const addCampaign: RequestHandler = async (req: Request, res: Response) => {
+    log.info('add campaign called');
+    console.log('body:', req.body);
+    useAirTable('Users', 'post', )?.then(data => {});
+};
+
 const data = {
     getNewsletter,
     getPricing,
+    addCampaign,
 };
 
 export default data;

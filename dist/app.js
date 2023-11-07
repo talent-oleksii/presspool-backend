@@ -8,6 +8,7 @@ const cors_1 = __importDefault(require("cors"));
 const dotenv_1 = __importDefault(require("dotenv"));
 const http_status_codes_1 = require("http-status-codes");
 const authRoute_1 = __importDefault(require("./routes/authRoute"));
+const dataRoute_1 = __importDefault(require("./routes/dataRoute"));
 dotenv_1.default.config({ path: './.env' });
 const app = (0, express_1.default)();
 const PORT = process.env.PORT || 5000;
@@ -15,6 +16,7 @@ app.use((0, cors_1.default)());
 app.use(express_1.default.json());
 app.use(express_1.default.urlencoded({ extended: false }));
 app.use('/auth', authRoute_1.default);
+app.use('/data', dataRoute_1.default);
 app.get('/', (_req, res) => {
     return res.status(http_status_codes_1.StatusCodes.OK).send('API is running');
 });

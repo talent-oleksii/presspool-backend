@@ -9,23 +9,32 @@ const useAirTable = (tableName, methodType, data) => {
     const airtablePat = process.env.AIRTABLE_PAT;
     const baseId = process.env.AIRTABLE_BASE_ID;
     if (methodType === 'get') {
-        let query = "AND(";
-        const keyLength = Object.keys(data).length;
-        Object.keys(data).forEach((key, index) => {
-            query = `${query}{${key}} = '${data[key]}'`;
-            if (index < keyLength - 1)
-                query = `${query}, `;
-        });
-        query = query.concat(')');
-        console.log('query:', query);
-        return axios_1.default.get(`${apiUrl}${baseId}/${tableName}`, {
-            headers: {
-                'Authorization': `Bearer ${airtablePat}`,
-            },
-            params: {
-                filterByFormula: query,
-            }
-        });
+        if (data && Object.keys(data).length >= 1) {
+            const keyLength = Object.keys(data).length;
+            let query = "AND(";
+            Object.keys(data).forEach((key, index) => {
+                query = `${query}{${key}} = '${data[key]}'`;
+                if (index < keyLength - 1)
+                    query = `${query}, `;
+            });
+            query = query.concat(')');
+            console.log('query:', query);
+            return axios_1.default.get(`${apiUrl}${baseId}/${tableName}`, {
+                headers: {
+                    'Authorization': `Bearer ${airtablePat}`,
+                },
+                params: {
+                    filterByFormula: query,
+                }
+            });
+        }
+        else {
+            return axios_1.default.get(`${apiUrl}${baseId}/${tableName}`, {
+                headers: {
+                    'Authorization': `Bearer ${airtablePat}`,
+                },
+            });
+        }
     }
     else if (methodType === 'post') {
         return axios_1.default.post(`${apiUrl}${baseId}/${tableName}`, {

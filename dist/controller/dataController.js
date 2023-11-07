@@ -15,40 +15,35 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const status_codes_1 = require("http-status-codes/build/cjs/status-codes");
 const useAirTable_1 = __importDefault(require("../util/useAirTable"));
 const logger_1 = __importDefault(require("../util/logger"));
-const signIn = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+const getNewsletter = (_req, res) => __awaiter(void 0, void 0, void 0, function* () {
     var _a;
-    logger_1.default.info("Sign in api called");
-    const { email, password } = req.query;
-    (_a = (0, useAirTable_1.default)('Users', 'get', {
-        'Email': email,
-        'Password': password,
-    })) === null || _a === void 0 ? void 0 : _a.then(data => {
+    logger_1.default.info('get newsletter called');
+    (_a = (0, useAirTable_1.default)('Newsletters', 'get')) === null || _a === void 0 ? void 0 : _a.then(data => {
         return res.status(status_codes_1.StatusCodes.OK).json(data.data);
     }).catch(error => {
         console.log('err:', error.message);
-        return res.status(status_codes_1.StatusCodes.OK).json({ message: error.message });
-    });
-});
-const clientSignUp = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    var _b;
-    logger_1.default.info('Sign up api called');
-    const { fullName, email, password, company } = req.body;
-    (_b = (0, useAirTable_1.default)("Users", 'post', {
-        'Full Name': fullName,
-        'Email': email,
-        'Password': password,
-        'Company Name': company,
-        'User Group': 'Client',
-    })) === null || _b === void 0 ? void 0 : _b.then(data => {
-        console.log('dat:', data);
-        return res.status(status_codes_1.StatusCodes.OK).json(data.data);
-    }).catch(error => {
-        console.log('err:', error);
         return res.status(status_codes_1.StatusCodes.INTERNAL_SERVER_ERROR).json({ message: error.message });
     });
 });
-const auth = {
-    signIn,
-    clientSignUp,
+const getPricing = (_req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    var _b;
+    logger_1.default.info('get pricing called');
+    (_b = (0, useAirTable_1.default)('Pricing', 'get')) === null || _b === void 0 ? void 0 : _b.then(data => {
+        return res.status(status_codes_1.StatusCodes.OK).json(data.data);
+    }).catch(error => {
+        logger_1.default.error('get pricig error:', error.message);
+        return res.status(status_codes_1.StatusCodes.INTERNAL_SERVER_ERROR).json({ message: error.message });
+    });
+});
+const addCampaign = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    var _c;
+    logger_1.default.info('add campaign called');
+    console.log('body:', req.body);
+    (_c = (0, useAirTable_1.default)('Users', 'post')) === null || _c === void 0 ? void 0 : _c.then(data => { });
+});
+const data = {
+    getNewsletter,
+    getPricing,
+    addCampaign,
 };
-exports.default = auth;
+exports.default = data;

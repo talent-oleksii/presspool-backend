@@ -4,11 +4,10 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = __importDefault(require("express"));
+const dataController_1 = __importDefault(require("../controller/dataController"));
 const router = express_1.default.Router();
-router.get('/', (req, res) => {
-    res.send('Welcome to user route!');
-});
-router.get('/profile', (_req, res) => {
-    res.send('User profile page');
-});
+// Define routes
+router.get('/newsletter', dataController_1.default.getNewsletter);
+router.get('/pricing', dataController_1.default.getPricing);
+router.post('/campaign', dataController_1.default.addCampaign);
 exports.default = router;
