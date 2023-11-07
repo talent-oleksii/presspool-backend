@@ -1,6 +1,7 @@
 import { RequestHandler, Request, Response } from "express";
 import { StatusCodes } from "http-status-codes/build/cjs/status-codes";
 
+import db from '../util/db';
 import useAirTable from "../util/useAirTable";
 import log from '../util/logger';
 
@@ -28,7 +29,15 @@ const getPricing: RequestHandler = async (_req: Request, res: Response) => {
 const addCampaign: RequestHandler = async (req: Request, res: Response) => {
     log.info('add campaign called');
     console.log('body:', req.body);
-    useAirTable('Users', 'post', )?.then(data => {});
+    const result = await db.query('INSERT INTO campaign(email, name, url, demographic, newsletter, price) VALUES($1, $2, $3, $4, $5, $6) RETURNING *', [
+        req.body.email,
+        req.body.campaignName,
+        req.body.url,
+        req.body.currentTarget,
+        req.body.currentAudience,
+        req.body.currentPrice,
+    ]);
+    return res.status(200).json(result.rows[0]);
 };
 
 const data = {

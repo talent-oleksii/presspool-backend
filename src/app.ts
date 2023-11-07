@@ -8,6 +8,10 @@ import dataRoute from './routes/dataRoute';
 
 dotenv.config({ path: './.env'});
 
+import db from './util/db';
+import log from './util/logger';
+
+
 const app = express();
 const PORT = process.env.PORT || 5000;
 
@@ -22,6 +26,7 @@ app.get('/', (_req, res) => {
     return res.status(StatusCodes.OK).send('API is running');
 });
 
-app.listen(PORT, () => {
-    console.log(`Server is running on PORT:${PORT}`);
+app.listen(PORT, async () => {
+    log.info(`Server is running on PORT:${PORT}`);
+    await db.testConnection();
 });
