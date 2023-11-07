@@ -12,26 +12,31 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-const express_1 = __importDefault(require("express"));
-const cors_1 = __importDefault(require("cors"));
+const pg_1 = require("pg");
+const logger_1 = __importDefault(require("./logger"));
 const dotenv_1 = __importDefault(require("dotenv"));
-const http_status_codes_1 = require("http-status-codes");
-const authRoute_1 = __importDefault(require("./routes/authRoute"));
-const dataRoute_1 = __importDefault(require("./routes/dataRoute"));
 dotenv_1.default.config({ path: './.env' });
-const db_1 = __importDefault(require("./util/db"));
-const logger_1 = __importDefault(require("./util/logger"));
-const app = (0, express_1.default)();
-const PORT = process.env.PORT || 5000;
-app.use((0, cors_1.default)());
-app.use(express_1.default.json());
-app.use(express_1.default.urlencoded({ extended: false }));
-app.use('/auth', authRoute_1.default);
-app.use('/data', dataRoute_1.default);
-app.get('/', (_req, res) => {
-    return res.status(http_status_codes_1.StatusCodes.OK).send('API is running');
+const pool = new pg_1.Pool({
+    connectionString: process.env.DB_URL,
+    ssl: {
+        rejectUnauthorized: false,
+    }
 });
-app.listen(PORT, () => __awaiter(void 0, void 0, void 0, function* () {
-    logger_1.default.info(`Server is running on PORT:${PORT}`);
-    yield db_1.default.testConnection();
-}));
+exports.default = {
+    query: (text, params) => pool.query(text, params),
+    testConnection: () => __awaiter(void 0, void 0, void 0, function* () {
+        try {
+            // Try to connect to the database
+            const client = yield pool.connect();
+            logger_1.default.info('Connection to PostgreSQL successful!');
+            client.release(); // Release the client back to the pool
+        }
+        catch (error) {
+            logger_1.default.error(error);
+        }
+        finally {
+            // Close the database connection
+            // await pool.end();
+        }
+    })
+};

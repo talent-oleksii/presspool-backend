@@ -13,6 +13,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 const status_codes_1 = require("http-status-codes/build/cjs/status-codes");
+const db_1 = __importDefault(require("../util/db"));
 const useAirTable_1 = __importDefault(require("../util/useAirTable"));
 const logger_1 = __importDefault(require("../util/logger"));
 const getNewsletter = (_req, res) => __awaiter(void 0, void 0, void 0, function* () {
@@ -36,10 +37,17 @@ const getPricing = (_req, res) => __awaiter(void 0, void 0, void 0, function* ()
     });
 });
 const addCampaign = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    var _c;
     logger_1.default.info('add campaign called');
     console.log('body:', req.body);
-    (_c = (0, useAirTable_1.default)('Users', 'post')) === null || _c === void 0 ? void 0 : _c.then(data => { });
+    const result = yield db_1.default.query('INSERT INTO campaign(email, name, url, demographic, newsletter, price) VALUES($1, $2, $3, $4, $5, $6) RETURNING *', [
+        req.body.email,
+        req.body.campaignName,
+        req.body.url,
+        req.body.currentTarget,
+        req.body.currentAudience,
+        req.body.currentPrice,
+    ]);
+    return res.status(200).json(result.rows[0]);
 });
 const data = {
     getNewsletter,
