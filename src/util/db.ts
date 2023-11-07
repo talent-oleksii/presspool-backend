@@ -11,7 +11,7 @@ const pool = new Pool({
 });
 
 export default { 
-    query: (text: string, params: any) => pool.query(text, params),
+    query: (text: string, params?: any) => pool.query(text, params),
     testConnection: async () => {
         try {
             // Try to connect to the database
