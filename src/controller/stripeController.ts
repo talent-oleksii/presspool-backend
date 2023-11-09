@@ -9,7 +9,6 @@ const preparePayment: RequestHandler = async (req: Request, res: Response) => {
   try {
     const { email, campaignId } = req.body;
     const time = moment().valueOf();
-    console.log('time:', time);
     await db.query("update campaign set state = 'purchasing', create_time = $1 where email = $2 and id = $3", [time, email, campaignId]);
 
     return res.status(StatusCodes.OK).json('Ready to Purchase');
@@ -25,8 +24,6 @@ const purchaseCampaign: RequestHandler = async (req: Request, res: Response) => 
 
     const object = req.body.data.object;
     const amount = object.amount;
-
-    console.log('values:', object.billing_details.email, object.id,);
 
     await db.query('insert into pay_history(email, pay_id, pay_amount, create_time) values ($1, $2, $3, $4)', [
       object.billing_details.email,
