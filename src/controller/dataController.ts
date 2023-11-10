@@ -79,6 +79,51 @@ const getCampaign: RequestHandler = async (req: Request, res: Response) => {
     }
 };
 
+const getCampaignDetail: RequestHandler = async (req: Request, res: Response) => {
+    log.info('get campaign detail called');
+    try {
+        const { id } = req.query;
+        const campaignData = await db.query('select * from campaign where id = $1', [id]);
+        const campaignUIData = await db.query('select * from campaign_ui where campaign_id = $1', [id]);
+
+        let row = campaignUIData.rows[0];
+        row = {
+            ...row,
+            image: row.image.toString('utf8')
+        };
+
+        return res.status(StatusCodes.OK).json({
+            campaignData: campaignData.rows[0],
+            uiData: row,
+        });
+    } catch (error: any) {
+        log.error(` get campaign detail error: ${error}`);
+        return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json(error.message);
+    }
+};
+
+const updateCampaignDetail: RequestHandler = async (req: Request, res: Response) => {
+    log.info('update campaign detail called');
+    try {
+        const { id, email, campaignName, url, currentTarget, currentAudience, currentPrice } = req.body;
+
+        const result = await db.query('update campaign set email = $1, name = $2, url = $3, demographic = $4, newsletter = $5, price = $6 where id = $7 returning *', [
+            email,
+            campaignName,
+            url,
+            currentTarget,
+            currentAudience,
+            currentPrice,
+            id,
+        ]);
+
+        return res.status(StatusCodes.OK).json(result.rows[0]);
+    } catch (error: any) {
+        log.error(` update campaign detail error: ${error}`);
+        return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json(error.message);
+    }
+};
+
 const addCampaignUI: RequestHandler = async (req: Request, res: Response) => {
     log.info('add campaign called');
 
@@ -95,13 +140,45 @@ const addCampaignUI: RequestHandler = async (req: Request, res: Response) => {
             noNeedCheck
         ]);
 
-        return res.status(StatusCodes.OK).json(result.rows[0]);
+        const data = result.rows[0];
+
+        return res.status(StatusCodes.OK).json({
+            ...data,
+            image: image.toString('utf-8'),
+        });
 
     } catch (error: any) {
         log.error(`add campaign-ui error: ${error}`);
         return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json(error.message);
     }
 }
+
+const updateCampaignUI: RequestHandler = async (req: Request, res: Response) => {
+    log.info('update campaign called');
+
+    try {
+        const { id, headLine, body, cta, image, pageUrl, noNeedCheck } = req.body;
+        const result = await db.query('update campaign_ui set headline = $1, body = $2, cta = $3, image = $4, page_url = $5, no_need_check = $6 where id = $7 returning *', [
+            headLine,
+            body,
+            cta,
+            image,
+            pageUrl,
+            noNeedCheck,
+            id
+        ]);
+
+        const data = result.rows[0];
+
+        return res.status(StatusCodes.OK).json({
+            ...data,
+            image: image.toString('utf-8'),
+        });
+    } catch (error: any) {
+        log.error(`add campaign-ui error: ${error}`);
+        return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json(error.message);
+    }
+};
 
 const data = {
     getNewsletter,
@@ -110,6 +187,9 @@ const data = {
     getCampaign,
     getAudience,
     addCampaignUI,
+    getCampaignDetail,
+    updateCampaignDetail,
+    updateCampaignUI,
 };
 
 export default data;

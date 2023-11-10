@@ -39,7 +39,7 @@ const purchaseCampaign: RequestHandler = async (req: Request, res: Response) => 
     }
     const campaignId = payData.rows[0].id;
 
-    await db.query("update campaign set state = 'purchased', price = $1 where id = $2", [Number(amount) / 100, campaignId]);
+    await db.query("update campaign set state = 'purchased' where id = $1", [campaignId]);
 
     return res.status(StatusCodes.OK).json('successfully purchased');
   } catch (error: any) {
