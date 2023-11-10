@@ -6,7 +6,7 @@ import { StatusCodes } from 'http-status-codes';
 import authRoute from './routes/authRoute';
 import dataRoute from './routes/dataRoute';
 import stripeRoute from './routes/stripeRoute';
-import stripe from './controller/stripeController';
+import adminRoute from './routes/adminRoute';
 
 dotenv.config({ path: './.env' });
 
@@ -25,6 +25,8 @@ app.use('/stripe', stripeRoute);
 
 app.use('/auth', authRoute);
 app.use('/data', dataRoute);
+
+app.use('/admin', adminRoute);
 
 app.get('/', (_req, res) => {
     return res.status(StatusCodes.OK).send('API is running');

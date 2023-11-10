@@ -89,7 +89,7 @@ const getCampaignDetail: RequestHandler = async (req: Request, res: Response) =>
         let row = campaignUIData.rows[0];
         row = {
             ...row,
-            image: row.image.toString('utf8')
+            image: row.image ? row.image.toString('utf8') : null,
         };
 
         return res.status(StatusCodes.OK).json({
@@ -144,7 +144,7 @@ const addCampaignUI: RequestHandler = async (req: Request, res: Response) => {
 
         return res.status(StatusCodes.OK).json({
             ...data,
-            image: image.toString('utf-8'),
+            image: image ? image.toString('utf-8') : null,
         });
 
     } catch (error: any) {
@@ -172,7 +172,7 @@ const updateCampaignUI: RequestHandler = async (req: Request, res: Response) => 
 
         return res.status(StatusCodes.OK).json({
             ...data,
-            image: image.toString('utf-8'),
+            image: image ? image.toString('utf-8') : null,
         });
     } catch (error: any) {
         log.error(`add campaign-ui error: ${error}`);
