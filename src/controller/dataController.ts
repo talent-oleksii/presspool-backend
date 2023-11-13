@@ -5,6 +5,7 @@ import axios from "axios";
 import db from '../util/db';
 import useAirTable from "../util/useAirTable";
 import log from '../util/logger';
+import moment from "moment";
 
 const showBaseList = async () => {
     const response = await axios.get('https://api.airtable.com/v0/meta/bases', {
@@ -22,19 +23,35 @@ const getNewsletter: RequestHandler = async (_req: Request, res: Response) => {
         return res.status(StatusCodes.OK).json(data.data);
     }).catch(error => {
         console.log('err:', error);
-        return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ message: error.message });
+        return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json(error);
     });
+};
+
+const addAudience: RequestHandler = async (req: Request, res: Response) => {
+    log.info('add audience');
+
+    try {
+        const { email, name } = req.body;
+        const time = moment().valueOf();
+        const result = await db.query('insert into audience (create_time, email, name) values ($1, $2, $3) returning *', [time, email, name]);
+
+        return res.status(StatusCodes.OK).json(result.rows[0]);
+    } catch (error) {
+        log.error(``);
+        return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json(error);
+    }
 };
 
 const getAudience: RequestHandler = async (_req: Request, res: Response) => {
     log.info('get audience ');
 
-    useAirTable('Audience', 'get')?.then(data => {
-        return res.status(StatusCodes.OK).json(data.data);
-    }).catch(error => {
+    try {
+        const result = await db.query('select * from audience order by create_time desc');
+        return res.status(StatusCodes.OK).json(result.rows);
+    } catch (error) {
         log.error(`get audience error: ${error}`);
-        return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ message: error.message });
-    })
+        return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json(error);
+    }
 };
 
 const getPricing: RequestHandler = async (_req: Request, res: Response) => {
@@ -42,7 +59,7 @@ const getPricing: RequestHandler = async (_req: Request, res: Response) => {
     useAirTable('Pricing', 'get')?.then(data => {
         return res.status(StatusCodes.OK).json(data.data);
     }).catch(error => {
-        log.error('get pricig error:', error.message);
+        log.error(`get pricig error:, ${error.message}`);
         return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ message: error.message });
     });
 };
@@ -51,17 +68,30 @@ const addCampaign: RequestHandler = async (req: Request, res: Response) => {
     log.info('add campaign called');
     try {
         // update campaign ui id
-        const result = await db.query('INSERT INTO campaign(email, name, url, demographic, newsletter, price) VALUES($1, $2, $3, $4, $5, $6) RETURNING *', [
+        const result = await db.query('INSERT INTO campaign(email, name, url, demographic, audience, price) VALUES($1, $2, $3, $4, $5, $6) RETURNING *', [
             req.body.email,
             req.body.campaignName,
             req.body.url,
             req.body.currentTarget,
-            req.body.currentAudience,
+            `${JSON.stringify(req.body.currentAudience)}`,
             req.body.currentPrice,
         ]);
+
+        // add on audience table
+        const time = moment().valueOf();
+        const audience = req.body.currentAudience;
+        for (const item of audience) {
+            const count = await db.query('select count(id) from audience where name = $1', [item]);
+            if (Number(count.rows[0].count) <= 0) {
+                await db.query('insert into audience (name, email, create_time) values ($1, $2, $3)', [item, req.body.email, time]);
+            } else {
+                await db.query('update audience set create_time = $1 where name = $2', [time, item]);
+            }
+        }
         await db.query('update campaign_ui set campaign_id = $1 where id = $2', [result.rows[0].id, req.body.uiId]);
         return res.status(StatusCodes.OK).json(result.rows[0]);
     } catch (error: any) {
+        log.error(`error campaign: ${error}`);
         return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json(error.message);
     }
 };
@@ -186,6 +216,7 @@ const data = {
     addCampaign,
     getCampaign,
     getAudience,
+    addAudience,
     addCampaignUI,
     getCampaignDetail,
     updateCampaignDetail,
