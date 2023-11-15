@@ -222,7 +222,7 @@ const clicked: RequestHandler = async (req: Request, res: Response) => {
 
         if (campaign.rows.length > 0) {
             const time = moment().valueOf();
-            await db.query('insert into clicked_history (create_time, ip, campaign_id) values ($1, $2, $3)', [time, req.body.ipaddress, campaign.rows[0].id]);
+            await db.query('insert into clicked_history (create_time, ip, campaign_id) values ($1, $2, $3)', [time, req.body.ipAddress, campaign.rows[0].id]);
             return res.status(StatusCodes.OK).json(campaign.rows[0]);
         } else {
             return res.status(StatusCodes.BAD_GATEWAY).json('There is no campaign data');
