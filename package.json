@@ -20,6 +20,7 @@
     "@types/pg": "^8.10.8",
     "@types/pino": "^7.0.5",
     "@types/sequelize": "^4.28.17",
+    "@types/uuid": "^9.0.7",
     "axios": "^1.6.0",
     "cors": "^2.8.5",
     "dotenv": "^16.3.1",
@@ -29,7 +30,8 @@
     "pg": "^8.11.3",
     "pino": "^8.16.1",
     "ts-node": "^10.9.1",
-    "typescript": "^5.2.2"
+    "typescript": "^5.2.2",
+    "uuid": "^9.0.1"
   },
   "devDependencies": {
     "nodemon": "^3.0.1",

@@ -1,6 +1,7 @@
 import { RequestHandler, Request, Response } from "express";
 import { StatusCodes } from "http-status-codes/build/cjs/status-codes";
 import axios from "axios";
+import { v4 } from "uuid";
 
 import db from '../util/db';
 import useAirTable from "../util/useAirTable";
@@ -67,18 +68,21 @@ const getPricing: RequestHandler = async (_req: Request, res: Response) => {
 const addCampaign: RequestHandler = async (req: Request, res: Response) => {
     log.info('add campaign called');
     try {
+        const time = moment().valueOf();
+        const uid = v4();
         // update campaign ui id
-        const result = await db.query('INSERT INTO campaign(email, name, url, demographic, audience, price) VALUES($1, $2, $3, $4, $5, $6) RETURNING *', [
+        const result = await db.query('INSERT INTO campaign(email, name, url, demographic, audience, price, create_time, uid) VALUES($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *', [
             req.body.email,
             req.body.campaignName,
             req.body.url,
             req.body.currentTarget,
             `${JSON.stringify(req.body.currentAudience)}`,
             req.body.currentPrice,
+            time,
+            uid
         ]);
 
         // add on audience table
-        const time = moment().valueOf();
         const audience = req.body.currentAudience;
         for (const item of audience) {
             const count = await db.query('select count(id) from audience where name = $1', [item]);
@@ -101,7 +105,7 @@ const getCampaign: RequestHandler = async (req: Request, res: Response) => {
 
     try {
         const { email } = req.query;
-        const result = await db.query('select id, name, url, demographic, newsletter, price from campaign where email = $1', [email]);
+        const result = await db.query('select * from campaign where email = $1', [email]);
         return res.status(StatusCodes.OK).json(result.rows);
     } catch (error: any) {
         log.error(`get campaign error: ${error}`);
@@ -210,6 +214,25 @@ const updateCampaignUI: RequestHandler = async (req: Request, res: Response) => 
     }
 };
 
+const clicked: RequestHandler = async (req: Request, res: Response) => {
+    log.info('campaign clicked');
+    try {
+        console.log('ip:', req.body.ipAddress);
+        const campaign = await db.query('select * from campaign where uid = $1', [req.body.id]);
+
+        if (campaign.rows.length > 0) {
+            const time = moment().valueOf();
+            await db.query('insert into clicked_history (create_time, ip, campaign_id) values ($1, $2, $3)', [time, req.body.ipaddress, campaign.rows[0].id]);
+            return res.status(StatusCodes.OK).json(campaign.rows[0]);
+        } else {
+            return res.status(StatusCodes.BAD_GATEWAY).json('There is no campaign data');
+        }
+    } catch (error: any) {
+        log.error(`add campaign-ui error: ${error}`);
+        return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json(error.message);
+    }
+};
+
 const data = {
     getNewsletter,
     getPricing,
@@ -221,6 +244,8 @@ const data = {
     getCampaignDetail,
     updateCampaignDetail,
     updateCampaignUI,
+
+    clicked,
 };
 
 export default data;

@@ -16,4 +16,6 @@ router.post('/campaign_ui', data.addCampaignUI);
 router.put('/campaign_ui', data.updateCampaignUI);
 router.get('/audience', data.getAudience);
 
+router.post('/clicked', data.clicked);
+
 export default router;
