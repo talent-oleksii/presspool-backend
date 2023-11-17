@@ -122,21 +122,15 @@ const getCampaignDetail: RequestHandler = async (req: Request, res: Response) =>
     log.info('get campaign detail called');
     try {
         const { id } = req.query;
-        console.log('id:', id)
-        const campaignData = await db.query('select * from campaign where id = $1', [id]);
-        const campaignUIData = await db.query('select * from campaign_ui where campaign_id = $1', [id]);
+        const campaignData = await db.query('select *, campaign.id as id from campaign left join campaign_ui on campaign.id = campaign_ui.campaign_id where campaign.id = $1', [id]);
 
-        console.log('data:', campaignUIData.rows);
-        let row = campaignUIData.rows[0];
+        let row = campaignData.rows[0];
         row = {
             ...row,
             image: row.image ? row.image.toString('utf8') : null,
         };
 
-        return res.status(StatusCodes.OK).json({
-            campaignData: campaignData.rows[0],
-            uiData: row,
-        });
+        return res.status(StatusCodes.OK).json(row);
     } catch (error: any) {
         log.error(` get campaign detail error: ${error}`);
         return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json(error.message);
@@ -228,14 +222,21 @@ const clicked: RequestHandler = async (req: Request, res: Response) => {
         const campaign = await db.query('select * from campaign where uid = $1', [req.body.id]);
 
         if (campaign.rows.length > 0) {
+            const data = campaign.rows[0];
             const time = moment().valueOf();
-            await db.query('insert into clicked_history (create_time, ip, campaign_id) values ($1, $2, $3)', [time, req.body.ipAddress, campaign.rows[0].id]);
-            return res.status(StatusCodes.OK).json(campaign.rows[0]);
+            await db.query('insert into clicked_history (create_time, ip, campaign_id) values ($1, $2, $3)', [time, req.body.ipAddress, data.id]);
+            const newPrice = Number(data.price) - (data.demographic === 'consumer' ? 8 : 20);
+            if (newPrice <= 0) {
+                await db.query('update campaign set click_count = click_count + 1, price = $1, status = "paused" where uid = $2', [0, req.body.id]);
+            } else {
+                await db.query('update campaign set click_count = click_count + 1, price = $1 where uid = $2', [newPrice, req.body.id]);
+            }
+            return res.status(StatusCodes.OK).json(data);
         } else {
             return res.status(StatusCodes.BAD_GATEWAY).json('There is no campaign data');
         }
     } catch (error: any) {
-        log.error(`add campaign-ui error: ${error}`);
+        log.error(`clicked error: ${error}`);
         return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json(error.message);
     }
 };
