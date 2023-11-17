@@ -105,7 +105,7 @@ const getCampaign: RequestHandler = async (req: Request, res: Response) => {
 
     try {
         const { email } = req.query;
-        const result = await db.query('select * from campaign left join campaign_ui on campaign.id = campaign_ui.campaign_id where campaign.email = $1', [email]);
+        const result = await db.query('select *, campaign.id as id from campaign left join campaign_ui on campaign.id = campaign_ui.campaign_id where campaign.email = $1', [email]);
 
         return res.status(StatusCodes.OK).json(result.rows.map(item => ({ ...item, image: item.image ? item.image.toString('utf8') : null })));
     } catch (error: any) {
@@ -118,9 +118,11 @@ const getCampaignDetail: RequestHandler = async (req: Request, res: Response) =>
     log.info('get campaign detail called');
     try {
         const { id } = req.query;
+        console.log('id:', id)
         const campaignData = await db.query('select * from campaign where id = $1', [id]);
         const campaignUIData = await db.query('select * from campaign_ui where campaign_id = $1', [id]);
 
+        console.log('data:', campaignUIData.rows);
         let row = campaignUIData.rows[0];
         row = {
             ...row,
