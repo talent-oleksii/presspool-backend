@@ -104,10 +104,14 @@ const getCampaign: RequestHandler = async (req: Request, res: Response) => {
     log.info('get campaign called');
 
     try {
-        const { email } = req.query;
-        const result = await db.query('select *, campaign.id as id from campaign left join campaign_ui on campaign.id = campaign_ui.campaign_id where campaign.email = $1', [email]);
+        const { email, searchStr } = req.query;
+        let result: any = undefined;
+        if (!searchStr)
+            result = await db.query('select *, campaign.id as id from campaign left join campaign_ui on campaign.id = campaign_ui.campaign_id where campaign.email = $1', [email]);
+        else
+            result = await db.query('select *, campaign.id as id from campaign left join campaign_ui on campaign.id = campaign_ui.campaign_id where campaign.email = $1 and name like $2', [email, `%${searchStr}%`]);
 
-        return res.status(StatusCodes.OK).json(result.rows.map(item => ({ ...item, image: item.image ? item.image.toString('utf8') : null })));
+        return res.status(StatusCodes.OK).json(result.rows.map((item: any) => ({ ...item, image: item.image ? item.image.toString('utf8') : null })));
     } catch (error: any) {
         log.error(`get campaign error: ${error}`);
         return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json(error.message);
