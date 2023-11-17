@@ -5,5 +5,7 @@ const router: Router = express.Router();
 
 router.post('/purchase', stripe.purchaseCampaign);
 router.post('/prepare', stripe.preparePayment);
+router.get('/card', stripe.getCard);
+router.post('/card', stripe.addCard);
 
 export default router;

@@ -18,6 +18,39 @@ const preparePayment: RequestHandler = async (req: Request, res: Response) => {
   }
 };
 
+const getCard: RequestHandler = async (req: Request, res: Response) => {
+  log.info('get card info called');
+  try {
+    const { email } = req.query;
+    const cards = await db.query('select * from card_info where email = $1', [email]);
+
+    return res.status(StatusCodes.OK).json(cards.rows);
+
+  } catch (error) {
+    log.error(`error while getting card: ${error}`);
+    return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json(error);
+  }
+};
+
+const addCard: RequestHandler = async (req: Request, res: Response) => {
+  log.info('add card called');
+  try {
+    const { email, token } = req.body;
+    const time = moment().valueOf();
+
+    const result = await db.query(`insert into card_info (email, token_id, card_id, last4, card_name, exp_month, exp_year, brand, zip, create_time)
+      values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) 
+      returning *`,
+      [email, token.id, token.card.id, token.card.last4, token.card.name, token.card.exp_month, token.card.exp_year, token.card.brand, token.card.address_zip, time]
+    );
+    return res.status(StatusCodes.OK).json(result.rows[0]);
+
+  } catch (error) {
+    log.error(`error while adding card: ${error}`);
+    return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json(error);
+  }
+};
+
 const purchaseCampaign: RequestHandler = async (req: Request, res: Response) => {
   try {
     console.log('req.body:', req.body);
@@ -51,6 +84,8 @@ const purchaseCampaign: RequestHandler = async (req: Request, res: Response) => 
 const stripeFunction = {
   purchaseCampaign,
   preparePayment,
+  getCard,
+  addCard,
 };
 
 export default stripeFunction;
