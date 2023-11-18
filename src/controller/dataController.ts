@@ -71,7 +71,7 @@ const addCampaign: RequestHandler = async (req: Request, res: Response) => {
         const time = moment().valueOf();
         const uid = v4();
         // update campaign ui id
-        const result = await db.query('INSERT INTO campaign(email, name, url, demographic, audience, price, create_time, uid) VALUES($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *', [
+        const result = await db.query('INSERT INTO campaign(email, name, url, demographic, audience, price, create_time, uid, card_id) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING *', [
             req.body.email,
             req.body.campaignName,
             req.body.url,
@@ -79,7 +79,8 @@ const addCampaign: RequestHandler = async (req: Request, res: Response) => {
             `${JSON.stringify(req.body.currentAudience)}`,
             req.body.currentPrice,
             time,
-            uid
+            uid,
+            req.body.currentCard,
         ]);
 
         // add on audience table
@@ -107,9 +108,9 @@ const getCampaign: RequestHandler = async (req: Request, res: Response) => {
         const { email, searchStr } = req.query;
         let result: any = undefined;
         if (!searchStr)
-            result = await db.query('select *, campaign.id as id from campaign left join campaign_ui on campaign.id = campaign_ui.campaign_id where campaign.email = $1', [email]);
+            result = await db.query('select *, campaign.id as id, campaign_ui.id as ui_id from campaign left join campaign_ui on campaign.id = campaign_ui.campaign_id where campaign.email = $1', [email]);
         else
-            result = await db.query('select *, campaign.id as id from campaign left join campaign_ui on campaign.id = campaign_ui.campaign_id where campaign.email = $1 and name like $2', [email, `%${searchStr}%`]);
+            result = await db.query('select *, campaign.id as id, campaign_ui.id as ui_id from campaign left join campaign_ui on campaign.id = campaign_ui.campaign_id where campaign.email = $1 and name like $2', [email, `%${searchStr}%`]);
 
         return res.status(StatusCodes.OK).json(result.rows.map((item: any) => ({ ...item, image: item.image ? item.image.toString('utf8') : null })));
     } catch (error: any) {
@@ -140,19 +141,25 @@ const getCampaignDetail: RequestHandler = async (req: Request, res: Response) =>
 const updateCampaignDetail: RequestHandler = async (req: Request, res: Response) => {
     log.info('update campaign detail called');
     try {
-        const { id, email, campaignName, url, currentTarget, currentAudience, currentPrice } = req.body;
+        const { id, email, campaignName, url, currentTarget, currentAudience, currentPrice, type, state, currentCard } = req.body;
 
-        const result = await db.query('update campaign set email = $1, name = $2, url = $3, demographic = $4, newsletter = $5, price = $6 where id = $7 returning *', [
-            email,
-            campaignName,
-            url,
-            currentTarget,
-            currentAudience,
-            currentPrice,
-            id,
-        ]);
+        if (type === 'state') {
+            await db.query('update campaign set state = $1 where id = $2', [state, id]);
+            return res.status(StatusCodes.OK).json('successfully updated!');
+        } else {
+            const result = await db.query('update campaign set email = $1, name = $2, url = $3, demographic = $4, newsletter = $5, price = $6, card_id = $7 where id = $8 returning *', [
+                email,
+                campaignName,
+                url,
+                currentTarget,
+                currentAudience,
+                currentPrice,
+                currentCard,
+                id,
+            ]);
 
-        return res.status(StatusCodes.OK).json(result.rows[0]);
+            return res.status(StatusCodes.OK).json(result.rows[0]);
+        }
     } catch (error: any) {
         log.error(` update campaign detail error: ${error}`);
         return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json(error.message);
