@@ -48,6 +48,7 @@ const authCheck: RequestHandler = async (req: Request, res: Response) => {
         }
     } catch (error: any) {
         log.error(`auth check fail: ${error}`);
+        return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ error: error.message });
     }
 };
 
