@@ -53,26 +53,27 @@ const addCard: RequestHandler = async (req: Request, res: Response) => {
 
 const purchaseCampaign: RequestHandler = async (req: Request, res: Response) => {
   try {
-    console.log('req.body:', req.body);
+    log.info('purchase called:');
 
     const object = req.body.data.object;
     const amount = object.amount;
 
-    await db.query('insert into pay_history(email, pay_id, pay_amount, create_time) values ($1, $2, $3, $4)', [
-      object.billing_details.email,
-      object.id,
-      Number(amount) / 100,
-      req.body.created
-    ]);
+    // await db.query('insert into pay_history(email, pay_id, pay_amount, create_time) values ($1, $2, $3, $4)', [
+    //   object.billing_details.email,
+    //   object.id,
+    //   Number(amount) / 100,
+    //   req.body.created
+    // ]);
 
     log.info(`${amount} purchased`);
-    const payData = await db.query("select id from campaign where email = $1 and state = 'purchasing' order by create_time desc", [object.billing_details.email]);
-    if (payData.rows.length <= 0) {
-      return res.status(StatusCodes.OK).json('no matching campaign id');
-    }
-    const campaignId = payData.rows[0].id;
+    // const payData = await db.query("select id from campaign where email = $1 and state = 'purchasing' order by create_time desc", [object.billing_details.email]);
+    // if (payData.rows.length <= 0) {
+    //   return res.status(StatusCodes.OK).json('no matching campaign id');
+    // }
+    // const campaignId = payData.rows[0].id;
 
-    await db.query("update campaign set state = 'purchased' where id = $1", [campaignId]);
+    // await db.query("update campaign set state = 'purchased' where id = $1", [campaignId]);
+    await db.query('update user_list set verified = 1 where email = $1', [object.billing_details.email]);
 
     return res.status(StatusCodes.OK).json('successfully purchased');
   } catch (error: any) {

@@ -38,7 +38,7 @@ const addAudience: RequestHandler = async (req: Request, res: Response) => {
 
         return res.status(StatusCodes.OK).json(result.rows[0]);
     } catch (error) {
-        log.error(``);
+        log.error(`add audience error: ${error}`);
         return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json(error);
     }
 };
@@ -71,7 +71,7 @@ const addCampaign: RequestHandler = async (req: Request, res: Response) => {
         const time = moment().valueOf();
         const uid = v4();
         // update campaign ui id
-        const result = await db.query('INSERT INTO campaign(email, name, url, demographic, audience, price, create_time, uid, card_id) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING *', [
+        const result = await db.query('INSERT INTO campaign(email, name, url, demographic, audience, price, create_time, uid, card_id, state) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING *', [
             req.body.email,
             req.body.campaignName,
             req.body.url,
@@ -81,16 +81,20 @@ const addCampaign: RequestHandler = async (req: Request, res: Response) => {
             time,
             uid,
             req.body.currentCard,
+            req.body.state,
         ]);
 
         // add on audience table
         const audience = req.body.currentAudience;
         for (const item of audience) {
-            const count = await db.query('select count(id) from audience where name = $1', [item]);
-            if (Number(count.rows[0].count) <= 0) {
-                await db.query('insert into audience (name, email, create_time) values ($1, $2, $3)', [item, req.body.email, time]);
-            } else {
-                await db.query('update audience set create_time = $1 where name = $2', [time, item]);
+            const count = await db.query('SELECT * FROM audience WHERE name = $1', [item]);
+
+            if (count.rows.length <= 0) {
+                try {
+                    await db.query('INSERT INTO audience (name, email, create_time) VALUES ($1, $2, $3) ON CONFLICT (name) DO NOTHING', [item, req.body.email, time]);
+                } catch (error) {
+                    console.error('Error inserting into audience:', error);
+                }
             }
         }
         await db.query('update campaign_ui set campaign_id = $1 where id = $2', [result.rows[0].id, req.body.uiId]);
