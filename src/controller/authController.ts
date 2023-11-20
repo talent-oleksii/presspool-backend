@@ -18,18 +18,34 @@ const authCheck: RequestHandler = async (req: Request, res: Response) => {
 
     try {
         const tokenHeader = req.headers.authorization;
-        console.log('he:', tokenHeader);
         const token = tokenHeader && tokenHeader.split(' ')[1];
 
         const result: JwtPayload = verify(token as string, secretKey) as JwtPayload;
 
-        if (!result) {
-            return res.status(StatusCodes.BAD_REQUEST).json({ error: 'JWT error'});
+        if (!result || !result.exp || !result.iat) {
+            return res.status(StatusCodes.BAD_REQUEST).json({ error: 'JWT error' });
         }
 
-        // if (result.exp < result.iat) {
+        if (result.exp < result.iat) {
+            return res.status(StatusCodes.BAD_REQUEST).json({ error: 'timeout error' });
+        } else {
+            const verifiedData = await db.query('select verified from user_list where email = $1', [result.email]);
+            if (verifiedData.rows.length <= 0) {
+                return res.status(StatusCodes.NO_CONTENT).json({ records: [] });
+            }
 
-        // }
+            useAirTable('Users', 'get', {
+                'Email': result.email,
+            })?.then(data => {
+                return res.status(StatusCodes.OK).json({
+                    ...data.data,
+                    verified: verifiedData.rows[0].verified,
+                });
+            }).catch(error => {
+                console.log('err:', error.message);
+                return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ message: error.message });
+            })
+        }
     } catch (error: any) {
         log.error(`auth check fail: ${error}`);
     }
@@ -45,7 +61,6 @@ const signIn: RequestHandler = async (req: Request, res: Response) => {
     }
 
     const token = generateToken({ email });
-    console.log(token);
     useAirTable('Users', 'get', {
         'Email': email,
         'Password': password,
