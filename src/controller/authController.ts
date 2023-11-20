@@ -1,4 +1,5 @@
 import { RequestHandler, Request, Response } from "express";
+import { verify, sign, JwtPayload } from "jsonwebtoken";
 import { StatusCodes } from "http-status-codes/build/cjs/status-codes";
 
 import moment from 'moment';
@@ -6,23 +7,53 @@ import db from "../util/db";
 import useAirTable from "../util/useAirTable";
 import log from "../util/logger";
 
+const secretKey = "presspool-ai";
+const generateToken = (payload: any) => {
+    const token = sign(payload, secretKey, { expiresIn: '1d' });
+    return token;
+};
+
+const authCheck: RequestHandler = async (req: Request, res: Response) => {
+    log.info('auth check called');
+
+    try {
+        const tokenHeader = req.headers.authorization;
+        console.log('he:', tokenHeader);
+        const token = tokenHeader && tokenHeader.split(' ')[1];
+
+        const result: JwtPayload = verify(token as string, secretKey) as JwtPayload;
+
+        if (!result) {
+            return res.status(StatusCodes.BAD_REQUEST).json({ error: 'JWT error'});
+        }
+
+        // if (result.exp < result.iat) {
+
+        // }
+    } catch (error: any) {
+        log.error(`auth check fail: ${error}`);
+    }
+};
+
 const signIn: RequestHandler = async (req: Request, res: Response) => {
     log.info("Sign in api called");
     const { email, password } = req.query;
 
     const verifiedData = await db.query('select verified from user_list where email = $1', [email]);
     if (verifiedData.rows.length <= 0) {
-        console.log('hereerer?');
         return res.status(StatusCodes.NO_CONTENT).json({ records: [] });
     }
 
+    const token = generateToken({ email });
+    console.log(token);
     useAirTable('Users', 'get', {
         'Email': email,
         'Password': password,
     })?.then(data => {
         return res.status(StatusCodes.OK).json({
             ...data.data,
-            verified: verifiedData.rows[0].verified
+            verified: verifiedData.rows[0].verified,
+            token
         });
     }).catch(error => {
         console.log('err:', error.message);
@@ -57,6 +88,7 @@ const clientSignUp: RequestHandler = async (req: Request, res: Response) => {
         return res.status(StatusCodes.OK).json({
             ...data.data,
             verified: 0,
+            token: generateToken({ email }),
         });
     }).catch(error => {
         console.log('err:', error);
@@ -67,6 +99,7 @@ const clientSignUp: RequestHandler = async (req: Request, res: Response) => {
 const auth = {
     signIn,
     clientSignUp,
+    check: authCheck,
 };
 
 export default auth;
