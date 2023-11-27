@@ -98,7 +98,10 @@ const addCampaign: RequestHandler = async (req: Request, res: Response) => {
             }
         }
         await db.query('update campaign_ui set campaign_id = $1 where id = $2', [result.rows[0].id, req.body.uiId]);
-        return res.status(StatusCodes.OK).json(result.rows[0]);
+
+        const retVal = await db.query('select *, campaign.id as id, campaign_ui.id as ui_id from campaign left join campaign_ui on campaign.id = campaign_ui.campaign_id where campaign.email = $1 and campaign.id = $2', [req.body.email, result.rows[0].id]);
+        const data = retVal.rows[0];
+        return res.status(StatusCodes.OK).json({ ...data, image: data.image ? data.image.toString('utf8') : null });
     } catch (error: any) {
         log.error(`error campaign: ${error}`);
         return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json(error.message);
@@ -132,8 +135,6 @@ const getCampaign: RequestHandler = async (req: Request, res: Response) => {
 
         log.info(`query: ${query}, values; ${values}`);
         result = await db.query(query, values);
-
-        console.log('ddd:', result);
 
         return res.status(StatusCodes.OK).json(result.rows.map((item: any) => ({ ...item, image: item.image ? item.image.toString('utf8') : null })));
     } catch (error: any) {
