@@ -2,11 +2,14 @@ import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import { StatusCodes } from 'http-status-codes';
+import cron from 'node-cron';
 
 import authRoute from './routes/authRoute';
 import dataRoute from './routes/dataRoute';
 import stripeRoute from './routes/stripeRoute';
 import adminRoute from './routes/adminRoute';
+
+import cronFunction from './util/cron';
 
 dotenv.config({ path: './.env' });
 
@@ -35,4 +38,9 @@ app.get('/', (_req, res) => {
 app.listen(PORT, async () => {
     log.info(`Server is running on PORT:${PORT}`);
     await db.testConnection();
+});
+
+cron.schedule('55 17 * * 1', async () => { // minute, hour, day, month, day_of_week
+    console.log('if this started');
+    await cronFunction();
 });

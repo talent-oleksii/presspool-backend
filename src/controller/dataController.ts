@@ -109,12 +109,31 @@ const getCampaign: RequestHandler = async (req: Request, res: Response) => {
     log.info('get campaign called');
 
     try {
-        const { email, searchStr } = req.query;
+        const { email, searchStr, from, to } = req.query;
+        console.log('from:', from, to);
         let result: any = undefined;
-        if (!searchStr)
-            result = await db.query('select *, campaign.id as id, campaign_ui.id as ui_id from campaign left join campaign_ui on campaign.id = campaign_ui.campaign_id where campaign.email = $1', [email]);
-        else
-            result = await db.query('select *, campaign.id as id, campaign_ui.id as ui_id from campaign left join campaign_ui on campaign.id = campaign_ui.campaign_id where campaign.email = $1 and name like $2', [email, `%${searchStr}%`]);
+
+        let query = 'select *, campaign.id as id, campaign_ui.id as ui_id from campaign left join campaign_ui on campaign.id = campaign_ui.campaign_id where campaign.email = $1';
+        let values = [email];
+        if (searchStr) {
+            query += ' and and name like $2';
+            values = [...values, `%${searchStr}%`];
+
+            if (from && to) {
+                query += ' and campaign.create_time > $3 and campaign.create_time < $4';
+                values = [...values, from, to];
+            }
+        } else {
+            if (from && to) {
+                query += ' and campaign.create_time > $2 and campaign.create_time < $3';
+                values = [...values, from, to];
+            }
+        }
+
+        log.info(`query: ${query}, values; ${values}`);
+        result = await db.query(query, values);
+
+        console.log('ddd:', result);
 
         return res.status(StatusCodes.OK).json(result.rows.map((item: any) => ({ ...item, image: item.image ? item.image.toString('utf8') : null })));
     } catch (error: any) {
