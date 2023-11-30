@@ -51,6 +51,18 @@ const addCard: RequestHandler = async (req: Request, res: Response) => {
   }
 };
 
+const deleteCard: RequestHandler = async (req: Request, res: Response) => {
+  log.info('delete card called');
+  try {
+    const { id } = req.query;
+    await db.query('delete from card_info where id = $1', [id]);
+    return res.status(StatusCodes.OK).send('successfully deleted');
+  } catch (error) {
+    log.error(`error while deleting card: ${error}`);
+    return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json(error);
+  }
+};
+
 const purchaseCampaign: RequestHandler = async (req: Request, res: Response) => {
   try {
     log.info('purchase called:');
@@ -87,6 +99,7 @@ const stripeFunction = {
   preparePayment,
   getCard,
   addCard,
+  deleteCard,
 };
 
 export default stripeFunction;
