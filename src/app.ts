@@ -15,6 +15,7 @@ dotenv.config({ path: './.env' });
 
 import db from './util/db';
 import log from './util/logger';
+import constant from './util/constant';
 
 
 const app = express();
