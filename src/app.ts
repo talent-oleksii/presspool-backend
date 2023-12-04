@@ -15,7 +15,6 @@ dotenv.config({ path: './.env' });
 
 import db from './util/db';
 import log from './util/logger';
-import constant from './util/constant';
 
 
 const app = express();
@@ -25,11 +24,9 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 app.use(cors());
 app.use('/stripe', stripeRoute);
-// app.post('/stripe/purchase', stripe.purchaseCampaign);
 
 app.use('/auth', authRoute);
 app.use('/data', dataRoute);
-
 app.use('/admin', adminRoute);
 
 app.get('/', (_req, res) => {

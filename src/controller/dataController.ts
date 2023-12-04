@@ -254,6 +254,39 @@ const updateCampaignUI: RequestHandler = async (req: Request, res: Response) => 
     }
 };
 
+const getProfile: RequestHandler = async (req: Request, res: Response) => {
+    log.info('get profile called');
+    try {
+        const { email } = req.query;
+        const data = await db.query('select * from user_list where email = $1', [email]);
+
+        const ret = data.rows[0];
+
+        return res.status(StatusCodes.OK).json({ ...ret, avatar: ret.avatar ? ret.avatar.toString('utf8') : null });
+
+    } catch (error: any) {
+        log.error(`get profile error: ${error}`);
+        return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json(error.message);
+    }
+};
+
+const updateProfile: RequestHandler = async (req: Request, res: Response) => {
+    log.info('update profile clicked');
+    try {
+        const { email, avatar } = req.body;
+        console.log('ddd:', email, avatar);
+        if (avatar) {
+            await db.query('update user_list set avatar = $1 where email = $2', [avatar, email]);
+        }
+
+        return res.status(StatusCodes.OK).json('updated');
+
+    } catch (error: any) {
+        log.error(`update profile error: ${error}`);
+        return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json(error.message);
+    }
+};
+
 const clicked: RequestHandler = async (req: Request, res: Response) => {
     log.info('campaign clicked');
     try {
@@ -293,6 +326,9 @@ const data = {
     updateCampaignUI,
 
     clicked,
+
+    getProfile,
+    updateProfile
 };
 
 export default data;
