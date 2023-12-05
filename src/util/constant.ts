@@ -28,16 +28,7 @@ const oAuth2Client = new google.auth.OAuth2(
 //   }
 // });
 
-const emailTransporter = nodemailer.createTransport(smtpTransport({
-  service: 'gmail',
-  auth: {
-    user: process.env.SERVER_EMAIL,
-    pass: process.env.EMAIL_PASSWORD,
-  }
-}));
-
 const constant = {
-  emailTransporter,
   stripe,
 };
 

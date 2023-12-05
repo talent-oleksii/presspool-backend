@@ -35,13 +35,13 @@ const getCard: RequestHandler = async (req: Request, res: Response) => {
 const addCard: RequestHandler = async (req: Request, res: Response) => {
   log.info('add card called');
   try {
-    const { email, token } = req.body;
+    const { email, token, source } = req.body;
     const time = moment().valueOf();
 
-    const result = await db.query(`insert into card_info (email, token_id, card_id, last4, card_name, exp_month, exp_year, brand, zip, create_time)
-      values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) 
+    const result = await db.query(`insert into card_info (email, token_id, card_id, last4, card_name, exp_month, exp_year, brand, zip, create_time, source_id, client_secret)
+      values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12) 
       returning *`,
-      [email, token.id, token.card.id, token.card.last4, token.card.name, token.card.exp_month, token.card.exp_year, token.card.brand, token.card.address_zip, time]
+      [email, token.id, token.card.id, token.card.last4, token.card.name, token.card.exp_month, token.card.exp_year, token.card.brand, token.card.address_zip, time, source.id, source.client_secret]
     );
     return res.status(StatusCodes.OK).json(result.rows[0]);
 
