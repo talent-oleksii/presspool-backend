@@ -30,7 +30,7 @@ const authCheck: RequestHandler = async (req: Request, res: Response) => {
         if (result.exp < result.iat) {
             return res.status(StatusCodes.BAD_REQUEST).json({ error: 'timeout error' });
         } else {
-            const verifiedData = await db.query('select verified from user_list where email = $1', [result.email]);
+            const verifiedData = await db.query('select verified, email_verified from user_list where email = $1', [result.email]);
             if (verifiedData.rows.length <= 0) {
                 return res.status(StatusCodes.NO_CONTENT).json({ records: [] });
             }
@@ -41,6 +41,8 @@ const authCheck: RequestHandler = async (req: Request, res: Response) => {
                 return res.status(StatusCodes.OK).json({
                     ...data.data,
                     verified: verifiedData.rows[0].verified,
+                    email_verified: verifiedData.rows[0].email_verified,
+                    token,
                 });
             }).catch(error => {
                 console.log('err:', error.message);
@@ -57,7 +59,7 @@ const signIn: RequestHandler = async (req: Request, res: Response) => {
     log.info("Sign in api called");
     const { email, password } = req.query;
 
-    const verifiedData = await db.query('select verified from user_list where email = $1', [email]);
+    const verifiedData = await db.query('select verified, email_verified from user_list where email = $1', [email]);
     if (verifiedData.rows.length <= 0) {
         return res.status(StatusCodes.NO_CONTENT).json({ records: [] });
     }
@@ -70,12 +72,13 @@ const signIn: RequestHandler = async (req: Request, res: Response) => {
         return res.status(StatusCodes.OK).json({
             ...data.data,
             verified: verifiedData.rows[0].verified,
+            email_verified: verifiedData.rows[0].email_verified,
             token
         });
     }).catch(error => {
         console.log('err:', error.message);
         return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ message: error.message });
-    })
+    });
 
 };
 
@@ -122,10 +125,41 @@ const clientSignUp: RequestHandler = async (req: Request, res: Response) => {
     });
 };
 
+const verifyEmail: RequestHandler = async (req: Request, res: Response) => {
+    try {
+        const { token } = req.body;
+        const result: JwtPayload = verify(token as string, secretKey) as JwtPayload;
+
+        await db.query('update user_list set email_verified = 1 where email = $1', [result.email]);
+        const verifiedData = await db.query('select verified from user_list where email = $1', [result.email]);
+        if (verifiedData.rows.length <= 0) {
+            return res.status(StatusCodes.NO_CONTENT).json({ records: [] });
+        }
+
+        useAirTable('Users', 'get', {
+            'Email': result.email,
+        })?.then(data => {
+            return res.status(StatusCodes.OK).json({
+                ...data.data,
+                verified: verifiedData.rows[0].verified,
+                email_verified: verifiedData.rows[0].email_verified,
+                token,
+            });
+        }).catch(error => {
+            console.log('err:', error.message);
+            return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ message: error.message });
+        });
+    } catch (error: any) {
+        log.error(`error while verifying email: ${error}`);
+        return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ message: error.message });
+    }
+};
+
 const auth = {
     signIn,
     clientSignUp,
     check: authCheck,
+    verifyEmail,
 };
 
 export default auth;

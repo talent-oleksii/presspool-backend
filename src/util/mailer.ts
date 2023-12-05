@@ -55,7 +55,7 @@ const generateHTML = (userName: string, payload: any) => {
           Welcome to <br />
           Presspool!
         </h2>
-        <a href='https://presspool-frontend.onrender.com/#/verify/token=${payload.token}' style="color: #6c63ff; font-size: 20px; text-decoration:underline;">Click here to verify your email</a>
+        <a href='https://presspool-frontend.onrender.com/#/verify/${payload.token}' style="color: #6c63ff; font-size: 20px; text-decoration:underline;">Click here to verify your email</a>
         <p style="margin-top: 54px; margin-bottom: 0; letter-spacing: -0.72px; font-weight: 500; font-size: 24px;">
           We are glad to have you here. <br />To kick things off (if you haven't already):
         </p>
