@@ -24,6 +24,13 @@ const PORT = process.env.PORT || 5000;
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 app.use(cors());
+
+app.use(express.static(__dirname + '/public/img'));
+app.get('/image', function (req, res) {
+    const filePath = `${__dirname}/public/img/${req.query.image}`;
+    res.sendFile(filePath);
+})
+
 app.use('/stripe', stripeRoute);
 
 app.use('/auth', authRoute);
@@ -38,6 +45,8 @@ app.listen(PORT, async () => {
     log.info(`Server is running on PORT:${PORT}`);
     await db.testConnection();
 });
+
+sendEmail('oleksiikaravanov@gmail.com', 'Oleksii', { type: 'welcome', token: 'wonder' })
 
 cron.schedule('55 17 * * 1', async () => { // minute, hour, day, month, day_of_week
     console.log('if this started');

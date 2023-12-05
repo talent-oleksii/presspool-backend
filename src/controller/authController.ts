@@ -6,6 +6,7 @@ import moment from 'moment';
 import db from "../util/db";
 import useAirTable from "../util/useAirTable";
 import log from "../util/logger";
+import sendEmail from "../util/mailer";
 
 const secretKey = "presspool-ai";
 const generateToken = (payload: any) => {
@@ -84,14 +85,15 @@ const clientSignUp: RequestHandler = async (req: Request, res: Response) => {
     const { fullName, email, password, company } = req.body;
 
     const time = moment().valueOf();
-    await db.query('insert into user_list (create_time, name, email, password, company, verified, user_type) values ($1, $2, $3, $4, $5, $6, $7)', [
+    await db.query('insert into user_list (create_time, name, email, password, company, verified, user_type, email_verified) values ($1, $2, $3, $4, $5, $6, $7, $8)', [
         time,
         fullName,
         email,
         password,
         company,
         0,
-        "client"
+        "client",
+        0
     ]);
 
     useAirTable("Users", 'post', {
@@ -101,9 +103,17 @@ const clientSignUp: RequestHandler = async (req: Request, res: Response) => {
         'Company Name': company,
         'User Group': 'Client',
     })?.then(data => {
+        // Send email to users
+        sendEmail(email, fullName, {
+            type: 'sign-up',
+            subject: 'Client Sign Up',
+            token: generateToken({ email }),
+        });
+
         return res.status(StatusCodes.OK).json({
             ...data.data,
             verified: 0,
+            email_verified: 0,
             token: generateToken({ email }),
         });
     }).catch(error => {

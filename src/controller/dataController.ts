@@ -104,7 +104,7 @@ const addCampaign: RequestHandler = async (req: Request, res: Response) => {
         const retVal = await db.query('select *, campaign.id as id, campaign_ui.id as ui_id from campaign left join campaign_ui on campaign.id = campaign_ui.campaign_id where campaign.email = $1 and campaign.id = $2', [req.body.email, result.rows[0].id]);
         const data = retVal.rows[0];
 
-        sendEmail(req.body.email, 'Campaign Successfully created');
+        // sendEmail(req.body.email, 'Campaign Successfully created');
         return res.status(StatusCodes.OK).json({ ...data, image: data.image ? data.image.toString('utf8') : null });
     } catch (error: any) {
         log.error(`error campaign: ${error}`);
