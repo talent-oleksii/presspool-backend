@@ -46,9 +46,14 @@ app.listen(PORT, async () => {
     await db.testConnection();
 });
 
-// sendEmail('oleksiikaravanov@gmail.com', 'Oleksii', { type: 'welcome', token: 'wonder' })
+sendEmail('oleksiikaravanov@gmail.com', 'Oleksii', { type: 'welcome', token: 'wonder' })
 
-cron.schedule('55 17 * * 1', async () => { // minute, hour, day, month, day_of_week
-    console.log('if this started');
+// This is to charge bill to clients by every friday
+cron.schedule('55 17 * * 5', async () => { // minute, hour, day, month, day_of_week
     await cronFunction();
+});
+
+// This is for email triggering
+cron.schedule('* * * * *', () => {
+    console.log('this called everytime');
 });
