@@ -251,7 +251,7 @@ const sendBudgetReachEmail = async (emailAddress: string, campaignName: string, 
     const mailComposer = new MailComposer({
       from: 'PressPool Support Team',
       to: emailAddress,
-      subject: 'Published Campaign',
+      subject: `Campaign Budget reached ${percentage}`,
       // text: content,
       html,
       // attachments: fileAttachments,
