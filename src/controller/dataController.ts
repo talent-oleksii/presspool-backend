@@ -104,6 +104,7 @@ const addCampaign: RequestHandler = async (req: Request, res: Response) => {
         const data = retVal.rows[0];
 
         // sendWelcomeEmail(req.body.email, 'Campaign Successfully created');
+        mailer.sendPublishEmail(req.body.email, req.body.campaignName);
         return res.status(StatusCodes.OK).json({ ...data, image: data.image ? data.image.toString('utf8') : null });
     } catch (error: any) {
         log.error(`error campaign: ${error}`);
@@ -194,7 +195,7 @@ const updateCampaignDetail: RequestHandler = async (req: Request, res: Response)
 };
 
 const addCampaignUI: RequestHandler = async (req: Request, res: Response) => {
-    log.info('add campaign called');
+    log.info('add campaign UI called');
 
     try {
         const { email, headLine, body, cta, image, pageUrl, noNeedCheck } = req.body;

@@ -174,9 +174,44 @@ const sendTutorialEmail = async (emailAddress: string, userName: string) => {
   }
 };
 
+const sendPublishEmail = async (emailAddress: string, campaignName: string) => {
+  try {
+    const html = `
+      <p>You have successfully launched a campaign: ${campaignName}</p>
+    `;
+    const mailComposer = new MailComposer({
+      from: 'PressPool Support Team',
+      to: emailAddress,
+      subject: 'Published Campaign',
+      // text: content,
+      html,
+      // attachments: fileAttachments,
+      textEncoding: 'base64',
+      headers: [{
+        key: 'X-Application-Developer', value: 'Oleksii Karavanov'
+      }, {
+        key: 'X-Application-Version', value: 'v1.0.0'
+      }]
+    });
+
+    const message = await mailComposer.compile().build();
+    const raw = Buffer.from(message).toString('base64');
+
+    await gmail.users.messages.send({
+      userId: 'rica@presspool.ai',
+      requestBody: {
+        raw,
+      }
+    });
+  } catch (error) {
+    log.error(`welcome email seinding error: ${error}`);
+  }
+};
+
 const mailer = {
   sendWelcomeEmail,
   sendTutorialEmail,
+  sendPublishEmail,
 }
 
 export default mailer;
