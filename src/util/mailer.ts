@@ -34,7 +34,7 @@ const fileAttachments = [
   // },
 ];
 
-const generateHTML = (userName: string, payload: any) => {
+const generateWelcomeHTML = (userName: string, payload: any) => {
   const html = `
   <html>
 
@@ -49,7 +49,9 @@ const generateHTML = (userName: string, payload: any) => {
 </head>
 
 <body>
-  <div style="width: 640px; padding: 30px;">
+  <div style="width: 640px; padding: 39px 30px; position: relative; background-image: url('https://presspool-images.s3.amazonaws.com/welcome_email_white_back.png');
+    background-size: cover; background-repeat: no-repeat;">
+
     <img src="https://presspool-images.s3.amazonaws.com/logo_black_small.png" style="width:62px; height: 62px;"
       alt="logo" />
     <p style="margin-top: 50px; margin-bottom: 0; letter-spacing: -0.72px; font-size: 24px;">Hello ${userName}, 👋</p>
@@ -105,9 +107,9 @@ const generateHTML = (userName: string, payload: any) => {
   return html;
 };
 
-const sendEmail = async (emailAddress: string, userName: string, payload: any) => {
+const sendWelcomeEmail = async (emailAddress: string, userName: string, payload: any) => {
   try {
-    const html = generateHTML(userName, payload);
+    const html = generateWelcomeHTML(userName, payload);
     const mailComposer = new MailComposer({
       from: 'PressPool Support Team',
       to: emailAddress,
@@ -133,8 +135,48 @@ const sendEmail = async (emailAddress: string, userName: string, payload: any) =
       }
     });
   } catch (error) {
-    log.error(`email seinding error: ${error}`);
+    log.error(`welcome email seinding error: ${error}`);
   }
 };
 
-export default sendEmail;
+const sendTutorialEmail = async (emailAddress: string, userName: string) => {
+  try {
+    const html = `
+      <p>Dear ${userName}</p>
+      <p>You have not created any campaign yet. I will try to explain how to create a new campaign.</p>
+    `;
+    const mailComposer = new MailComposer({
+      from: 'PressPool Support Team',
+      to: emailAddress,
+      subject: 'Tutorial',
+      // text: content,
+      html,
+      // attachments: fileAttachments,
+      textEncoding: 'base64',
+      headers: [{
+        key: 'X-Application-Developer', value: 'Oleksii Karavanov'
+      }, {
+        key: 'X-Application-Version', value: 'v1.0.0'
+      }]
+    });
+
+    const message = await mailComposer.compile().build();
+    const raw = Buffer.from(message).toString('base64');
+
+    await gmail.users.messages.send({
+      userId: 'rica@presspool.ai',
+      requestBody: {
+        raw,
+      }
+    });
+  } catch (error) {
+    log.error(`welcome email seinding error: ${error}`);
+  }
+};
+
+const mailer = {
+  sendWelcomeEmail,
+  sendTutorialEmail,
+}
+
+export default mailer;

@@ -7,8 +7,7 @@ import db from '../util/db';
 import useAirTable from "../util/useAirTable";
 import log from '../util/logger';
 import moment from "moment";
-import constant from "../util/constant";
-import sendEmail from "../util/mailer";
+import mailer from "../util/mailer";
 
 const showBaseList = async () => {
     const response = await axios.get('https://api.airtable.com/v0/meta/bases', {
@@ -104,7 +103,7 @@ const addCampaign: RequestHandler = async (req: Request, res: Response) => {
         const retVal = await db.query('select *, campaign.id as id, campaign_ui.id as ui_id from campaign left join campaign_ui on campaign.id = campaign_ui.campaign_id where campaign.email = $1 and campaign.id = $2', [req.body.email, result.rows[0].id]);
         const data = retVal.rows[0];
 
-        // sendEmail(req.body.email, 'Campaign Successfully created');
+        // sendWelcomeEmail(req.body.email, 'Campaign Successfully created');
         return res.status(StatusCodes.OK).json({ ...data, image: data.image ? data.image.toString('utf8') : null });
     } catch (error: any) {
         log.error(`error campaign: ${error}`);

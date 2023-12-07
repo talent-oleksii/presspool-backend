@@ -15,7 +15,7 @@ dotenv.config({ path: './.env' });
 
 import db from './util/db';
 import log from './util/logger';
-import sendEmail from './util/mailer';
+import sendWelcomeEmail from './util/mailer';
 
 
 const app = express();
@@ -46,14 +46,13 @@ app.listen(PORT, async () => {
     await db.testConnection();
 });
 
-sendEmail('oleksiikaravanov@gmail.com', 'Oleksii', { type: 'welcome', token: 'wonder' })
-
 // This is to charge bill to clients by every friday
 cron.schedule('55 17 * * 5', async () => { // minute, hour, day, month, day_of_week
-    await cronFunction();
+    await cronFunction.billingFunction();
 });
 
 // This is for email triggering
-cron.schedule('* * * * *', () => {
-    console.log('this called everytime');
+cron.schedule('* * * * *', async () => {
+    console.log('mailing called');
+    await cronFunction.mailingFunction();
 });

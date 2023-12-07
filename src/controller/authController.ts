@@ -6,7 +6,7 @@ import moment from 'moment';
 import db from "../util/db";
 import useAirTable from "../util/useAirTable";
 import log from "../util/logger";
-import sendEmail from "../util/mailer";
+import mailer from "../util/mailer";
 
 const secretKey = "presspool-ai";
 const generateToken = (payload: any) => {
@@ -107,7 +107,7 @@ const clientSignUp: RequestHandler = async (req: Request, res: Response) => {
         'User Group': 'Client',
     })?.then(data => {
         // Send email to users
-        sendEmail(email, fullName, {
+        mailer.sendWelcomeEmail(email, fullName, {
             type: 'sign-up',
             subject: 'Client Sign Up',
             token: generateToken({ email }),
