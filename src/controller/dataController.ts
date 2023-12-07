@@ -293,11 +293,13 @@ const clicked: RequestHandler = async (req: Request, res: Response) => {
             const data = campaign.rows[0];
             const time = moment().valueOf();
             await db.query('insert into clicked_history (create_time, ip, campaign_id) values ($1, $2, $3)', [time, req.body.ipAddress, data.id]);
-            const newPrice = Number(data.price) - (data.demographic === 'consumer' ? 8 : 20);
-            if (newPrice <= 0) {
-                await db.query('update campaign set click_count = click_count + 1, price = $1, status = "paused" where uid = $2', [0, req.body.id]);
+            const newPrice = Number(data.spent) + (data.demographic === 'consumer' ? 8 : 20);
+            checkCampaignState(data.email, data.name, Number(data.price), Number(data.spent), data.demographic === 'consumer' ? 8 : 20);
+            if (newPrice >= Number(data.price)) {
+                await db.query('update campaign set click_count = click_count + 1, spent = $1, status = "paused" where uid = $2', [0, req.body.id]);
+                mailer.sendBudgetIncreaseEmail(data.email, data.name);
             } else {
-                await db.query('update campaign set click_count = click_count + 1, price = $1 where uid = $2', [newPrice, req.body.id]);
+                await db.query('update campaign set click_count = click_count + 1, spent = $1 where uid = $2', [newPrice, req.body.id]);
             }
             return res.status(StatusCodes.OK).json(data);
         } else {
@@ -306,6 +308,23 @@ const clicked: RequestHandler = async (req: Request, res: Response) => {
     } catch (error: any) {
         log.error(`clicked error: ${error}`);
         return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json(error.message);
+    }
+};
+
+const checkCampaignState = (email: string, campaignName: string, totalPrice: number, spent: number, cpc: number) => {
+    const value50 = totalPrice / 2;
+    const value75 = totalPrice * 75 / 100;
+    const value100 = totalPrice;
+
+    // check if budget reached 50%
+    if (value50 - cpc / 2 <= spent && spent <= value50 + cpc / 2) {
+        mailer.sendBudgetReachEmail(email, campaignName, '50%');
+    }
+    if (value75 - cpc / 2 <= spent && spent <= value75 + cpc / 2) {
+        mailer.sendBudgetReachEmail(email, campaignName, '75%');
+    }
+    if (value100 <= spent) {
+        mailer.sendBudgetReachEmail(email, campaignName, '100%');
     }
 };
 
