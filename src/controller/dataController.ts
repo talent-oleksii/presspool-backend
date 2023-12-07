@@ -300,7 +300,7 @@ const clicked: RequestHandler = async (req: Request, res: Response) => {
             checkCampaignState(data.email, data.name, Number(data.price), Number(data.spent), data.demographic === 'consumer' ? 8 : 20);
             if (newPrice >= Number(data.price)) {
                 mailer.sendBudgetIncreaseEmail(data.email, data.name);
-                await db.query('update campaign set click_count = click_count + 1, spent = $1, state = $2 where uid = $3', [0, 'paused', req.body.id]);
+                await db.query('update campaign set click_count = click_count + 1, state = $1 where uid = $2', ['paused', req.body.id]);
             } else {
                 await db.query('update campaign set click_count = click_count + 1, spent = $1 where uid = $2', [newPrice, req.body.id]);
             }
