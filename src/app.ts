@@ -52,7 +52,7 @@ cron.schedule('55 17 * * 5', async () => { // minute, hour, day, month, day_of_w
 });
 
 // This is for email triggering
-cron.schedule('* * * * *', async () => {
+cron.schedule('1 0 * * *', async () => {
     console.log('mailing called');
     await cronFunction.mailingFunction();
 });

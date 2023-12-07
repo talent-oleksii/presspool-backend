@@ -48,7 +48,8 @@ const mailingFunction = async () => {
 
       // Check if today is one day after the target timestamp
       if (currentTimestamp > targetTimestamp && previousDayTimestamp <= targetTimestamp) {
-        mailer.sendTutorialEmail(user.email, user.name);
+        console.log(`tutorial email sent to user ${user.email}`);
+        await mailer.sendTutorialEmail(user.email, user.name);
       } else {
         console.log('is not one day after the user creation');
       }
