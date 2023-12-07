@@ -4,6 +4,7 @@ import { StatusCodes } from "http-status-codes/build/cjs/status-codes";
 
 import db from '../util/db';
 import log from '../util/logger';
+import mailer from '../util/mailer';
 
 const preparePayment: RequestHandler = async (req: Request, res: Response) => {
   try {
@@ -66,7 +67,7 @@ const deleteCard: RequestHandler = async (req: Request, res: Response) => {
 const purchaseCampaign: RequestHandler = async (req: Request, res: Response) => {
   try {
     log.info('purchase called:');
-
+    console.log('ddd:', req.body.data.object.description);
     const object = req.body.data.object;
     const amount = object.amount;
 
@@ -85,6 +86,8 @@ const purchaseCampaign: RequestHandler = async (req: Request, res: Response) => 
     // const campaignId = payData.rows[0].id;
 
     // await db.query("update campaign set state = 'purchased' where id = $1", [campaignId]);
+    console.log('ddd:', object.billing_details.email);
+    await mailer.sendPurchaseEmail(object.billing_details.email, `${object.description}, ${amount / 100} has purchased, check billing information: ${object.receipt_url}`);
     await db.query('update user_list set verified = 1 where email = $1', [object.billing_details.email]);
 
     return res.status(StatusCodes.OK).json('successfully purchased');

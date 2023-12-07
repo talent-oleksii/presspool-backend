@@ -11,27 +11,42 @@ const stripe = new Stripe(process.env.STRIPE_SECRET as string);
 
 const billingFunction = async () => { // Here we notify users about billing
   try {
+    console.log('billined called');
+    const activeCampaigns = await db.query('SELECT campaign.id, campaign.name, card_info.email, campaign.billed, campaign.spent, campaign.card_id, source_id from campaign LEFT JOIN card_info ON campaign.card_id = card_info.card_id  where state = $1', ['active']);
+    for (const campaign of activeCampaigns.rows) {
+      const billAmount = (Number(campaign.spent) - Number(campaign.billed)) * 100;
+      if (billAmount === 0) continue;
+      console.log('billing campaign:', campaign);
+      const email = campaign.email;
+      let customer: any = undefined;
+      const list = await stripe.customers.list({ email });
 
-    // below are auto payment codes.
-    // const email = 'oleksiikaravanov@gmail.com';
-    // const list = await stripe.customers.list({ email });
+      const usedCustomer = list.data.filter(item => item.default_source === campaign.source_id);
 
-    // const customer = await stripe.customers.create({
-    //   email,
-    //   source: 'src_1OH7yRFx5HbKLtp4jR8kER4c',
-    // });
+      if (usedCustomer.length <= 0) {
+        customer = await stripe.customers.create({
+          email,
+          source: campaign.source_id,
+        });
+      } else {
+        customer = usedCustomer[0];
+      }
 
-    // await stripe.charges.create({
-    //   amount: 523000,
-    //   currency: 'usd',
-    //   customer: customer.id,
-    //   source: 'src_1OH7yRFx5HbKLtp4jR8kER4c',
-    // });
+      await stripe.charges.create({
+        amount: billAmount,
+        currency: 'usd',
+        customer: customer.id,
+        source: campaign.source_id,
+        description: `Charge for Campaign ${campaign.name}`,
+      });
 
+      // update billed information on database
+      const newBilled = Number(campaign.billed) + billAmount / 100;
+      await db.query('UPDATE campaign set billed = $1 where id = $2', [newBilled, campaign.id]);
+    }
   } catch (error) {
-    log.error(`error: ${error}`);
+    log.error(`weekly billing error: ${error}`);
   }
-
 };
 
 const mailingFunction = async () => {

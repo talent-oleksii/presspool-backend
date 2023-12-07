@@ -277,12 +277,47 @@ const sendBudgetReachEmail = async (emailAddress: string, campaignName: string, 
   }
 };
 
+const sendPurchaseEmail = async (emailAddress: string, description: string) => {
+  try {
+    const html = `
+      <p>${description}</p>
+    `;
+    const mailComposer = new MailComposer({
+      from: 'PressPool Support Team',
+      to: emailAddress,
+      subject: `Campaign Charged`,
+      // text: content,
+      html,
+      // attachments: fileAttachments,
+      textEncoding: 'base64',
+      headers: [{
+        key: 'X-Application-Developer', value: 'Oleksii Karavanov'
+      }, {
+        key: 'X-Application-Version', value: 'v1.0.0'
+      }]
+    });
+
+    const message = await mailComposer.compile().build();
+    const raw = Buffer.from(message).toString('base64');
+
+    await gmail.users.messages.send({
+      userId: 'rica@presspool.ai',
+      requestBody: {
+        raw,
+      }
+    });
+  } catch (error) {
+    log.error(`welcome email seinding error: ${error}`);
+  }
+};
+
 const mailer = {
   sendWelcomeEmail,
   sendTutorialEmail,
   sendPublishEmail,
   sendBudgetIncreaseEmail,
   sendBudgetReachEmail,
+  sendPurchaseEmail,
 }
 
 export default mailer;
