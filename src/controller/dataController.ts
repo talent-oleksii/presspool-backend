@@ -291,13 +291,16 @@ const clicked: RequestHandler = async (req: Request, res: Response) => {
 
         if (campaign.rows.length > 0) {
             const data = campaign.rows[0];
+            if (data.state !== 'active') {
+                return res.status(StatusCodes.BAD_REQUEST).send('campaign not activated');
+            }
             const time = moment().valueOf();
             await db.query('insert into clicked_history (create_time, ip, campaign_id) values ($1, $2, $3)', [time, req.body.ipAddress, data.id]);
             const newPrice = Number(data.spent) + (data.demographic === 'consumer' ? 8 : 20);
             checkCampaignState(data.email, data.name, Number(data.price), Number(data.spent), data.demographic === 'consumer' ? 8 : 20);
             if (newPrice >= Number(data.price)) {
                 mailer.sendBudgetIncreaseEmail(data.email, data.name);
-                await db.query('update campaign set click_count = click_count + 1, spent = $1, state = "paused" where uid = $2', [0, req.body.id]);
+                await db.query('update campaign set click_count = click_count + 1, spent = $1, state = $2 where uid = $3', [0, 'paused', req.body.id]);
             } else {
                 await db.query('update campaign set click_count = click_count + 1, spent = $1 where uid = $2', [newPrice, req.body.id]);
             }

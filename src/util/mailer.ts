@@ -216,7 +216,7 @@ const sendBudgetIncreaseEmail = async (emailAddress: string, campaignName: strin
     const mailComposer = new MailComposer({
       from: 'PressPool Support Team',
       to: emailAddress,
-      subject: 'Published Campaign',
+      subject: 'Your Campaign Budget has reached an end',
       // text: content,
       html,
       // attachments: fileAttachments,
