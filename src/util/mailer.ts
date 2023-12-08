@@ -115,7 +115,11 @@ const sendWelcomeEmail = async (emailAddress: string, userName: string, payload:
       to: emailAddress,
       subject: payload.subject,
       // text: content,
-      html,
+      html: `
+      <p>Welcome to Presspool.</p>
+      <a href='https://presspool-frontend.onrender.com/#/verify/${payload.token}'
+      style="color: #6c63ff; font-size: 20px; text-decoration:underline;" target="_blank">Click here to verify your email</a>
+      `,
       // attachments: fileAttachments,
       textEncoding: 'base64',
       headers: [{
