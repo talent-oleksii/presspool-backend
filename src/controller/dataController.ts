@@ -72,7 +72,7 @@ const addCampaign: RequestHandler = async (req: Request, res: Response) => {
         const time = moment().valueOf();
         const uid = v4();
         // Get if user payment verified or not
-        const verifiedData = await db.query('SELECT verified from user_list where email = %1', [req.body.email]);
+        const verifiedData = await db.query('SELECT verified from user_list where email = $1', [req.body.email]);
         let campaignState = req.body.state;
         if (Number(verifiedData.rows[0].verified) === 1) {
             campaignState = 'draft';
@@ -112,7 +112,7 @@ const addCampaign: RequestHandler = async (req: Request, res: Response) => {
 
         // sendWelcomeEmail(req.body.email, 'Campaign Successfully created');
         if (campaignState === 'active') mailer.sendPublishEmail(req.body.email, req.body.campaignName);
-        return res.status(StatusCodes.OK).json({ ...data, image: data.image ? data.image.toString('utf8') : null });
+        return res.status(StatusCodes.OK).json(data);
     } catch (error: any) {
         log.error(`error campaign: ${error}`);
         return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json(error.message);
@@ -147,7 +147,7 @@ const getCampaign: RequestHandler = async (req: Request, res: Response) => {
         log.info(`query: ${query}, values; ${values}`);
         result = await db.query(query, values);
 
-        return res.status(StatusCodes.OK).json(result.rows.map((item: any) => ({ ...item, image: item.image ? item.image.toString('utf8') : null })));
+        return res.status(StatusCodes.OK).json(result.rows.map((item: any) => item));
     } catch (error: any) {
         log.error(`get campaign error: ${error}`);
         return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json(error.message);
@@ -160,11 +160,7 @@ const getCampaignDetail: RequestHandler = async (req: Request, res: Response) =>
         const { id } = req.query;
         const campaignData = await db.query('select *, campaign.id as id from campaign left join campaign_ui on campaign.id = campaign_ui.campaign_id where campaign.id = $1', [id]);
 
-        let row = campaignData.rows[0];
-        row = {
-            ...row,
-            image: row.image ? row.image.toString('utf8') : null,
-        };
+        const row = campaignData.rows[0];
 
         return res.status(StatusCodes.OK).json(row);
     } catch (error: any) {
@@ -182,7 +178,7 @@ const updateCampaignDetail: RequestHandler = async (req: Request, res: Response)
             await db.query('update campaign set state = $1 where id = $2', [state, id]);
             return res.status(StatusCodes.OK).json('successfully updated!');
         } else {
-            const result = await db.query('update campaign set email = $1, name = $2, url = $3, demographic = $4, newsletter = $5, price = $6, card_id = $7 where id = $8 returning *', [
+            await db.query('update campaign set email = $1, name = $2, url = $3, demographic = $4, newsletter = $5, price = $6, card_id = $7 where id = $8', [
                 email,
                 campaignName,
                 url,
@@ -193,7 +189,11 @@ const updateCampaignDetail: RequestHandler = async (req: Request, res: Response)
                 id,
             ]);
 
-            return res.status(StatusCodes.OK).json(result.rows[0]);
+            const campaignData = await db.query('select *, campaign.id as id, campaign_ui.id as ui_id from campaign left join campaign_ui on campaign.id = campaign_ui.campaign_id where campaign.id = $1', [id]);
+
+            const row = campaignData.rows[0];
+
+            return res.status(StatusCodes.OK).json(row);
         }
     } catch (error: any) {
         log.error(` update campaign detail error: ${error}`);
@@ -205,8 +205,7 @@ const addCampaignUI: RequestHandler = async (req: Request, res: Response) => {
     log.info('add campaign UI called');
 
     try {
-        console.log('file:', req.files);
-        if (!req.files || req.files.length as number > 0) return res.status(StatusCodes.BAD_REQUEST).json({ message: 'No image provided!' });
+        if (!req.files || !(req.files as any)['image']) return res.status(StatusCodes.BAD_REQUEST).json({ message: 'No image provided!' });
         const image = (req.files as any)['image'][0].location;
         const { email, headLine, body, cta, pageUrl, noNeedCheck } = req.body;
 
@@ -222,10 +221,7 @@ const addCampaignUI: RequestHandler = async (req: Request, res: Response) => {
 
         const data = result.rows[0];
 
-        return res.status(StatusCodes.OK).json({
-            ...data,
-            image: image,
-        });
+        return res.status(StatusCodes.OK).json(data);
 
     } catch (error: any) {
         log.error(`add campaign-ui error: ${error}`);
@@ -237,25 +233,36 @@ const updateCampaignUI: RequestHandler = async (req: Request, res: Response) => 
     log.info('update campaign called');
 
     try {
-        const { id, headLine, body, cta, image, pageUrl, noNeedCheck } = req.body;
-        const result = await db.query('update campaign_ui set headline = $1, body = $2, cta = $3, image = $4, page_url = $5, no_need_check = $6 where id = $7 returning *', [
-            headLine,
-            body,
-            cta,
-            image,
-            pageUrl,
-            noNeedCheck,
-            id
-        ]);
+        const image = (req.files as any)['image'] ? (req.files as any)['image'][0].location : '';
+        console.log('ddd:', image);
+        const { id, headLine, body, cta, pageUrl, noNeedCheck } = req.body;
+        let result: any = undefined;
+        console.log('step 1', id);
+        if (image.length > 2) {
+            result = await db.query('update campaign_ui set headline = $1, body = $2, cta = $3, page_url = $4, image = $5 where id = $6 returning *', [
+                headLine,
+                body,
+                cta,
+                pageUrl,
+                image,
+                id
+            ]);
+        } else {
+            result = await db.query('update campaign_ui set headline = $1, body = $2, cta = $3, page_url = $4 where id = $5 returning *', [
+                headLine,
+                body,
+                cta,
+                pageUrl,
+                id
+            ]);
+        }
 
         const data = result.rows[0];
+        console.log('step 2', data);
 
-        return res.status(StatusCodes.OK).json({
-            ...data,
-            image: image ? image.toString('utf-8') : null,
-        });
+        return res.status(StatusCodes.OK).json(data);
     } catch (error: any) {
-        log.error(`add campaign-ui error: ${error}`);
+        log.error(`update campaign-ui error: ${error}`);
         return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json(error.message);
     }
 };

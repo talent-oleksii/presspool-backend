@@ -55,8 +55,6 @@ app.listen(PORT, async () => {
     await db.testConnection();
 });
 
-mailer.sendWelcomeEmail('jaxonparrott200@gmail.com', 'welcome', { subject: 'cool', token: 'ddd' });
-
 // This is to charge bill to clients by every friday
 cron.schedule('* * * * 4', async () => { // minute, hour, day, month, day_of_week
     await cronFunction.billingFunction();

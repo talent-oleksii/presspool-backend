@@ -36,7 +36,9 @@ router.put('/campaign_detail', data.updateCampaignDetail);
 router.post('/campaign_ui', upload.fields([
   { name: 'image', maxCount: 10 }
 ]), data.addCampaignUI);
-router.put('/campaign_ui', data.updateCampaignUI);
+router.put('/campaign_ui', upload.fields([
+  { name: 'image', maxCount: 10 }
+]), data.updateCampaignUI);
 router.get('/audience', data.getAudience);
 
 router.get('/profile', data.getProfile);
