@@ -87,6 +87,11 @@ const clientSignUp: RequestHandler = async (req: Request, res: Response) => {
 
     const { fullName, email, password, company } = req.body;
 
+    const isExist = await db.query('select * from user_list where email = $1', [email]);
+    if (isExist.rows.length >= 1) {
+        return res.status(StatusCodes.BAD_REQUEST).json({ message: 'Same Email Exists!' });
+    }
+
     const time = moment().valueOf();
     await db.query('insert into user_list (create_time, name, email, password, company, verified, user_type, email_verified) values ($1, $2, $3, $4, $5, $6, $7, $8)', [
         time,

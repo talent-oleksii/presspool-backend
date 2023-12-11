@@ -3,6 +3,7 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import { StatusCodes } from 'http-status-codes';
 import cron from 'node-cron';
+import AWS from 'aws-sdk';
 
 import authRoute from './routes/authRoute';
 import dataRoute from './routes/dataRoute';
@@ -15,7 +16,15 @@ dotenv.config({ path: './.env' });
 
 import db from './util/db';
 import log from './util/logger';
-import sendWelcomeEmail from './util/mailer';
+import mailer from './util/mailer';
+
+AWS.config.update({
+    region: 'us-east-1',
+    credentials: {
+        accessKeyId: process.env.AWS_ACCESS_KEY as string,
+        secretAccessKey: process.env.AWS_SECRET_KEY as string,
+    }
+});
 
 
 const app = express();
@@ -45,6 +54,8 @@ app.listen(PORT, async () => {
     log.info(`Server is running on PORT:${PORT}`);
     await db.testConnection();
 });
+
+mailer.sendWelcomeEmail('jaxonparrott200@gmail.com', 'welcome', { subject: 'cool', token: 'ddd' });
 
 // This is to charge bill to clients by every friday
 cron.schedule('* * * * 4', async () => { // minute, hour, day, month, day_of_week

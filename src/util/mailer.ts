@@ -111,7 +111,7 @@ const sendWelcomeEmail = async (emailAddress: string, userName: string, payload:
   try {
     const html = generateWelcomeHTML(userName, payload);
     const mailComposer = new MailComposer({
-      from: 'PressPool Support Team',
+      from: 'Rica Mae-PressPool Support Team<rica@presspool.ai>',
       to: emailAddress,
       subject: payload.subject,
       // text: content,

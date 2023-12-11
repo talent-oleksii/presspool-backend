@@ -71,6 +71,13 @@ const addCampaign: RequestHandler = async (req: Request, res: Response) => {
     try {
         const time = moment().valueOf();
         const uid = v4();
+        // Get if user payment verified or not
+        const verifiedData = await db.query('SELECT verified from user_list where email = %1', [req.body.email]);
+        let campaignState = req.body.state;
+        if (Number(verifiedData.rows[0].verified) === 1) {
+            campaignState = 'draft';
+        }
+
         // update campaign ui id
         const result = await db.query('INSERT INTO campaign(email, name, url, demographic, audience, price, create_time, uid, card_id, state) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING *', [
             req.body.email,
@@ -82,7 +89,7 @@ const addCampaign: RequestHandler = async (req: Request, res: Response) => {
             time,
             uid,
             req.body.currentCard,
-            req.body.state,
+            campaignState,
         ]);
 
         // add on audience table
@@ -104,7 +111,7 @@ const addCampaign: RequestHandler = async (req: Request, res: Response) => {
         const data = retVal.rows[0];
 
         // sendWelcomeEmail(req.body.email, 'Campaign Successfully created');
-        mailer.sendPublishEmail(req.body.email, req.body.campaignName);
+        if (campaignState === 'active') mailer.sendPublishEmail(req.body.email, req.body.campaignName);
         return res.status(StatusCodes.OK).json({ ...data, image: data.image ? data.image.toString('utf8') : null });
     } catch (error: any) {
         log.error(`error campaign: ${error}`);
@@ -198,7 +205,10 @@ const addCampaignUI: RequestHandler = async (req: Request, res: Response) => {
     log.info('add campaign UI called');
 
     try {
-        const { email, headLine, body, cta, image, pageUrl, noNeedCheck } = req.body;
+        console.log('file:', req.files);
+        if (!req.files || req.files.length as number > 0) return res.status(StatusCodes.BAD_REQUEST).json({ message: 'No image provided!' });
+        const image = (req.files as any)['image'][0].location;
+        const { email, headLine, body, cta, pageUrl, noNeedCheck } = req.body;
 
         const result = await db.query('insert into campaign_ui (email, headline, body, cta, image, page_url, no_need_check) values ($1, $2, $3, $4, $5, $6, $7) returning *', [
             email,
@@ -214,7 +224,7 @@ const addCampaignUI: RequestHandler = async (req: Request, res: Response) => {
 
         return res.status(StatusCodes.OK).json({
             ...data,
-            image: image ? image.toString('utf-8') : null,
+            image: image,
         });
 
     } catch (error: any) {
