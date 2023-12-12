@@ -59,7 +59,7 @@ const signIn: RequestHandler = async (req: Request, res: Response) => {
     log.info("Sign in api called");
     const { email, password } = req.query;
 
-    const verifiedData = await db.query('select verified, email_verified from user_list where email = $1', [email]);
+    const verifiedData = await db.query('select verified, email_verified from user_list where email = $1 and password = $2', [email, password]);
     if (verifiedData.rows.length <= 0) {
         return res.status(StatusCodes.NO_CONTENT).json({ records: [] });
     }
@@ -67,7 +67,6 @@ const signIn: RequestHandler = async (req: Request, res: Response) => {
     const token = generateToken({ email });
     useAirTable('Users', 'get', {
         'Email': email,
-        'Password': password,
     })?.then(data => {
         return res.status(StatusCodes.OK).json({
             ...data.data,
@@ -160,11 +159,74 @@ const verifyEmail: RequestHandler = async (req: Request, res: Response) => {
     }
 };
 
+const generateRandomNumbers = (count: number) => {
+    const randomNumbers = [];
+    for (let i = 0; i < count; i++) {
+        const randomNumber = Math.floor(Math.random() * 10); // Adjust the range as needed
+        randomNumbers.push(randomNumber);
+    }
+
+    return randomNumbers.join('');
+};
+
+const sendPasswordEmail: RequestHandler = async (req: Request, res: Response) => {
+    try {
+        const { email } = req.body;
+
+        const isExist = await db.query('select * from user_list where email = $1', [email]);
+
+        if (isExist.rows.length <= 0) {
+            return res.status(StatusCodes.BAD_REQUEST).json({ message: 'The email does not exist. Please Sign Up first' });
+        }
+
+        const random = generateRandomNumbers(5);
+        await db.query('UPDATE user_list set password_reset = $1 where email = $2', [random, email]);
+        mailer.sendForgotPasswordEmail(email, random);
+        return res.status(StatusCodes.OK).json({ message: 'Password Reset email sent!' });
+    } catch (error: any) {
+        console.log('error:', error);
+        return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ message: error.message });
+    }
+};
+
+const verifyPasswordEmail: RequestHandler = async (req: Request, res: Response) => {
+    try {
+        const { email, code } = req.body;
+
+        const isSame = await db.query('SELECT * from user_list where email = $1 and password_reset = $2 ', [email, code]);
+        if (isSame.rows.length <= 0) {
+            return res.status(StatusCodes.BAD_REQUEST).json({ message: 'Code is not valid' });
+        }
+        return res.status(StatusCodes.OK).json('ok');
+    } catch (error: any) {
+        console.log('error:', error);
+        return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ message: error.message });
+    }
+};
+
+const changePassword: RequestHandler = async (req: Request, res: Response) => {
+    console.log('password reset called');
+    try {
+        const { email, password } = req.body;
+        console.log('eee:', email, password);
+
+        await db.query('UPDATE user_list set password = $1 where email = $2', [password, email]);
+
+        return res.status(StatusCodes.OK).json('ok');
+    } catch (error: any) {
+        console.log('error:', error);
+        return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ message: error.message });
+    }
+};
+
 const auth = {
     signIn,
     clientSignUp,
     check: authCheck,
     verifyEmail,
+    sendPasswordEmail,
+    verifyPasswordEmail,
+    changePassword,
 };
 
 export default auth;

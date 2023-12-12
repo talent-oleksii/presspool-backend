@@ -9,4 +9,8 @@ router.post('/client-sign-up', auth.clientSignUp);
 router.post('/check', auth.check);
 router.post('/verify', auth.verifyEmail);
 
+router.post('/password', auth.sendPasswordEmail);
+router.post('/verify-password-email', auth.verifyPasswordEmail);
+router.put('/password', auth.changePassword);
+
 export default router;

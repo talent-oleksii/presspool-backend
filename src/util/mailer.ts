@@ -143,6 +143,36 @@ const sendWelcomeEmail = async (emailAddress: string, userName: string, payload:
   }
 };
 
+const sendForgotPasswordEmail = async (emailAddress: string, code: string) => {
+  const html = `
+      <p>You requested password reset, Verification Code: ${code}.</p>
+    `;
+  const mailComposer = new MailComposer({
+    from: 'PressPool Support Team',
+    to: emailAddress,
+    subject: 'Password Reset',
+    // text: content,
+    html,
+    // attachments: fileAttachments,
+    textEncoding: 'base64',
+    headers: [{
+      key: 'X-Application-Developer', value: 'Oleksii Karavanov'
+    }, {
+      key: 'X-Application-Version', value: 'v1.0.0'
+    }]
+  });
+
+  const message = await mailComposer.compile().build();
+  const raw = Buffer.from(message).toString('base64');
+
+  await gmail.users.messages.send({
+    userId: 'rica@presspool.ai',
+    requestBody: {
+      raw,
+    }
+  });
+};
+
 const sendTutorialEmail = async (emailAddress: string, userName: string) => {
   try {
     const html = `
@@ -317,6 +347,7 @@ const sendPurchaseEmail = async (emailAddress: string, description: string) => {
 
 const mailer = {
   sendWelcomeEmail,
+  sendForgotPasswordEmail,
   sendTutorialEmail,
   sendPublishEmail,
   sendBudgetIncreaseEmail,

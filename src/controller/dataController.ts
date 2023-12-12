@@ -234,10 +234,8 @@ const updateCampaignUI: RequestHandler = async (req: Request, res: Response) => 
 
     try {
         const image = (req.files as any)['image'] ? (req.files as any)['image'][0].location : '';
-        console.log('ddd:', image);
         const { id, headLine, body, cta, pageUrl, noNeedCheck } = req.body;
         let result: any = undefined;
-        console.log('step 1', id);
         if (image.length > 2) {
             result = await db.query('update campaign_ui set headline = $1, body = $2, cta = $3, page_url = $4, image = $5 where id = $6 returning *', [
                 headLine,
@@ -304,7 +302,7 @@ const clicked: RequestHandler = async (req: Request, res: Response) => {
     log.info('campaign clicked');
     try {
         console.log('ip:', req.body.ipAddress);
-        const campaign = await db.query('select * from campaign where uid = $1', [req.body.id]);
+        const campaign = await db.query('select page_url as url from campaign left join campaign_ui on campaign.id = campaign_ui.campaign_id where uid = $1', [req.body.id]);
 
         if (campaign.rows.length > 0) {
             const data = campaign.rows[0];

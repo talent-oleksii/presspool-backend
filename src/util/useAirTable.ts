@@ -13,10 +13,10 @@ const useAirTable = (tableName: string, methodType: string, data?: any) => {
             Object.keys(data).forEach((key, index) => {
                 query = `${query}{${key}} = '${data[key]}'`;
                 if (index < keyLength - 1)
-                query = `${query}, `;
+                    query = `${query}, `;
             });
             query = query.concat(')');
-    
+
             console.log('query:', query);
             return axios.get(`${apiUrl}${baseId}/${tableName}`, {
                 headers: {
@@ -35,6 +35,15 @@ const useAirTable = (tableName: string, methodType: string, data?: any) => {
         }
     } else if (methodType === 'post') {
         return axios.post(`${apiUrl}${baseId}/${tableName}`, {
+            fields: data,
+        }, {
+            headers: {
+                'Authorization': `Bearer ${airtablePat}`,
+                'Content-Type': 'application/json',
+            }
+        });
+    } else if (methodType === 'patch') {
+        return axios.patch(`${apiUrl}${baseId}/${tableName}`, {
             fields: data,
         }, {
             headers: {
