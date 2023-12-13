@@ -18,26 +18,38 @@ const billingFunction = async () => { // Here we notify users about billing
       if (billAmount === 0) continue;
       console.log('billing campaign:', campaign);
       const email = campaign.email;
-      let customer: any = undefined;
+      // let customer: any = undefined;
       const list = await stripe.customers.list({ email });
 
-      const usedCustomer = list.data.filter(item => item.default_source === campaign.source_id);
+      // const usedCustomer = list.data.filter(item => item.default_source === campaign.source_id);
 
-      if (usedCustomer.length <= 0) {
-        customer = await stripe.customers.create({
-          email,
-          source: campaign.source_id,
-        });
-      } else {
-        customer = usedCustomer[0];
-      }
+      // if (usedCustomer.length <= 0) {
+      //   customer = await stripe.customers.create({
+      //     email,
+      //     source: campaign.source_id,
+      //   });
+      // } else {
+      //   customer = usedCustomer[0];
+      // }
 
-      await stripe.charges.create({
+      // await stripe.charges.create({
+      //   amount: billAmount,
+      //   currency: 'usd',
+      //   customer: customer.id,
+      //   description: `Charge for Campaign ${campaign.name}`,
+      // });
+
+      await stripe.paymentIntents.create({
+        customer: "cus_PAdp76RNw9WxLo",
         amount: billAmount,
         currency: 'usd',
-        customer: customer.id,
-        source: campaign.source_id,
-        description: `Charge for Campaign ${campaign.name}`,
+        payment_method: 'pm_1OMpLmFx5HbKLtp4jKZHYFEY',
+        // confirmation_method: 'automatic',
+        automatic_payment_methods: {
+          enabled: true,
+          allow_redirects: 'never',
+        },
+        confirm: true,
       });
 
       // update billed information on database
