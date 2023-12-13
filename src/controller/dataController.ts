@@ -111,7 +111,7 @@ const addCampaign: RequestHandler = async (req: Request, res: Response) => {
         const data = retVal.rows[0];
 
         // sendWelcomeEmail(req.body.email, 'Campaign Successfully created');
-        if (campaignState === 'active') mailer.sendPublishEmail(req.body.email, req.body.campaignName);
+        // if (campaignState === 'active') mailer.sendPublishEmail(req.body.email, req.body.campaignName);
         return res.status(StatusCodes.OK).json(data);
     } catch (error: any) {
         log.error(`error campaign: ${error}`);
@@ -124,7 +124,6 @@ const getCampaign: RequestHandler = async (req: Request, res: Response) => {
 
     try {
         const { email, searchStr, from, to } = req.query;
-        console.log('from:', from, to);
         let result: any = undefined;
 
         let query = 'select *, campaign.id as id, campaign_ui.id as ui_id from campaign left join campaign_ui on campaign.id = campaign_ui.campaign_id where campaign.email = $1';
@@ -147,7 +146,12 @@ const getCampaign: RequestHandler = async (req: Request, res: Response) => {
         log.info(`query: ${query}, values; ${values}`);
         result = await db.query(query, values);
 
-        return res.status(StatusCodes.OK).json(result.rows.map((item: any) => item));
+        const clickedData = await db.query('SELECT create_time, id, campaign_id FROM clicked_history WHERE campaign_id = ANY($1)', [result.rows.map((item: any) => Number(item.id))]);
+
+        return res.status(StatusCodes.OK).json({
+            data: result.rows,
+            clicked: clickedData.rows,
+        });
     } catch (error: any) {
         log.error(`get campaign error: ${error}`);
         return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json(error.message);
