@@ -42,7 +42,7 @@ router.put('/campaign_ui', upload.fields([
 router.get('/audience', data.getAudience);
 
 router.get('/profile', data.getProfile);
-router.put('/profile', data.updateProfile);
+router.put('/profile', upload.fields([{ name: 'avatar', maxCount: 10 }]), data.updateProfile);
 
 router.post('/clicked', data.clicked);
 

@@ -277,7 +277,7 @@ const getProfile: RequestHandler = async (req: Request, res: Response) => {
 
         const ret = data.rows[0];
 
-        return res.status(StatusCodes.OK).json({ ...ret, avatar: ret.avatar ? ret.avatar.toString('utf8') : null });
+        return res.status(StatusCodes.OK).json(ret);
 
     } catch (error: any) {
         log.error(`get profile error: ${error}`);
@@ -288,13 +288,14 @@ const getProfile: RequestHandler = async (req: Request, res: Response) => {
 const updateProfile: RequestHandler = async (req: Request, res: Response) => {
     log.info('update profile clicked');
     try {
-        const { email, avatar } = req.body;
-        console.log('ddd:', email, avatar);
+        if (!req.files || !(req.files as any)['avatar']) return res.status(StatusCodes.BAD_REQUEST).json({ message: 'No image provided!' });
+        const avatar = (req.files as any)['avatar'][0].location;
+        const { email } = req.body;
         if (avatar) {
             await db.query('update user_list set avatar = $1 where email = $2', [avatar, email]);
         }
 
-        return res.status(StatusCodes.OK).json('updated');
+        return res.status(StatusCodes.OK).json({ avatar });
 
     } catch (error: any) {
         log.error(`update profile error: ${error}`);

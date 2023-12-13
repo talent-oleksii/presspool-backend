@@ -99,9 +99,9 @@ const addBillingMethod: RequestHandler = async (req: Request, res: Response) => 
     const data = req.body.data;
 
     if (req.body.type === 'payment_method.attached') { // payment method attached.
-      await db.query(`insert into card_info (customer_id, card_id, last4, exp_month, exp_year, brand)
-      values ($1, $2, $3, $4, $5, $6)`,
-        [data.object.customer, data.object.id, data.object.card.last4, data.object.card.exp_month, data.object.card.exp_year, data.object.card.brand]
+      await db.query(`insert into card_info (customer_id, card_id, last4, brand, create_time)
+      values ($1, $2, $3, $4, $5)`,
+        [data.object.customer, data.object.id, data.object.card.last4 ? data.object.card.last4 : '****', data.object.card.brand, req.body.created]
       );
 
       return res.status(StatusCodes.OK).json('attached');

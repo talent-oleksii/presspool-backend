@@ -30,7 +30,7 @@ const authCheck: RequestHandler = async (req: Request, res: Response) => {
         if (result.exp < result.iat) {
             return res.status(StatusCodes.BAD_REQUEST).json({ error: 'timeout error' });
         } else {
-            const verifiedData = await db.query('select verified, email_verified from user_list where email = $1', [result.email]);
+            const verifiedData = await db.query('select verified, email_verified, avatar from user_list where email = $1', [result.email]);
             if (verifiedData.rows.length <= 0) {
                 return res.status(StatusCodes.NO_CONTENT).json({ records: [] });
             }
@@ -43,6 +43,7 @@ const authCheck: RequestHandler = async (req: Request, res: Response) => {
                     verified: verifiedData.rows[0].verified,
                     email_verified: verifiedData.rows[0].email_verified,
                     token,
+                    avatar: verifiedData.rows[0].avatar,
                 });
             }).catch(error => {
                 console.log('err:', error.message);
