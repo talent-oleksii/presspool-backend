@@ -306,7 +306,7 @@ const clicked: RequestHandler = async (req: Request, res: Response) => {
     log.info('campaign clicked');
     try {
         console.log('ip:', req.body.ipAddress);
-        const campaign = await db.query('select page_url as url from campaign left join campaign_ui on campaign.id = campaign_ui.campaign_id where uid = $1', [req.body.id]);
+        const campaign = await db.query('select campaign.id, page_url as url, state, campaign.email, name, price, spent, demographic from campaign left join campaign_ui on campaign.id = campaign_ui.campaign_id where uid = $1', [req.body.id]);
 
         if (campaign.rows.length > 0) {
             const data = campaign.rows[0];

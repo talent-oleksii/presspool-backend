@@ -341,7 +341,7 @@ const sendPurchaseEmail = async (emailAddress: string, description: string) => {
       }
     });
   } catch (error) {
-    log.error(`welcome email seinding error: ${error}`);
+    log.error(`email seinding error: ${error}`);
   }
 };
 

@@ -12,43 +12,30 @@ const stripe = new Stripe(process.env.STRIPE_SECRET as string);
 const billingFunction = async () => { // Here we notify users about billing
   try {
     console.log('billined called');
-    const activeCampaigns = await db.query('SELECT campaign.id, campaign.name, card_info.email, campaign.billed, campaign.spent, campaign.card_id, source_id from campaign LEFT JOIN card_info ON campaign.card_id = card_info.card_id  where state = $1', ['active']);
+    const activeCampaigns = await db.query('SELECT campaign.id, campaign.name, campaign.email, campaign.billed, campaign.spent, campaign.card_id from campaign LEFT JOIN card_info ON campaign.card_id = card_info.card_id  where state = $1', ['active']);
     for (const campaign of activeCampaigns.rows) {
       const billAmount = (Number(campaign.spent) - Number(campaign.billed)) * 100;
       if (billAmount === 0) continue;
       console.log('billing campaign:', campaign);
-      const email = campaign.email;
-      // let customer: any = undefined;
-      const list = await stripe.customers.list({ email });
+      let customer;
+      const existingCustomers = await stripe.customers.list({ email: campaign.email as string });
 
-      // const usedCustomer = list.data.filter(item => item.default_source === campaign.source_id);
-
-      // if (usedCustomer.length <= 0) {
-      //   customer = await stripe.customers.create({
-      //     email,
-      //     source: campaign.source_id,
-      //   });
-      // } else {
-      //   customer = usedCustomer[0];
-      // }
-
-      // await stripe.charges.create({
-      //   amount: billAmount,
-      //   currency: 'usd',
-      //   customer: customer.id,
-      //   description: `Charge for Campaign ${campaign.name}`,
-      // });
+      if (existingCustomers.data.length > 0) {
+        customer = existingCustomers.data[0];
+      } else {
+        customer = await stripe.customers.create({ email: campaign.email as string });
+      }
 
       await stripe.paymentIntents.create({
-        customer: "cus_PAdp76RNw9WxLo",
+        customer: customer.id,
         amount: billAmount,
         currency: 'usd',
-        payment_method: 'pm_1OMpLmFx5HbKLtp4jKZHYFEY',
-        // confirmation_method: 'automatic',
+        payment_method: campaign.card_id,
         automatic_payment_methods: {
           enabled: true,
           allow_redirects: 'never',
         },
+        description: `Payment for campaign ${campaign.name}`,
         confirm: true,
       });
 
