@@ -1,5 +1,6 @@
 import { RequestHandler, Request, Response } from "express";
 import { StatusCodes } from "http-status-codes/build/cjs/status-codes";
+import validator from 'validator';
 import axios from "axios";
 import { v4 } from "uuid";
 
@@ -179,9 +180,13 @@ const updateCampaignDetail: RequestHandler = async (req: Request, res: Response)
         const { id, email, campaignName, url, currentTarget, currentAudience, currentPrice, type, state, currentCard } = req.body;
 
         if (type === 'state') {
+            const campaign = await db.query('select card_id from campaign where id = $1', [id]);
+            const cardId = campaign.rows[0].card_id;
+            if ((cardId === null || cardId.length <= 0) && state === 'active') return res.status(StatusCodes.BAD_GATEWAY).json({ message: 'You must set up billing method to activate that campaign' });
             await db.query('update campaign set state = $1 where id = $2', [state, id]);
             return res.status(StatusCodes.OK).json('successfully updated!');
         } else {
+            console.log('card:', currentCard);
             await db.query('update campaign set email = $1, name = $2, url = $3, demographic = $4, newsletter = $5, price = $6, card_id = $7 where id = $8', [
                 email,
                 campaignName,
@@ -201,7 +206,7 @@ const updateCampaignDetail: RequestHandler = async (req: Request, res: Response)
         }
     } catch (error: any) {
         log.error(` update campaign detail error: ${error}`);
-        return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json(error.message);
+        return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ message: error.message });
     }
 };
 
