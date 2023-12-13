@@ -73,11 +73,11 @@ const addCampaign: RequestHandler = async (req: Request, res: Response) => {
         const time = moment().valueOf();
         const uid = v4();
         // Get if user payment verified or not
-        const verifiedData = await db.query('SELECT verified from user_list where email = $1', [req.body.email]);
+        // const verifiedData = await db.query('SELECT verified from user_list where email = $1', [req.body.email]);
         let campaignState = req.body.state;
-        if (Number(verifiedData.rows[0].verified) === 1) {
-            campaignState = 'draft';
-        }
+        // if (Number(verifiedData.rows[0].verified) === 1) {
+        //     campaignState = 'draft';
+        // }
 
         // update campaign ui id
         const result = await db.query('INSERT INTO campaign(email, name, url, demographic, audience, price, create_time, uid, card_id, state) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING *', [
