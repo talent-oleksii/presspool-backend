@@ -59,7 +59,7 @@ const generateWelcomeHTML = (userName: string, payload: any) => {
       Welcome to <br />
       Presspool!
     </h2>
-    <a href='https://presspool-frontend.onrender.com/#/verify/${payload.token}'
+    <a href='https://presspool-frontend.onrender.com/verify/${payload.token}'
       style="color: #6c63ff; font-size: 20px; text-decoration:underline;">Click here to verify your email</a>
     <p style="margin-top: 54px; margin-bottom: 0; letter-spacing: -0.72px; font-weight: 500; font-size: 24px;">
       We are glad to have you here. <br />To kick things off (if you haven't already):
@@ -117,7 +117,7 @@ const sendWelcomeEmail = async (emailAddress: string, userName: string, payload:
       // text: content,
       html: `
       <p>Welcome to Presspool.</p>
-      <a href='https://presspool-frontend.onrender.com/#/verify/${payload.token}'
+      <a href='https://presspool-frontend.onrender.com/verify/${payload.token}'
       style="color: #6c63ff; font-size: 20px; text-decoration:underline;" target="_blank">Click here to verify your email</a>
       `,
       // attachments: fileAttachments,
