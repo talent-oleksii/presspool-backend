@@ -55,7 +55,7 @@ app.listen(PORT, async () => {
 });
 
 // This is to charge bill to clients by every friday
-cron.schedule('* * * * 3', async () => { // minute, hour, day, month, day_of_week
+cron.schedule('* * * * 4', async () => { // minute, hour, day, month, day_of_week
     await cronFunction.billingFunction();
 });
 
