@@ -77,13 +77,14 @@ const deleteCard: RequestHandler = async (req: Request, res: Response) => {
 const purchaseCampaign: RequestHandler = async (req: Request, res: Response) => {
   try {
     console.log('purchase called:', req.body);
-    console.log('ddd:', req.body.data.object.description);
     const object = req.body.data.object;
     const amount = object.amount_received;
 
     log.info(`${amount} purchased`);
 
-    await mailer.sendPurchaseEmail(object.receipt_email, `${object.description}, ${amount / 100} has purchased`);
+    const user = await db.query('select name from user_list where email = $1', [object.receipt_email]);
+
+    await mailer.sendPurchaseEmail(object.receipt_email, user.rows[0].name, `${object.description}, ${amount / 100} has purchased`);
     await db.query('update user_list set verified = 1 where email = $1', [object.receipt_email]);
 
     return res.status(StatusCodes.OK).json('successfully purchased');

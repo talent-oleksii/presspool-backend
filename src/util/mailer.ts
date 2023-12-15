@@ -11,7 +11,6 @@ oAuth2Client.setCredentials({
   access_token: process.env.GMAIL_ACCESS_TOKEN,
   token_type: process.env.GMAIL_TOKEN_TYPE,
   scope: process.env.GMAIL_SCOPE,
-  // expiry_date: process.env.EXPIRY_DATE,
 });
 const gmail = google.gmail({ version: 'v1', auth: oAuth2Client });
 
@@ -34,134 +33,7 @@ const fileAttachments = [
   // },
 ];
 
-const generateWelcomeHTML = (userName: string, payload: any) => {
-  const html = `
-  <html>
-
-<head>
-  <link href='https://fonts.googleapis.com/css?family=Inter' rel='stylesheet'>
-  <style>
-    body {
-      font-family: 'Inter';
-      margin: 0;
-    }
-  </style>
-</head>
-
-<body>
-  <div style="width: 640px; padding: 39px 30px; position: relative; background-image: url('https://presspool-images.s3.amazonaws.com/welcome_email_white_back.png');
-    background-size: cover; background-repeat: no-repeat;">
-
-    <img src="https://presspool-images.s3.amazonaws.com/logo_black_small.png" style="width:62px; height: 62px;"
-      alt="logo" />
-    <p style="margin-top: 50px; margin-bottom: 0; letter-spacing: -0.72px; font-size: 24px;">Hello ${userName}, 👋</p>
-    <h2 style="font-size: 62px; font-weight: 700; letter-spacing: -1.86px; margin-top: 42px; margin-bottom: 0;">
-      Welcome to <br />
-      Presspool!
-    </h2>
-    <a href='https://presspool-frontend.onrender.com/verify/${payload.token}'
-      style="color: #6c63ff; font-size: 20px; text-decoration:underline;">Click here to verify your email</a>
-    <p style="margin-top: 54px; margin-bottom: 0; letter-spacing: -0.72px; font-weight: 500; font-size: 24px;">
-      We are glad to have you here. <br />To kick things off (if you haven't already):
-    </p>
-    <p style="font-size: 22px; letter-spacing: -0.66px; margin-bottom: 0;">
-      1. Join Our Slack Channel - It's the hub for instant answers, our expert team's insights, and real-time updates.
-    </p>
-    <p style="font-size: 22px; letter-spacing: -0.66px; margin-top: 32px; margin-bottom: 0;">
-      2. Bookmark Your Platform Dashboard - Your one-stop shop to create, track, and manage all campaigns.
-    </p>
-    <p style="margin-top: 56px; margin-bottom: 0; font-size: 20px; letter-spacing: -0.6px;">Need assistance? Remember,
-      we're just a message away.
-    </p>
-    <div style="padding-right: 35px; margin-top: 48px; text-align: right;">
-      <div style="display: inline-flex;">
-        <div style="text-align: left;">
-          <img src="https://presspool-images.s3.amazonaws.com/rica.png" />
-          <p style="font-size: 20px; letter-spacing: -0.6px; margin-bottom: 0;">Warmly,</p>
-          <p style="font-size: 20px; letter-spacing: -0.6px; margin-bottom: 0; font-weight: 600;">Rica</p>
-          <p style="margin-top: 62px; letter-spacing: -0.54px; font-size: 18px;">Follow Us on Our Social Media</p>
-          <div>
-            <a href="https://www.linkedin.com/company/presspoolai" target="_blank"
-              style="cursor: pointer; margin-right: 24px; width: 0; color: white;">
-              <img src="https://presspool-images.s3.amazonaws.com/facebook.png" alt="facebook" />
-            </a>
-            <a href="https://twitter.com/presspoolai" target="_blank"
-              style="cursor: pointer; margin-right: 24px; width: 0; color: white;">
-              <img src="https://presspool-images.s3.amazonaws.com/twitter.png" alt="twitter" />
-            </a>
-            <a href="https://instagram.com/presspoolai" target="_blank"
-              style="cursor: pointer; margin-right: 24px; width: 0; color: white;">
-              <img src="https://presspool-images.s3.amazonaws.com/instagram.png" alt="instagram" />
-            </a>
-          </div>
-
-        </div>
-      </div>
-    </div>
-  </div>
-</body>
-
-</html>
-  `;
-
-  return html;
-};
-
-const sendWelcomeEmail = async (emailAddress: string, userName: string, payload: any) => {
-  try {
-    const html = generateWelcomeHTML(userName, payload);
-    const mailComposer = new MailComposer({
-      from: 'Rica Mae-PressPool Support Team<rica@presspool.ai>',
-      to: emailAddress,
-      subject: payload.subject,
-      // text: content,
-      html: `
-      <p>Welcome to Presspool.</p>
-      <a href='https://presspool-frontend.onrender.com/verify/${payload.token}'
-      style="color: #6c63ff; font-size: 20px; text-decoration:underline;" target="_blank">Click here to verify your email</a>
-      `,
-      // attachments: fileAttachments,
-      textEncoding: 'base64',
-      headers: [{
-        key: 'X-Application-Developer', value: 'Oleksii Karavanov'
-      }, {
-        key: 'X-Application-Version', value: 'v1.0.0'
-      }]
-    });
-
-    const message = await mailComposer.compile().build();
-    const raw = Buffer.from(message).toString('base64');
-
-    await gmail.users.messages.send({
-      userId: 'rica@presspool.ai',
-      requestBody: {
-        raw,
-      }
-    });
-  } catch (error) {
-    log.error(`welcome email seinding error: ${error}`);
-  }
-};
-
-const sendForgotPasswordEmail = async (emailAddress: string, code: string) => {
-  const html = `
-      <p>You requested password reset, Verification Code: ${code}.</p>
-    `;
-  const mailComposer = new MailComposer({
-    from: 'PressPool Support Team',
-    to: emailAddress,
-    subject: 'Password Reset',
-    // text: content,
-    html,
-    // attachments: fileAttachments,
-    textEncoding: 'base64',
-    headers: [{
-      key: 'X-Application-Developer', value: 'Oleksii Karavanov'
-    }, {
-      key: 'X-Application-Version', value: 'v1.0.0'
-    }]
-  });
-
+const sendEmail = async (mailComposer: MailComposer) => {
   const message = await mailComposer.compile().build();
   const raw = Buffer.from(message).toString('base64');
 
@@ -173,18 +45,104 @@ const sendForgotPasswordEmail = async (emailAddress: string, code: string) => {
   });
 };
 
+const sendWelcomeEmail = async (emailAddress: string, userName: string, payload: any) => {
+  try {
+    const firstName = userName.split(' ')[0];
+    const mailComposer = new MailComposer({
+      from: 'Rica Mae-PressPool Support Team<rica@presspool.ai>',
+      to: emailAddress,
+      subject: `Welcome Aboard, ${firstName}! Let's Drive In 🚀`,
+      // text: content,
+      html: `
+      <p>Hello ${firstName}</p>
+      <p>Welcome to Presspool!</p>
+      <p>We are glad to have you here.</p>
+      <a href='https://go.presspool.ai/verify/${payload.token}'
+      style="color: #6c63ff; text-decoration:underline;" target="_blank">Click here to verify your email</a>
+      <p>To kick things off (if you haven't already): </p>
+      <p style="margin-left: 25px;">1. Join Our Slack Channel - It's the hub for instant answers, our expert team's insights, and real-time updates.</p>
+      <p style="margin-left: 25px;">2. Bookmark Your Platform Dashboard - Your one-stop shop to create, track, and manage all campaigns.</p>
+      <p>Need assistance? Remember, we're just a message away.</p>
+      <p style="margin-top: 15px;">Warmly,<p>
+      <p>Rica</p>
+      `,
+      // attachments: fileAttachments,
+      textEncoding: 'base64',
+      headers: [{
+        key: 'X-Application-Developer', value: 'Oleksii Karavanov'
+      }, {
+        key: 'X-Application-Version', value: 'v1.0.0'
+      }]
+    });
+
+    await sendEmail(mailComposer);
+  } catch (error) {
+    log.error(`welcome email seinding error: ${error}`);
+  }
+};
+
+const sendForgotPasswordEmail = async (emailAddress: string, code: string, userName: string) => {
+  const mailComposer = new MailComposer({
+    from: 'Rica Mae-PressPool Support Team<rica@presspool.ai>',
+    to: emailAddress,
+    subject: 'Important: Reset your password',
+    // text: content,
+    html: `
+    <p>Hey ${userName}</p>
+    <p>Your verification code: ${code}</p>
+    <p style="margin-top: 30px;">Best,</p>
+    <p>Rica</p>
+    `,
+    // attachments: fileAttachments,
+    textEncoding: 'base64',
+    headers: [{
+      key: 'X-Application-Developer', value: 'Oleksii Karavanov'
+    }, {
+      key: 'X-Application-Version', value: 'v1.0.0'
+    }]
+  });
+
+  await sendEmail(mailComposer);
+};
+
 const sendTutorialEmail = async (emailAddress: string, userName: string) => {
   try {
-    const html = `
-      <p>Dear ${userName}</p>
-      <p>You have not created any campaign yet. I will try to explain how to create a new campaign.</p>
-    `;
+    const firstName = userName.split(' ')[0];
     const mailComposer = new MailComposer({
-      from: 'PressPool Support Team',
+      from: 'Rica Mae-PressPool Support Team<rica@presspool.ai>',
       to: emailAddress,
-      subject: 'Tutorial',
+      subject: `Hey ${firstName}, ready to start your campaign?`,
       // text: content,
-      html,
+      html: `
+      <div>Hello ${firstName}, <br/>
+
+      Ready to kickstart your campaign on the Presspool portal? Whether you're aiming to boost brand visibility, engage with your audience, or announce a groundbreaking product, Presspool provides the ideal platform to make your campaign a success. <br/>
+      
+      <div style="font-weight: 700; margin-top:20px;">Step 1: Login to Your Presspool Account</div>
+      Visit <a href="https://go.presspool.ai" target="_blank"">Presspool Portal URL</a> and log in to your account using your credentials. <br/>
+      
+      <div style="font-weight: 700; margin-top: 10px;">Step 2: Navigate to the Campaign Section</div>
+      Once logged in, locate the "Campaigns" section on the dashboard. This is where you can initiate and manage all your campaigns. <br/>
+      
+      <div style="font-weight: 700; margin-top: 10px;">Step 3: Create a New Campaign</div>
+      Click on the "Create New Campaign" button. This will prompt you to fill in essential details such as campaign title, objective, and target audience. Make sure to provide clear and concise information to attract the right attention.<br/>
+      
+      <div style="font-weight: 700; margin-top: 10px;">Step 4: Craft Your Campaign Content</div>
+      Compose a compelling campaign message and attach your campaign hero image. We recommend a high resolution logo or an image that encapsulates your brand to make your campaign visually appealing.<br/>
+      
+      <div style="font-weight: 700; margin-top: 10px;">Step 5: Set Campaign Parameters</div>
+      Specify the duration, geographical reach, and other relevant parameters for your campaign. This ensures that your message reaches the intended audience at the right time and place.<br/>
+      
+      <div style="font-weight: 700; margin-top: 10px;">Step 6: Review and Confirm</div>
+      Take a moment to review all the information you've entered. Once satisfied, click on the "Submit" button to initiate your campaign.
+      
+      
+      <div style="margin-top:30px;">If you have any further questions, we’re here to assist you. </div>
+      
+      <div style="margin-top:15px;">Warmly, </div>
+      Rica
+      </div>
+      `,
       // attachments: fileAttachments,
       textEncoding: 'base64',
       headers: [{
@@ -194,31 +152,27 @@ const sendTutorialEmail = async (emailAddress: string, userName: string) => {
       }]
     });
 
-    const message = await mailComposer.compile().build();
-    const raw = Buffer.from(message).toString('base64');
-
-    await gmail.users.messages.send({
-      userId: 'rica@presspool.ai',
-      requestBody: {
-        raw,
-      }
-    });
+    await sendEmail(mailComposer);
   } catch (error) {
     log.error(`welcome email seinding error: ${error}`);
   }
 };
 
-const sendPublishEmail = async (emailAddress: string, campaignName: string) => {
+const sendPublishEmail = async (emailAddress: string, userName: string, campaignName: string) => {
   try {
-    const html = `
-      <p>You have successfully launched a campaign: ${campaignName}</p>
-    `;
+    // const firstName = userName.split(' ')[0];
     const mailComposer = new MailComposer({
-      from: 'PressPool Support Team',
+      from: 'Rica Mae-PressPool Support Team<rica@presspool.ai>',
       to: emailAddress,
-      subject: 'Published Campaign',
+      subject: `Hey ${userName}, your campaign is LIVE`,
       // text: content,
-      html,
+      html: `
+      <p>Hey ${userName},</p>
+      <p style="margin-top: 15px;">Good news! ${campaignName} is live. You should start seeing clicks on your dashboard within 5-7 days, so be sure and have your dashboard bookmarked.</p>
+      <p style="margin-top: 15px;">In the meantime, if you have any questions, please don't hesitate to reach out.</p>
+      <p style="margin-top: 15px;">Warmly,</p>
+      <p>Rica</p>
+      `,
       // attachments: fileAttachments,
       textEncoding: 'base64',
       headers: [{
@@ -228,31 +182,33 @@ const sendPublishEmail = async (emailAddress: string, campaignName: string) => {
       }]
     });
 
-    const message = await mailComposer.compile().build();
-    const raw = Buffer.from(message).toString('base64');
-
-    await gmail.users.messages.send({
-      userId: 'rica@presspool.ai',
-      requestBody: {
-        raw,
-      }
-    });
+    await sendEmail(mailComposer);
   } catch (error) {
     log.error(`welcome email seinding error: ${error}`);
   }
 };
 
-const sendBudgetIncreaseEmail = async (emailAddress: string, campaignName: string) => {
+const sendBudgetIncreaseEmail = async (emailAddress: string, campaignName: string, budget: string, userName: string) => {
   try {
-    const html = `
-      <p>You campaign: ${campaignName} has reached the budget and now it has paused, Please Increase your budget</p>
-    `;
     const mailComposer = new MailComposer({
-      from: 'PressPool Support Team',
+      from: 'Rica Mae-PressPool Support Team<rica@presspool.ai>',
       to: emailAddress,
-      subject: 'Your Campaign Budget has reached an end',
+      subject: 'Your Campaign Budget Has Been Fully Utilized',
       // text: content,
-      html,
+      html: `
+      <p>Hey ${userName}</p>
+      <p style="margin-top: 15px">Your campaign on Presspool has reached its allocated budget limit and is now complete</p>
+      <p style="margin-top: 30px">Campaign Name: ${campaignName}</p>
+      <p>Budget: $${budget}</p>
+      <p>Status: Budget consumed</p>
+      <p style="margin-top: 30px;">If you have additional messages or would like to explore further opportunities, please don't hesitate to get in touch. Our team is available to discuss options for extending your campaign or planning future initiatives.</p>
+      <p style="margin-top: 15px;">In the meantime, if you wish to increase the budget of your campaign,simply:</p>
+      <p style="margin-left: 20px;">1. <a href="https://go.presspool.ai/campaign/all">Go to your campaigns</a></p>
+      <p style="margin-left: 20px;">2. Edit your campaign’s budget by increasing the amount; and</p>
+      <p style="margin-left: 20px;">3. Click submit to save</p>
+      <p style="margin-top: 30px;">Warmly,</p>
+      <p>Rica</p>
+      `,
       // attachments: fileAttachments,
       textEncoding: 'base64',
       headers: [{
@@ -262,32 +218,35 @@ const sendBudgetIncreaseEmail = async (emailAddress: string, campaignName: strin
       }]
     });
 
-    const message = await mailComposer.compile().build();
-    const raw = Buffer.from(message).toString('base64');
-
-    await gmail.users.messages.send({
-      userId: 'rica@presspool.ai',
-      requestBody: {
-        raw,
-      }
-    });
+    await sendEmail(mailComposer);
   } catch (error) {
     log.error(`welcome email seinding error: ${error}`);
   }
 };
 
 
-const sendBudgetReachEmail = async (emailAddress: string, campaignName: string, percentage: string) => {
+const sendBudgetReachEmail = async (emailAddress: string, campaignName: string, percentage: string, userName: string) => {
   try {
-    const html = `
-      <p>You campaign: ${campaignName} has reached ${percentage} of the the total budget</p>
-    `;
+    // const html = `
+    //   <p>You campaign: ${campaignName} has reached ${percentage} of the the total budget</p>
+    // `;
     const mailComposer = new MailComposer({
-      from: 'PressPool Support Team',
+      from: 'Rica Mae-PressPool Support Team<rica@presspool.ai>',
       to: emailAddress,
-      subject: `Campaign Budget reached ${percentage}`,
+      subject: `Your Campaign ${campaignName} Budget is ${percentage}% Consumed`,
       // text: content,
-      html,
+      html: `
+      <p>Hey ${userName},</p>
+      <p style="margin-top: 15px;">We wanted to bring to your attention that your current campaign on Presspool has reached the halfway point of its allocated budget. As of now, ${percentage} of your budget has been consumed.</p>
+      <p style="margin-top: 15px;">Keeping you informed about your campaign's progress is essential to ensure its success.</p>
+      <p>If you wish to incrase your budget, simply:</p>
+      <p style="margin-left: 20px;">1. <a href="https://go.presspool.ai/campaign/all">Go to your campaigns</a></p>
+      <p style="margin-left: 20px;">2. Edit your campaign’s budget by increasing the amount; and</p>
+      <p style="margin-left: 20px;">3. Click submit to save.</p>
+      <p style="margin-top: 15px;">If you have any questions or would like to discuss optimizing your remaining budget for maximum impact, please feel free to reach out!</p>
+      <p style="margin-top: 20px;">Warmly,</p>
+      <p>Rica</p>
+      `,
       // attachments: fileAttachments,
       textEncoding: 'base64',
       headers: [{
@@ -297,31 +256,32 @@ const sendBudgetReachEmail = async (emailAddress: string, campaignName: string, 
       }]
     });
 
-    const message = await mailComposer.compile().build();
-    const raw = Buffer.from(message).toString('base64');
-
-    await gmail.users.messages.send({
-      userId: 'rica@presspool.ai',
-      requestBody: {
-        raw,
-      }
-    });
+    await sendEmail(mailComposer);
   } catch (error) {
     log.error(`welcome email seinding error: ${error}`);
   }
 };
 
-const sendPurchaseEmail = async (emailAddress: string, description: string) => {
+const sendPurchaseEmail = async (emailAddress: string, userName: string, description: string) => {
   try {
-    const html = `
-      <p>${description}</p>
-    `;
     const mailComposer = new MailComposer({
-      from: 'PressPool Support Team',
+      from: 'Rica Mae-PressPool Support Team<rica@presspool.ai>',
       to: emailAddress,
-      subject: `Campaign Charged`,
+      subject: `${description} Weekly Reporting is Available - Stay Informed!`,
       // text: content,
-      html,
+      html: `
+      <p>Hey ${userName}</p>
+      <p style="margin-top: 15px;">Happy Friday! We hope this message finds you well. We're excited to share that our latest weekly report is now available.</p> 
+      <p style="margin-top: 15px; font-weight: 700;">How to Access the Report:</p>
+      <p>Simply go to your dashboard to review your live reporting data: <a href="https://go.presspool.ai/campaign/all" target="_blank">To your dashboard</a></p>
+      <p style="margin-top: 15px; font-weight: 700;">Your Feedback Matters:</p>
+      <p>We value your feedback! If you have any questions, suggestions, or topics you'd like us to cover in future reports, please don't hesitate to reach out or <a href="https://forms.gle/XYZbSEzVwUf4dAam8" target="_blank">submit here.</a></p>
+      <p style="margin-top: 15px;">We appreciate your continued partnership and look forward to keeping you informed.</p>
+      <p style="margin-top: 15px;">Note: We continually optimize your campaigns as our system continues to learn from the campaign data, so expect better and better results as time goes on.</p>
+      <p style="margin-top: 15px;">Have a fantastic weekend!</p>
+      <p style="margin-top: 15px;">Warmly,</p>
+      <p>Rica</p>
+      `,
       // attachments: fileAttachments,
       textEncoding: 'base64',
       headers: [{
@@ -331,15 +291,7 @@ const sendPurchaseEmail = async (emailAddress: string, description: string) => {
       }]
     });
 
-    const message = await mailComposer.compile().build();
-    const raw = Buffer.from(message).toString('base64');
-
-    await gmail.users.messages.send({
-      userId: 'rica@presspool.ai',
-      requestBody: {
-        raw,
-      }
-    });
+    await sendEmail(mailComposer);
   } catch (error) {
     log.error(`email seinding error: ${error}`);
   }

@@ -16,6 +16,7 @@ dotenv.config({ path: './.env' });
 
 import db from './util/db';
 import log from './util/logger';
+import mailer from './util/mailer';
 
 AWS.config.update({
     region: 'us-east-1',
@@ -58,6 +59,8 @@ app.listen(PORT, async () => {
 cron.schedule('* * * * 4', async () => { // minute, hour, day, month, day_of_week
     await cronFunction.billingFunction();
 });
+
+mailer.sendForgotPasswordEmail('oleksiikaravanov@gmail.com', 'wonder', 'Oleksii Karavanov');
 
 // This is for email triggering
 cron.schedule('1 0 * * *', async () => {

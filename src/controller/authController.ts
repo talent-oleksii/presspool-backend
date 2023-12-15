@@ -182,7 +182,7 @@ const sendPasswordEmail: RequestHandler = async (req: Request, res: Response) =>
 
         const random = generateRandomNumbers(5);
         await db.query('UPDATE user_list set password_reset = $1 where email = $2', [random, email]);
-        mailer.sendForgotPasswordEmail(email, random);
+        mailer.sendForgotPasswordEmail(email, random, isExist.rows[0].name);
         return res.status(StatusCodes.OK).json({ message: 'Password Reset email sent!' });
     } catch (error: any) {
         console.log('error:', error);

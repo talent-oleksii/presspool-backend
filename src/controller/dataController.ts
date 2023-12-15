@@ -111,8 +111,6 @@ const addCampaign: RequestHandler = async (req: Request, res: Response) => {
         const retVal = await db.query('select *, campaign.id as id, campaign_ui.id as ui_id from campaign left join campaign_ui on campaign.id = campaign_ui.campaign_id where campaign.email = $1 and campaign.id = $2', [req.body.email, result.rows[0].id]);
         const data = retVal.rows[0];
 
-        // sendWelcomeEmail(req.body.email, 'Campaign Successfully created');
-        // if (campaignState === 'active') mailer.sendPublishEmail(req.body.email, req.body.campaignName);
         return res.status(StatusCodes.OK).json(data);
     } catch (error: any) {
         log.error(`error campaign: ${error}`);
@@ -321,10 +319,11 @@ const clicked: RequestHandler = async (req: Request, res: Response) => {
             }
             const time = moment().valueOf();
             await db.query('insert into clicked_history (create_time, ip, campaign_id) values ($1, $2, $3)', [time, req.body.ipAddress, data.id]);
+            const user = await db.query('select name from user_list where email = $1', [data.email]);
             const newPrice = Number(data.spent) + (data.demographic === 'consumer' ? 8 : 20);
-            checkCampaignState(data.email, data.name, Number(data.price), Number(data.spent), data.demographic === 'consumer' ? 8 : 20);
+            checkCampaignState(data.email, data.name, Number(data.price), Number(data.spent), data.demographic === 'consumer' ? 8 : 20, user.rows[0].name);
             if (newPrice >= Number(data.price)) {
-                mailer.sendBudgetIncreaseEmail(data.email, data.name);
+                mailer.sendBudgetIncreaseEmail(data.email, data.name, data.price, user.rows[0].name);
                 await db.query('update campaign set click_count = click_count + 1, state = $1 where uid = $2', ['paused', req.body.id]);
             } else {
                 await db.query('update campaign set click_count = click_count + 1, spent = $1 where uid = $2', [newPrice, req.body.id]);
@@ -339,20 +338,20 @@ const clicked: RequestHandler = async (req: Request, res: Response) => {
     }
 };
 
-const checkCampaignState = (email: string, campaignName: string, totalPrice: number, spent: number, cpc: number) => {
+const checkCampaignState = (email: string, campaignName: string, totalPrice: number, spent: number, cpc: number, userName: string) => {
     const value50 = totalPrice / 2;
     const value75 = totalPrice * 75 / 100;
     const value100 = totalPrice;
 
     // check if budget reached 50%
     if (value50 - cpc / 2 <= spent && spent <= value50 + cpc / 2) {
-        mailer.sendBudgetReachEmail(email, campaignName, '50%');
+        mailer.sendBudgetReachEmail(email, campaignName, '50%', userName);
     }
     if (value75 - cpc / 2 <= spent && spent <= value75 + cpc / 2) {
-        mailer.sendBudgetReachEmail(email, campaignName, '75%');
+        mailer.sendBudgetReachEmail(email, campaignName, '75%', userName);
     }
     if (value100 <= spent) {
-        mailer.sendBudgetReachEmail(email, campaignName, '100%');
+        mailer.sendBudgetReachEmail(email, campaignName, '100%', userName);
     }
 };
 

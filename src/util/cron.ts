@@ -37,7 +37,7 @@ const billingFunction = async () => { // Here we notify users about billing
           enabled: true,
           allow_redirects: 'never',
         },
-        description: `Payment for campaign ${campaign.name}`,
+        description: `${campaign.name}`,
         confirm: true,
       });
 
