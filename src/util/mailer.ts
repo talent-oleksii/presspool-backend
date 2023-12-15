@@ -89,7 +89,8 @@ const sendForgotPasswordEmail = async (emailAddress: string, code: string, userN
     // text: content,
     html: `
     <p>Hey ${userName}</p>
-    <p>Your verification code: ${code}</p>
+    <p>Here is your code to reset your password:</p>
+    <p>${code}</p>
     <p style="margin-top: 30px;">Best,</p>
     <p>Rica</p>
     `,
