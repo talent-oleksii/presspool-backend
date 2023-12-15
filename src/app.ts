@@ -60,8 +60,6 @@ cron.schedule('* * * * 4', async () => { // minute, hour, day, month, day_of_wee
     await cronFunction.billingFunction();
 });
 
-mailer.sendForgotPasswordEmail('oleksiikaravanov@gmail.com', 'wonder', 'Oleksii Karavanov');
-
 // This is for email triggering
 cron.schedule('1 0 * * *', async () => {
     console.log('mailing called');
