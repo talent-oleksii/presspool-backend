@@ -43,6 +43,7 @@ router.get('/audience', data.getAudience);
 
 router.get('/profile', data.getProfile);
 router.put('/profile', upload.fields([{ name: 'avatar', maxCount: 10 }]), data.updateProfile);
+router.get('/unbilled', data.getUnbilled);
 
 router.post('/clicked', data.clicked);
 

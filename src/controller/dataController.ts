@@ -355,6 +355,22 @@ const checkCampaignState = (email: string, campaignName: string, totalPrice: num
     }
 };
 
+const getUnbilled: RequestHandler = async (req: Request, res: Response) => {
+    try {
+        const { email } = req.query;
+        const campaigns = await db.query('SELECT spent, billed from campaign where email = $1', [email]);
+
+        let unbilled = 0;
+        campaigns.rows.forEach(item => {
+            unbilled += Number(item.spent) - Number(item.billed);
+        });
+
+        return res.status(StatusCodes.OK).json({ unbilled });
+    } catch (error: any) {
+        return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ message: error.message });
+    }
+};
+
 const data = {
     getNewsletter,
     getPricing,
@@ -366,6 +382,7 @@ const data = {
     getCampaignDetail,
     updateCampaignDetail,
     updateCampaignUI,
+    getUnbilled,
 
     clicked,
 

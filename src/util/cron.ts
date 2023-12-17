@@ -26,8 +26,6 @@ const billingFunction = async () => { // Here we notify users about billing
         customer = await stripe.customers.create({ email: campaign.email as string });
       }
 
-      console.log(await stripe.customers.listPaymentMethods(customer.id));
-
       await stripe.paymentIntents.create({
         customer: customer.id,
         amount: billAmount,
@@ -36,6 +34,9 @@ const billingFunction = async () => { // Here we notify users about billing
         automatic_payment_methods: {
           enabled: true,
           allow_redirects: 'never',
+        },
+        metadata: {
+          state: 'weekly'
         },
         description: `${campaign.name}`,
         confirm: true,

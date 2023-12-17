@@ -82,12 +82,18 @@ const purchaseCampaign: RequestHandler = async (req: Request, res: Response) => 
 
     log.info(`${amount} purchased`);
 
-    const user = await db.query('select name from user_list where email = $1', [object.receipt_email]);
+    if (object.metadata.state === 'unbilled') {
+      await db.query('UPDATE campaign set billed = spent where email = $1', [object.receipt_email]);
 
-    await mailer.sendPurchaseEmail(object.receipt_email, user.rows[0].name, `${object.description}, ${amount / 100} has purchased`);
-    await db.query('update user_list set verified = 1 where email = $1', [object.receipt_email]);
+      return res.status(StatusCodes.OK).json('successfully purchased');
+    } else if (object.metadata.state === 'weekly') {
+      const user = await db.query('select name from user_list where email = $1', [object.receipt_email]);
 
-    return res.status(StatusCodes.OK).json('successfully purchased');
+      await mailer.sendPurchaseEmail(object.receipt_email, user.rows[0].name, `${object.description}, $${amount / 100} has purchased`);
+      await db.query('update user_list set verified = 1 where email = $1', [object.receipt_email]);
+
+      return res.status(StatusCodes.OK).json('successfully purchased');
+    }
   } catch (error: any) {
     log.error(`purchase confirm error: ${error}`);
     return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json(error.message);
@@ -119,6 +125,7 @@ const addBillingMethod: RequestHandler = async (req: Request, res: Response) => 
 const stripeFunction = {
   purchaseCampaign,
   addBillingMethod,
+
   preparePayment,
   getCard,
   addCard,
