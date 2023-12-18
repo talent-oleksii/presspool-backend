@@ -128,7 +128,7 @@ const getCampaign: RequestHandler = async (req: Request, res: Response) => {
         let query = 'select *, campaign.id as id, campaign_ui.id as ui_id from campaign left join campaign_ui on campaign.id = campaign_ui.campaign_id where campaign.email = $1';
         let values = [email];
         if (searchStr) {
-            query += ' and and name like $2';
+            query += ' and name like $2';
             values = [...values, `%${searchStr}%`];
 
             if (from && to) {

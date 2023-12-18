@@ -3,11 +3,13 @@ import { RequestHandler, Request, Response } from 'express';
 import db from '../../util/db';
 import { StatusCodes } from 'http-status-codes';
 
-const getDashboardOverviewData: RequestHandler = async (_req: Request, res: Response) => {
+const getDashboardOverviewData: RequestHandler = async (req: Request, res: Response) => {
   console.log('get dashboard overview data called');
   try {
     const clientCount = await db.query('SELECT count(*) as total_count, count(*) FILTER (where email_verified = $1) as inactive_count from user_list', [0]);
     const campaignCount = await db.query('SELECT count(*) FILTER (WHERE state = $1) as active_count, count(*) FILTER (WHERE state = $2) as draft_count, SUM(price) as total_revenue, SUM(spent) as total_spent, SUM(billed) as total_profit from campaign', ['active', 'draft']);
+
+    const clickedData = await db.query('SELECT create_time, id, campaign_id FROM clicked_history');
 
     return res.status(StatusCodes.OK).json({
       totalClient: clientCount.rows[0].total_count,
@@ -18,6 +20,7 @@ const getDashboardOverviewData: RequestHandler = async (_req: Request, res: Resp
       totalSpent: campaignCount.rows[0].total_spent,
       totalProfit: campaignCount.rows[0].total_profit,
       unpaid: campaignCount.rows[0].total_spent - campaignCount.rows[0].total_profit,
+      clicked: clickedData.rows,
     });
   } catch (error: any) {
     console.log('get dashboard overview error:', error.message);
