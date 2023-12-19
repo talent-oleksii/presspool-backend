@@ -62,10 +62,39 @@ const getDashboardCampaignDetail: RequestHandler = async (req: Request, res: Res
   }
 };
 
+const getDashboardClient: RequestHandler = async (req: Request, res: Response) => {
+  console.log('get dashboard client called');
+  try {
+    const { searchStr } = req.query;
+    const users = await db.query('select user_list.email, user_list.state, user_list.id, COALESCE(SUM(spent), 0) as spent, user_list.create_time, count(campaign.id) as campaign_count, user_list.name, user_list.email, user_list.avatar from user_list left join campaign on user_list.email = campaign.email where user_list.name like $1 group by user_list.id', [`%${searchStr}%`]);
+
+    return res.status(StatusCodes.OK).json(users.rows);
+  } catch (error: any) {
+    console.log('get dashboard client error:', error);
+    return res.status(StatusCodes.OK).json({ message: error.message });
+  }
+};
+
+const updateDashboardClient: RequestHandler = async (req: Request, res: Response) => {
+  try {
+    const { id, data, type } = req.body;
+    if (type === 'state') {
+      await db.query('UPDATE user_list SET state = $1 where id = $2', [data, id]);
+    }
+
+    return res.status(StatusCodes.OK).json('updated');
+  } catch (error: any) {
+    console.log('update dashboard client error:', error);
+    return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ message: error.message });
+  }
+};
+
 const adminData = {
   getDashboardOverviewData,
   getDashboardCampaignList,
   getDashboardCampaignDetail,
+  getDashboardClient,
+  updateDashboardClient,
 };
 
 export default adminData;

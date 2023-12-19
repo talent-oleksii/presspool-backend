@@ -30,8 +30,8 @@ const authCheck: RequestHandler = async (req: Request, res: Response) => {
         if (result.exp < result.iat) {
             return res.status(StatusCodes.BAD_REQUEST).json({ error: 'timeout error' });
         } else {
-            const verifiedData = await db.query('select verified, email_verified, avatar from user_list where email = $1', [result.email]);
-            if (verifiedData.rows.length <= 0) {
+            const verifiedData = await db.query('select verified, email_verified, state, avatar from user_list where email = $1', [result.email]);
+            if (verifiedData.rows.length <= 0 || verifiedData.rows[0].state === 'inactive') {
                 return res.status(StatusCodes.NO_CONTENT).json({ records: [] });
             }
 
@@ -60,8 +60,8 @@ const signIn: RequestHandler = async (req: Request, res: Response) => {
     log.info("Sign in api called");
     const { email, password } = req.query;
 
-    const verifiedData = await db.query('select verified, email_verified from user_list where email = $1 and password = $2', [email, password]);
-    if (verifiedData.rows.length <= 0) {
+    const verifiedData = await db.query('select verified, email_verified, state from user_list where email = $1 and password = $2', [email, password]);
+    if (verifiedData.rows.length <= 0 || verifiedData.rows[0].state === 'inactive') {
         return res.status(StatusCodes.NO_CONTENT).json({ records: [] });
     }
 
