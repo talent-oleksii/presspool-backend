@@ -48,7 +48,7 @@ const getDashboardCampaignDetail: RequestHandler = async (req: Request, res: Res
 
     // const totalClick = await db.query('select count(*) from clicked_history where campaign_id = $1', [id]);
     const clicks = await db.query('select * from clicked_history where campaign_id = $1', [id]);
-    const campaignData = await db.query('select *, campaign.id as id from campaign left join campaign_ui on campaign.id = campaign_ui.campaign_id where campaign.id = $1', [id]);
+    const campaignData = await db.query('select *, campaign.id as id, campaign_ui.id as ui_id from campaign left join campaign_ui on campaign.id = campaign_ui.campaign_id where campaign.id = $1', [id]);
 
     return res.status(StatusCodes.OK).json({
       ...campaignData.rows[0],
