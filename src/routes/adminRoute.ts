@@ -11,6 +11,8 @@ router.post('/auth/login', adminAuth.signIn);
 router.post('/auth/check', adminAuth.authCheck);
 
 router.get('/dashboard/overview', adminData.getDashboardOverviewData);
+router.get('/dashboard/campaign/list', adminData.getDashboardCampaignList);
+router.get('/dashboard/campaign/detail', adminData.getDashboardCampaignDetail);
 
 router.get('/data/campaign', campaign.getCampaign);
 

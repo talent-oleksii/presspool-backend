@@ -28,8 +28,44 @@ const getDashboardOverviewData: RequestHandler = async (req: Request, res: Respo
   }
 };
 
+const getDashboardCampaignList: RequestHandler = async (req: Request, res: Response) => {
+  console.log('get capaign list called');
+  try {
+    const { searchStr } = req.query;
+    const campaign = await db.query('SELECT id, name from campaign where name like $1', [`%${searchStr}%`]);
+
+    return res.status(StatusCodes.OK).json(campaign.rows);
+  } catch (error: any) {
+    console.log('get dashboard campaign list error:', error.message);
+    return res.status(StatusCodes.OK).json({ message: error.message });
+  }
+};
+
+const getDashboardCampaignDetail: RequestHandler = async (req: Request, res: Response) => {
+  console.log('get dashboard campaign detail called');
+  try {
+    const { id } = req.query;
+
+    // const totalClick = await db.query('select count(*) from clicked_history where campaign_id = $1', [id]);
+    const clicks = await db.query('select * from clicked_history where campaign_id = $1', [id]);
+    const campaignData = await db.query('select *, campaign.id as id from campaign left join campaign_ui on campaign.id = campaign_ui.campaign_id where campaign.id = $1', [id]);
+
+    return res.status(StatusCodes.OK).json({
+      ...campaignData.rows[0],
+      // totalClick: totalClick.rows[0].count,
+      clicked: clicks.rows,
+    });
+
+  } catch (error: any) {
+    console.log('get dashboard campaign detail error:', error.message);
+    return res.status(StatusCodes.OK).json({ message: error.message });
+  }
+};
+
 const adminData = {
   getDashboardOverviewData,
+  getDashboardCampaignList,
+  getDashboardCampaignDetail,
 };
 
 export default adminData;
