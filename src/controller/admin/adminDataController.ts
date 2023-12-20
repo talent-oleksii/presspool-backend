@@ -89,11 +89,41 @@ const updateDashboardClient: RequestHandler = async (req: Request, res: Response
   }
 };
 
+const getClientDetail: RequestHandler = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.query;
+    const user = await db.query('select * from user_list where id = $1', [id]);
+    if (user.rows.length <= 0) return res.status(StatusCodes.BAD_REQUEST).json({ message: 'No user exists' });
+    const campaign = await db.query('select * from campaign where email = $1', [user.rows[0].email]);
+
+    return res.status(StatusCodes.OK).json({
+      userData: user.rows[0],
+      campaignData: campaign.rows,
+    });
+
+  } catch (error: any) {
+    console.log('get client detail error: ', error.message);
+    return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ message: error.message });
+  }
+};
+
+const updateClientDetail: RequestHandler = async (req: Request, res: Response) => {
+  try {
+    const { id, data } = req.body;
+    console.log('id:', id, data);
+  } catch (error: any) {
+    console.log('update client detail error: ', error.message);
+    return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ message: error.message });
+  }
+}
+
 const adminData = {
   getDashboardOverviewData,
   getDashboardCampaignList,
   getDashboardCampaignDetail,
   getDashboardClient,
+  getClientDetail,
+  updateClientDetail,
   updateDashboardClient,
 };
 
