@@ -1,6 +1,5 @@
 import { RequestHandler, Request, Response } from "express";
 import { StatusCodes } from "http-status-codes/build/cjs/status-codes";
-import validator from 'validator';
 import axios from "axios";
 import { v4 } from "uuid";
 
