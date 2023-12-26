@@ -45,6 +45,9 @@ router.get('/profile', data.getProfile);
 router.put('/profile', upload.fields([{ name: 'avatar', maxCount: 10 }]), data.updateProfile);
 router.get('/unbilled', data.getUnbilled);
 
+router.post('/team-member', data.addTeamMeber);
+router.put('/team-member', data.updateTeamMember);
+
 router.post('/clicked', data.clicked);
 
 export default router;

@@ -276,10 +276,14 @@ const getProfile: RequestHandler = async (req: Request, res: Response) => {
     try {
         const { email } = req.query;
         const data = await db.query('select * from user_list where email = $1', [email]);
+        const teamData = await db.query('SELECT team_list.*, user_list.name, user_list.avatar FROM team_list LEFT JOIN user_list ON team_list.manager = user_list.email  WHERE owner = $1', [email]);
 
         const ret = data.rows[0];
 
-        return res.status(StatusCodes.OK).json(ret);
+        return res.status(StatusCodes.OK).json({
+            profile: ret,
+            teamData: teamData.rows
+        });
 
     } catch (error: any) {
         log.error(`get profile error: ${error}`);
@@ -370,6 +374,54 @@ const getUnbilled: RequestHandler = async (req: Request, res: Response) => {
     }
 };
 
+const addTeamMeber: RequestHandler = async (req: Request, res: Response) => {
+    console.log('add member called');
+    try {
+        const { owner, email, type, campaignIds } = req.body;
+        console.log('er:', email, type, campaignIds);
+
+        const isExist = await db.query('select * from user_list where email = $1', [email]);
+        if (isExist.rows.length <= 0) {
+            return res.status(StatusCodes.BAD_REQUEST).json({ message: 'User email does not exist!' });
+        }
+
+        const isMember = await db.query('SELECT * from team_list WHERE owner = $1 and manager = $2', [owner, email]);
+        if (isMember.rows.length > 0) {
+            return res.status(StatusCodes.BAD_REQUEST).json({ message: 'Email already exists in the team list' });
+        }
+
+        const time = moment().valueOf().toString();
+        await db.query('INSERT INTO team_list (owner, manager, role, campaign_list, create_time) VALUES ($1, $2, $3, $4, $5)',
+            [owner, email, type, campaignIds.join(','), time]);
+
+        return res.status(StatusCodes.OK).json({ message: 'Successfully Added!' });
+
+    } catch (error: any) {
+        console.log('error on add member:', error.message);
+        return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ message: error.message });
+    }
+};
+
+const updateTeamMember: RequestHandler = async (req: Request, res: Response) => {
+    console.log('update team member called');
+    try {
+        const { teamData, owner } = req.body;
+
+        await db.query('DELETE from team_list where owner = $1', [owner]);
+
+        const time = moment().valueOf();
+        for (const team of teamData) {
+            await db.query('INSERT INTO team_list (owner, manager, role, campaign_list, create_time) values ($1, $2, $3, $4, $5)',
+                [team.owner, team.manager, team.role, team.campaign_list, time]);
+        }
+
+        return res.status(StatusCodes.OK).json({ message: 'Successfully updated!' });
+    } catch (error: any) {
+        console.log('update team member erorr:', error.message);
+        return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ message: error.message });
+    }
+};
+
 const data = {
     getNewsletter,
     getPricing,
@@ -386,7 +438,9 @@ const data = {
     clicked,
 
     getProfile,
-    updateProfile
+    updateProfile,
+    addTeamMeber,
+    updateTeamMember,
 };
 
 export default data;

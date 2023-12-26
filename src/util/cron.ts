@@ -68,7 +68,7 @@ const mailingFunction = async () => {
         console.log(`tutorial email sent to user ${user.email}`);
         await mailer.sendTutorialEmail(user.email, user.name);
       } else {
-        console.log('is not one day after the user creation');
+        console.log('tutorial email check: all sent!');
       }
     }
   } catch (error) {
