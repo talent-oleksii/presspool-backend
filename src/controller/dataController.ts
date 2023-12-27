@@ -160,7 +160,7 @@ const getCampaignDetail: RequestHandler = async (req: Request, res: Response) =>
     log.info('get campaign detail called');
     try {
         const { id } = req.query;
-        const campaignData = await db.query('select *, campaign.id as id from campaign left join campaign_ui on campaign.id = campaign_ui.campaign_id where campaign.id = $1', [id]);
+        const campaignData = await db.query('select *, campaign.id as id, campaign_ui.id as ui_id from campaign left join campaign_ui on campaign.id = campaign_ui.campaign_id where campaign.id = $1', [id]);
 
         const row = campaignData.rows[0];
 
@@ -183,17 +183,30 @@ const updateCampaignDetail: RequestHandler = async (req: Request, res: Response)
             await db.query('update campaign set state = $1 where id = $2', [state, id]);
             return res.status(StatusCodes.OK).json('successfully updated!');
         } else {
-            console.log('card:', currentCard);
-            await db.query('update campaign set email = $1, name = $2, url = $3, demographic = $4, newsletter = $5, price = $6, card_id = $7 where id = $8', [
-                email,
-                campaignName,
-                url,
-                currentTarget,
-                currentAudience,
-                currentPrice,
-                currentCard,
-                id,
-            ]);
+            if (state) {
+                await db.query('update campaign set email = $1, name = $2, url = $3, demographic = $4, newsletter = $5, price = $6, card_id = $7, state = $8 where id = $9', [
+                    email,
+                    campaignName,
+                    url,
+                    currentTarget,
+                    currentAudience,
+                    currentPrice,
+                    currentCard,
+                    state,
+                    id,
+                ]);
+            } else {
+                await db.query('update campaign set email = $1, name = $2, url = $3, demographic = $4, newsletter = $5, price = $6, card_id = $7 where id = $8', [
+                    email,
+                    campaignName,
+                    url,
+                    currentTarget,
+                    currentAudience,
+                    currentPrice,
+                    currentCard,
+                    id,
+                ]);
+            }
 
             const campaignData = await db.query('select *, campaign.id as id, campaign_ui.id as ui_id from campaign left join campaign_ui on campaign.id = campaign_ui.campaign_id where campaign.id = $1', [id]);
 
