@@ -124,8 +124,22 @@ const getCampaign: RequestHandler = async (req: Request, res: Response) => {
         const { email, searchStr, from, to } = req.query;
         let result: any = undefined;
 
-        let query = 'select *, campaign.id as id, campaign_ui.id as ui_id from campaign left join campaign_ui on campaign.id = campaign_ui.campaign_id where campaign.email = $1';
-        let values = [email];
+        const ids: Array<Number> = [];
+        const myCampaigns = await db.query('select id from campaign where email = $1', [email]);
+        myCampaigns.rows.forEach(item => ids.push(Number(item.id)));
+        // check if this email is manager or admin
+        const teamList = await db.query('select owner, role, campaign_list from team_list where manager = $1', [email]);
+        for (const item of teamList.rows) {
+            if (item.role === 'admin') {
+                const ownerCampaigns = await db.query('select id from campaign where email = $1', [item.owner]);
+                ownerCampaigns.rows.forEach(item => ids.push(Number(item.id)));
+            } else if (item.role === 'manager') {
+                item.campaign_list.split(',').map((item: string) => ids.push(Number(item)));
+            }
+        }
+
+        let query = 'SELECT *, campaign.id as id, campaign_ui.id as ui_id from campaign left join campaign_ui on campaign.id = campaign_ui.campaign_id where campaign.id = ANY($1)';
+        let values: Array<any> = [ids];
         if (searchStr) {
             query += ' and name like $2';
             values = [...values, `%${searchStr}%`];
@@ -145,6 +159,8 @@ const getCampaign: RequestHandler = async (req: Request, res: Response) => {
         result = await db.query(query, values);
 
         const clickedData = await db.query('SELECT create_time, id, campaign_id FROM clicked_history WHERE campaign_id = ANY($1)', [result.rows.map((item: any) => Number(item.id))]);
+
+        console.log('dd:', clickedData.rows);
 
         return res.status(StatusCodes.OK).json({
             data: result.rows,
