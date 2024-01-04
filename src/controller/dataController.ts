@@ -356,9 +356,9 @@ const clicked: RequestHandler = async (req: Request, res: Response) => {
 
             await db.query('insert into clicked_history (create_time, ip, campaign_id) values ($1, $2, $3)', [time, req.body.ipAddress, data.id]);
             const user = await db.query('select name from user_list where email = $1', [data.email]);
-            const newPrice = Number(data.spent) + (data.demographic === 'consumer' ? 8 : 20);
+            let newPrice = Number(data.spent);
+            if (isUnique.rows.length <= 0) newPrice = Number(data.spent) + (data.demographic === 'consumer' ? 8 : 20);
             checkCampaignState(data.email, data.name, Number(data.price), Number(data.spent), data.demographic === 'consumer' ? 8 : 20, user.rows[0].name);
-            console.log('dd:', addUnique);
             if (newPrice >= Number(data.price)) {
                 mailer.sendBudgetIncreaseEmail(data.email, data.name, data.price, user.rows[0].name);
                 await db.query('update campaign set click_count = click_count + 1, unique_clicks = unique_clicks + $1, state = $2 where uid = $3', [addUnique, 'paused', req.body.id]);
