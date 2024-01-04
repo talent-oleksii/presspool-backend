@@ -341,7 +341,6 @@ const updateProfile: RequestHandler = async (req: Request, res: Response) => {
 const clicked: RequestHandler = async (req: Request, res: Response) => {
     log.info('campaign clicked');
     try {
-        console.log('ip:', req.body.ipAddress);
         const campaign = await db.query('select campaign.id, page_url as url, state, campaign.email, name, price, spent, demographic from campaign left join campaign_ui on campaign.id = campaign_ui.campaign_id where uid = $1', [req.body.id]);
 
         if (campaign.rows.length > 0) {
@@ -350,15 +349,21 @@ const clicked: RequestHandler = async (req: Request, res: Response) => {
                 return res.status(StatusCodes.BAD_REQUEST).send('campaign not activated');
             }
             const time = moment().valueOf();
+
+            let addUnique: number = 0;
+            const isUnique = await db.query('SELECT * from clicked_history where ip = $1 and campaign_id = $2', [req.body.ipAddress, data.id]);
+            if (isUnique.rows.length <= 0) addUnique = 1;
+
             await db.query('insert into clicked_history (create_time, ip, campaign_id) values ($1, $2, $3)', [time, req.body.ipAddress, data.id]);
             const user = await db.query('select name from user_list where email = $1', [data.email]);
             const newPrice = Number(data.spent) + (data.demographic === 'consumer' ? 8 : 20);
             checkCampaignState(data.email, data.name, Number(data.price), Number(data.spent), data.demographic === 'consumer' ? 8 : 20, user.rows[0].name);
+            console.log('dd:', addUnique);
             if (newPrice >= Number(data.price)) {
                 mailer.sendBudgetIncreaseEmail(data.email, data.name, data.price, user.rows[0].name);
-                await db.query('update campaign set click_count = click_count + 1, state = $1 where uid = $2', ['paused', req.body.id]);
+                await db.query('update campaign set click_count = click_count + 1, unique_clicks = unique_clicks + $1, state = $2 where uid = $3', [addUnique, 'paused', req.body.id]);
             } else {
-                await db.query('update campaign set click_count = click_count + 1, spent = $1 where uid = $2', [newPrice, req.body.id]);
+                await db.query('update campaign set click_count = click_count + 1, unique_clicks = unique_clicks + $1, spent = $2 where uid = $3', [addUnique, newPrice, req.body.id]);
             }
             return res.status(StatusCodes.OK).json(data);
         } else {
