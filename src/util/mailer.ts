@@ -298,6 +298,35 @@ const sendPurchaseEmail = async (emailAddress: string, userName: string, descrip
   }
 };
 
+const sendAddTemmateEmail = async (ownerName: string, companyName: string, email: string) => {
+  try {
+    0.
+    const mailComposer = new MailComposer({
+      from: 'Rica Mae-PressPool Support Team<rica@presspool.ai>',
+      to: email,
+      subject: `${ownerName} invited you to join the ${companyName} team`,
+      // text: content,
+      html: `
+      <p style="margin-top: 15px;">${ownerName} invited you to join the ${companyName} team on Presspool.ai Platform</p>
+      <a style="margin-top: 15px;" href="https://go.presspool.ai" target="_blank">Join Presspool</a>
+      <p style="margin-top: 20px;">Warmly,</p>
+      <p>Rica</p>
+      `,
+      // attachments: fileAttachments,
+      textEncoding: 'base64',
+      headers: [{
+        key: 'X-Application-Developer', value: 'Oleksii Karavanov'
+      }, {
+        key: 'X-Application-Version', value: 'v1.0.0'
+      }]
+    });
+
+    await sendEmail(mailComposer);
+  } catch (error) {
+    log.error(`send add teammate dialog error: ${error}`);
+  }
+};
+
 const mailer = {
   sendWelcomeEmail,
   sendForgotPasswordEmail,
@@ -306,6 +335,7 @@ const mailer = {
   sendBudgetIncreaseEmail,
   sendBudgetReachEmail,
   sendPurchaseEmail,
+  sendAddTemmateEmail,
 }
 
 export default mailer;

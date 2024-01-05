@@ -412,17 +412,19 @@ const addTeamMeber: RequestHandler = async (req: Request, res: Response) => {
     console.log('add member called');
     try {
         const { owner, email, type, campaignIds } = req.body;
-        console.log('er:', email, type, campaignIds);
 
-        const isExist = await db.query('select * from user_list where email = $1', [email]);
-        if (isExist.rows.length <= 0) {
-            return res.status(StatusCodes.BAD_REQUEST).json({ message: 'User email does not exist!' });
-        }
+        const ownerInfo = await db.query('select * from user_list where email = $1', [owner]);
+        // if (isExist.rows.length <= 0) {
+        //     return res.status(StatusCodes.BAD_REQUEST).json({ message: 'User email does not exist!' });
+        // }
 
         const isMember = await db.query('SELECT * from team_list WHERE owner = $1 and manager = $2', [owner, email]);
         if (isMember.rows.length > 0) {
             return res.status(StatusCodes.BAD_REQUEST).json({ message: 'Email already exists in the team list' });
         }
+
+        // Send email
+        await mailer.sendAddTemmateEmail(ownerInfo.rows[0].name, ownerInfo.rows[0].company, email);
 
         const time = moment().valueOf().toString();
         await db.query('INSERT INTO team_list (owner, manager, role, campaign_list, create_time) VALUES ($1, $2, $3, $4, $5)',
