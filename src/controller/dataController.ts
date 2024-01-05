@@ -92,6 +92,8 @@ const addCampaign: RequestHandler = async (req: Request, res: Response) => {
             campaignState,
         ]);
 
+        const userData = await db.query('SELECT * from user_list where email = $1', [req.body.email]);
+
         // add on audience table
         const audience = req.body.currentAudience;
         for (const item of audience) {
@@ -109,6 +111,17 @@ const addCampaign: RequestHandler = async (req: Request, res: Response) => {
 
         const retVal = await db.query('select *, campaign.id as id, campaign_ui.id as ui_id from campaign left join campaign_ui on campaign.id = campaign_ui.campaign_id where campaign.email = $1 and campaign.id = $2', [req.body.email, result.rows[0].id]);
         const data = retVal.rows[0];
+
+        // send email to super admins
+        const admins = await db.query('SELECT email FROM admin_user');
+        for (const admin of admins.rows) {
+            mailer.sendAdminNotificationEmail(admin.email, {
+                name: req.body.campaignName,
+                company: userData.rows[0].company,
+                ownerName: userData.rows[0].name,
+                price: req.body.currentPrice,
+            });
+        }
 
         return res.status(StatusCodes.OK).json(data);
     } catch (error: any) {

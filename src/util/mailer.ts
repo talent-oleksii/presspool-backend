@@ -300,7 +300,6 @@ const sendPurchaseEmail = async (emailAddress: string, userName: string, descrip
 
 const sendAddTemmateEmail = async (ownerName: string, companyName: string, email: string) => {
   try {
-    0.
     const mailComposer = new MailComposer({
       from: 'Rica Mae-PressPool Support Team<rica@presspool.ai>',
       to: email,
@@ -327,6 +326,37 @@ const sendAddTemmateEmail = async (ownerName: string, companyName: string, email
   }
 };
 
+const sendAdminNotificationEmail = async (email: string, data: any) => {
+  console.log(`send email to ${email} about ${data.toString()}`);
+  try {
+    const mailComposer = new MailComposer({
+      from: 'Rica Mae-PressPool Support Team<rica@presspool.ai>',
+      to: email,
+      subject: `New Campaign Alert: It's Go Time!`,
+      // text: content,
+      html: `
+      <p style="margin-top: 15px;">Exciting news! Our latest campaign is now live. 🚀</p>
+      <p>Campaign Details:</a>
+      <p>Title: ${data.name}</p>
+      <p>Company: ${data.company}</p>
+      <p>Campaign Made by: ${data.ownerName}</p>
+      <p>Campaign Budget: ${data.price}</p>
+      `,
+      // attachments: fileAttachments,
+      textEncoding: 'base64',
+      headers: [{
+        key: 'X-Application-Developer', value: 'Oleksii Karavanov'
+      }, {
+        key: 'X-Application-Version', value: 'v1.0.0'
+      }]
+    });
+
+    await sendEmail(mailComposer);
+  } catch (error) {
+    log.error(`send add teammate dialog error: ${error}`);
+  }
+};
+
 const mailer = {
   sendWelcomeEmail,
   sendForgotPasswordEmail,
@@ -336,6 +366,8 @@ const mailer = {
   sendBudgetReachEmail,
   sendPurchaseEmail,
   sendAddTemmateEmail,
+
+  sendAdminNotificationEmail,
 }
 
 export default mailer;
