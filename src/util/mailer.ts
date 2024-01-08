@@ -328,6 +328,7 @@ const sendAddTemmateEmail = async (ownerName: string, companyName: string, email
 };
 
 const sendAdminNotificationEmail = async (email: string, data: any) => {
+  console.log('ddd:', email, data.toString());
   console.log(`send email to ${email} about ${data.toString()}`);
   try {
     const mailComposer = new MailComposer({
@@ -355,7 +356,7 @@ const sendAdminNotificationEmail = async (email: string, data: any) => {
 
     await sendEmail(mailComposer);
   } catch (error) {
-    log.error(`send add teammate dialog error: ${error}`);
+    log.error(`send admin notification email error: ${error}`);
   }
 };
 

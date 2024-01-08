@@ -119,8 +119,8 @@ const addCampaign: RequestHandler = async (req: Request, res: Response) => {
             for (const admin of admins.rows) {
                 mailer.sendAdminNotificationEmail(admin.email, {
                     name: req.body.campaignName,
-                    company: userData.rows[0].company,
-                    ownerName: userData.rows[0].name,
+                    company: userData.company,
+                    ownerName: userData.name,
                     price: req.body.currentPrice,
                     uid,
                 });
@@ -211,7 +211,24 @@ const updateCampaignDetail: RequestHandler = async (req: Request, res: Response)
             const campaign = await db.query('select card_id from campaign where id = $1', [id]);
             const cardId = campaign.rows[0].card_id;
             if ((cardId === null || cardId.length <= 0) && state === 'active') return res.status(StatusCodes.BAD_GATEWAY).json({ message: 'You must set up billing method to activate that campaign' });
-            await db.query('update campaign set state = $1 where id = $2', [state, id]);
+            const campaignData = await db.query('update campaign set state = $1 where id = $2 returning *', [state, id]);
+
+            if (state === 'active') {
+                //send email to client
+                const userData = (await db.query('SELECT * from user_list where email = $1', [email])).rows[0];
+                mailer.sendPublishEmail(email, userData.name, campaignName);
+                // send email to super admins
+                const admins = await db.query('SELECT email FROM admin_user');
+                for (const admin of admins.rows) {
+                    mailer.sendAdminNotificationEmail(admin.email, {
+                        name: campaignName,
+                        company: userData.company,
+                        ownerName: userData.name,
+                        price: currentPrice,
+                        uid: campaignData.rows[0].uid,
+                    });
+                }
+            }
             return res.status(StatusCodes.OK).json('successfully updated!');
         } else if (type === 'budget') {
             const { newPrice } = req.body;
@@ -219,7 +236,7 @@ const updateCampaignDetail: RequestHandler = async (req: Request, res: Response)
             return res.status(StatusCodes.OK).json('successfully updated!');
         } else {
             if (state) {
-                await db.query('update campaign set email = $1, name = $2, url = $3, demographic = $4, newsletter = $5, price = $6, card_id = $7, state = $8 where id = $9', [
+                const campaignData = await db.query('update campaign set email = $1, name = $2, url = $3, demographic = $4, newsletter = $5, price = $6, card_id = $7, state = $8 where id = $9 returning *', [
                     email,
                     campaignName,
                     url,
@@ -230,6 +247,22 @@ const updateCampaignDetail: RequestHandler = async (req: Request, res: Response)
                     state,
                     id,
                 ]);
+                if (state === 'active') {
+                    //send email to client
+                    const userData = (await db.query('SELECT * from user_list where email = $1', [email])).rows[0];
+                    mailer.sendPublishEmail(email, userData.name, campaignName);
+                    // send email to super admins
+                    const admins = await db.query('SELECT email FROM admin_user');
+                    for (const admin of admins.rows) {
+                        mailer.sendAdminNotificationEmail(admin.email, {
+                            name: campaignName,
+                            company: userData.company,
+                            ownerName: userData.name,
+                            price: currentPrice,
+                            uid: campaignData.rows[0].uid,
+                        });
+                    }
+                }
             } else {
                 await db.query('update campaign set email = $1, name = $2, url = $3, demographic = $4, newsletter = $5, price = $6, card_id = $7 where id = $8', [
                     email,
