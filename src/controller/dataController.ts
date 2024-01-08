@@ -173,8 +173,6 @@ const getCampaign: RequestHandler = async (req: Request, res: Response) => {
 
         const clickedData = await db.query('SELECT create_time, id, campaign_id FROM clicked_history WHERE campaign_id = ANY($1)', [result.rows.map((item: any) => Number(item.id))]);
 
-        console.log('dd:', clickedData.rows);
-
         return res.status(StatusCodes.OK).json({
             data: result.rows,
             clicked: clickedData.rows,
@@ -210,6 +208,10 @@ const updateCampaignDetail: RequestHandler = async (req: Request, res: Response)
             const cardId = campaign.rows[0].card_id;
             if ((cardId === null || cardId.length <= 0) && state === 'active') return res.status(StatusCodes.BAD_GATEWAY).json({ message: 'You must set up billing method to activate that campaign' });
             await db.query('update campaign set state = $1 where id = $2', [state, id]);
+            return res.status(StatusCodes.OK).json('successfully updated!');
+        } else if (type === 'budget') {
+            const { newPrice } = req.body;
+            await db.query('UPDATE campaign SET card_id = $1, price = $2 WHERE id = $3', [currentCard, newPrice, id]);
             return res.status(StatusCodes.OK).json('successfully updated!');
         } else {
             if (state) {
@@ -304,7 +306,6 @@ const updateCampaignUI: RequestHandler = async (req: Request, res: Response) => 
         }
 
         const data = result.rows[0];
-        console.log('step 2', data);
 
         return res.status(StatusCodes.OK).json(data);
     } catch (error: any) {
