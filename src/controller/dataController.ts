@@ -113,17 +113,17 @@ const addCampaign: RequestHandler = async (req: Request, res: Response) => {
         if (campaignState === 'active') {
             //send email to client
             const userData = (await db.query('SELECT * from user_list where email = $1', [req.body.email])).rows[0];
-            mailer.sendPublishEmail(req.body.email, userData.name, req.body.campaignName);
+            await mailer.sendPublishEmail(req.body.email, userData.name, req.body.campaignName);
             // send email to super admins
-            const admins = await db.query('SELECT email FROM admin_user');
+            const admins = await db.query('SELECT email, name FROM admin_user');
             for (const admin of admins.rows) {
-                mailer.sendAdminNotificationEmail(admin.email, {
-                    name: req.body.campaignName,
-                    company: userData.company,
-                    ownerName: userData.name,
-                    price: req.body.currentPrice,
+                await mailer.sendAdminNotificationEmail(admin.email, admin.name,
+                    req.body.campaignName,
+                    userData.company,
+                    userData.name,
+                    req.body.currentPrice,
                     uid,
-                });
+                );
             }
         }
 
@@ -216,17 +216,17 @@ const updateCampaignDetail: RequestHandler = async (req: Request, res: Response)
             if (state === 'active') {
                 //send email to client
                 const userData = (await db.query('SELECT * from user_list where email = $1', [email])).rows[0];
-                mailer.sendPublishEmail(email, userData.name, campaignName);
+                await mailer.sendPublishEmail(email, userData.name, campaignName);
                 // send email to super admins
-                const admins = await db.query('SELECT email FROM admin_user');
+                const admins = await db.query('SELECT email, name FROM admin_user');
                 for (const admin of admins.rows) {
-                    mailer.sendAdminNotificationEmail(admin.email, {
-                        name: campaignName,
-                        company: userData.company,
-                        ownerName: userData.name,
-                        price: currentPrice,
-                        uid: campaignData.rows[0].uid,
-                    });
+                    await mailer.sendAdminNotificationEmail(admin.email, admin.name,
+                        campaignName,
+                        userData.company,
+                        userData.name,
+                        currentPrice,
+                        campaignData.rows[0].uid,
+                    );
                 }
             }
             return res.status(StatusCodes.OK).json('successfully updated!');
@@ -250,17 +250,17 @@ const updateCampaignDetail: RequestHandler = async (req: Request, res: Response)
                 if (state === 'active') {
                     //send email to client
                     const userData = (await db.query('SELECT * from user_list where email = $1', [email])).rows[0];
-                    mailer.sendPublishEmail(email, userData.name, campaignName);
+                    await mailer.sendPublishEmail(email, userData.name, campaignName);
                     // send email to super admins
-                    const admins = await db.query('SELECT email FROM admin_user');
+                    const admins = await db.query('SELECT email, name FROM admin_user');
                     for (const admin of admins.rows) {
-                        mailer.sendAdminNotificationEmail(admin.email, {
-                            name: campaignName,
-                            company: userData.company,
-                            ownerName: userData.name,
-                            price: currentPrice,
-                            uid: campaignData.rows[0].uid,
-                        });
+                        await mailer.sendAdminNotificationEmail(admin.email, admin.name,
+                            campaignName,
+                            userData.company,
+                            userData.name,
+                            currentPrice,
+                            campaignData.rows[0].uid,
+                        );
                     }
                 }
             } else {

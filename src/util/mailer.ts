@@ -327,23 +327,19 @@ const sendAddTemmateEmail = async (ownerName: string, companyName: string, email
   }
 };
 
-const sendAdminNotificationEmail = async (email: string, data: any) => {
-  console.log('ddd:', email, data.toString());
-  console.log(`send email to ${email} about ${data.toString()}`);
+const sendAdminNotificationEmail = async (email: string, adminName: string, campaignName: string, company: string, userName: string, price: string, uid: string) => {
+  console.log('send admin notification emails');
   try {
     const mailComposer = new MailComposer({
       from: 'Rica Mae-PressPool Support Team<rica@presspool.ai>',
       to: email,
-      subject: `New Campaign Alert: It's Go Time!`,
+      subject: `Review Needed: ${userName}'s "${campaignName}" Submitted`,
       // text: content,
       html: `
-      <p style="margin-top: 15px;">Exciting news! Our latest campaign is now live. 🚀</p>
-      <p>Campaign Details:</a>
-      <p>Title: ${data.name}</p>
-      <p>Company: ${data.company}</p>
-      <p>Landing Page URL: https://go.presspool.ai/cul/${data.uid}</p>
-      <p>Campaign Made by: ${data.ownerName}</p>
-      <p>Campaign Budget: ${data.price}</p>
+      <p style="margin-top: 15px;">Hi ${adminName}</p>
+      <p>${userName}'s "${campaignName}" has been submitted for review. Expected turnaround is 24-48 hours. Please be ready for any client queries or changes.</a>
+      <p>Thanks,</p>
+      <p>Rica</p>
       `,
       // attachments: fileAttachments,
       textEncoding: 'base64',
