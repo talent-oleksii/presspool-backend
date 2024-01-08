@@ -165,13 +165,14 @@ const sendPublishEmail = async (emailAddress: string, userName: string, campaign
     const mailComposer = new MailComposer({
       from: 'Rica Mae-PressPool Support Team<rica@presspool.ai>',
       to: emailAddress,
-      subject: `Hey ${userName}, your campaign is LIVE`,
+      subject: `Your Campaign "${campaignName}" is Under Review`,
       // text: content,
       html: `
-      <p>Hey ${userName},</p>
-      <p style="margin-top: 15px;">Good news! ${campaignName} is live. You should start seeing clicks on your dashboard within 5-7 days, so be sure and have your dashboard bookmarked.</p>
-      <p style="margin-top: 15px;">In the meantime, if you have any questions, please don't hesitate to reach out.</p>
-      <p style="margin-top: 15px;">Warmly,</p>
+      <p>Hi ${userName},</p>
+      <p style="margin-top: 15px;">Just a heads-up: your campaign "${campaignName}" is now in review. We'll give it a quick check and get it live within 24-48 hours.</p>
+      <p style="margin-top: 15px;">Got any questions or need to make changes? Just hit reply or head to your dashboard.</p>
+      <p style="margin-top: 15px;">We'll be in touch soon!</p>
+      <p style="margin-top: 15px;">Cheers,</p>
       <p>Rica</p>
       `,
       // attachments: fileAttachments,
@@ -339,6 +340,7 @@ const sendAdminNotificationEmail = async (email: string, data: any) => {
       <p>Campaign Details:</a>
       <p>Title: ${data.name}</p>
       <p>Company: ${data.company}</p>
+      <p>Landing Page URL: https://go.presspool.ai/cul/${data.uid}</p>
       <p>Campaign Made by: ${data.ownerName}</p>
       <p>Campaign Budget: ${data.price}</p>
       `,
