@@ -61,9 +61,29 @@ const signIn: RequestHandler = async (req: Request, res: Response) => {
   }
 };
 
+const signUp: RequestHandler = async (req: Request, res: Response) => {
+  console.log('admkin sign up api called');
+  try {
+    const { email, fullName, password } = req.body;
+    const now = moment().valueOf();
+
+    const data = await db.query('INSERT INTO admin_user (email, name, password, create_time, role) VALUES ($1, $2, $3, $4, $5) RETURNING *', [email, fullName, password, now, 'account_manager']);
+    const token = generateToken({ email });
+
+    return res.status(StatusCodes.OK).json({
+      ...data.rows[0],
+      token,
+    });
+  } catch (error: any) {
+    console.log('admin sign up error:', error.message);
+    return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ message: error.message });
+  }
+};
+
 const adminAuth = {
   authCheck,
   signIn,
+  signUp,
 };
 
 export default adminAuth;

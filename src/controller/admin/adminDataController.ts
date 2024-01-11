@@ -6,6 +6,7 @@ import { StatusCodes } from 'http-status-codes';
 const getDashboardOverviewData: RequestHandler = async (req: Request, res: Response) => {
   console.log('get dashboard overview data called');
   try {
+    console.log('req.headers.role:', req.headers.role);
     const clientCount = await db.query('SELECT count(*) as total_count, count(*) FILTER (where email_verified = $1) as inactive_count from user_list', [0]);
     const campaignCount = await db.query('SELECT count(*) FILTER (WHERE state = $1) as active_count, count(*) FILTER (WHERE state = $2) as draft_count, SUM(price) as total_revenue, SUM(spent) as total_spent, SUM(billed) as total_profit from campaign', ['active', 'draft']);
 
@@ -94,11 +95,17 @@ const getClientDetail: RequestHandler = async (req: Request, res: Response) => {
     const { id } = req.query;
     const user = await db.query('select * from user_list where id = $1', [id]);
     if (user.rows.length <= 0) return res.status(StatusCodes.BAD_REQUEST).json({ message: 'No user exists' });
+
+    // get assign manager for this user
+    const admins = await db.query("SELECT * from admin_user WHERE ',' || assigned_users || ',' LIKE $1", [`%,${user.rows[0].email},%`]);
+    console.log('adm:', admins.rows);
+
     const campaign = await db.query('select * from campaign where email = $1', [user.rows[0].email]);
 
     return res.status(StatusCodes.OK).json({
       userData: user.rows[0],
       campaignData: campaign.rows,
+      assignedAdmins: admins.rows[0],
     });
 
   } catch (error: any) {
