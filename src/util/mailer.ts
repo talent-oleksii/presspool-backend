@@ -327,6 +327,38 @@ const sendAddTemmateEmail = async (ownerName: string, companyName: string, email
   }
 };
 
+// (Math.round((req.body.currentPrice / ((4 * (1 + 0.10)) / (1 - 0.50))) * 4) - 2).toString(),
+const sendSuperAdminNotificationEmail = async (email: string, adminName: string, campaignName: string, company: string, userName: string, price: string, uid: string) => {
+  console.log('send super admin notification emails');
+  try {
+    const mailComposer = new MailComposer({
+      from: 'Rica Mae-PressPool Support Team<rica@presspool.ai>',
+      to: email,
+      subject: `Review Needed: ${userName}'s "${campaignName}" Submitted`,
+      // text: content,
+      html: `
+      <p style="margin-top: 15px;">Hi ${adminName}</p>
+      <p>${userName}'s "${campaignName}" has been submitted for review. Expected turnaround is 24-48 hours. Please be ready for any client queries or changes.</p>
+      <p>Company: ${company}</p>
+      <p>Beehiiv Budget: ${(Math.round((Number(price) / ((4 * (1 + 0.10)) / (1 - 0.50))) * 4) - 2).toString()}</p>
+      <p>Thanks,</p>
+      <p>Rica</p>
+      `,
+      // attachments: fileAttachments,
+      textEncoding: 'base64',
+      headers: [{
+        key: 'X-Application-Developer', value: 'Oleksii Karavanov'
+      }, {
+        key: 'X-Application-Version', value: 'v1.0.0'
+      }]
+    });
+
+    await sendEmail(mailComposer);
+  } catch (error) {
+    log.error(`send admin notification email error: ${error}`);
+  }
+};
+
 const sendAdminNotificationEmail = async (email: string, adminName: string, campaignName: string, company: string, userName: string, price: string, uid: string) => {
   console.log('send admin notification emails');
   try {
@@ -367,6 +399,7 @@ const mailer = {
   sendAddTemmateEmail,
 
   sendAdminNotificationEmail,
+  sendSuperAdminNotificationEmail,
 }
 
 export default mailer;

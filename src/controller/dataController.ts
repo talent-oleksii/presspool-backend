@@ -115,15 +115,25 @@ const addCampaign: RequestHandler = async (req: Request, res: Response) => {
             const userData = (await db.query('SELECT * from user_list where email = $1', [req.body.email])).rows[0];
             await mailer.sendPublishEmail(req.body.email, userData.name, req.body.campaignName);
             // send email to super admins
-            const admins = await db.query('SELECT email, name FROM admin_user');
+            const admins = await db.query('SELECT email, name, role FROM admin_user');
             for (const admin of admins.rows) {
-                await mailer.sendAdminNotificationEmail(admin.email, admin.name,
-                    req.body.campaignName,
-                    userData.company,
-                    userData.name,
-                    req.body.currentPrice,
-                    uid,
-                );
+                if (admin.role === 'super_admin') {
+                    await mailer.sendSuperAdminNotificationEmail(admin.email, admin.name,
+                        req.body.campaignName,
+                        userData.company,
+                        userData.name,
+                        req.body.currentPrice,
+                        uid,
+                    );
+                } else {
+                    await mailer.sendAdminNotificationEmail(admin.email, admin.name,
+                        req.body.campaignName,
+                        userData.company,
+                        userData.name,
+                        req.body.currentPrice,
+                        uid,
+                    );
+                }
             }
         }
 
@@ -218,15 +228,25 @@ const updateCampaignDetail: RequestHandler = async (req: Request, res: Response)
                 const userData = (await db.query('SELECT * from user_list where email = $1', [email])).rows[0];
                 await mailer.sendPublishEmail(email, userData.name, campaignName);
                 // send email to super admins
-                const admins = await db.query('SELECT email, name FROM admin_user');
+                const admins = await db.query('SELECT email, name, role FROM admin_user');
                 for (const admin of admins.rows) {
-                    await mailer.sendAdminNotificationEmail(admin.email, admin.name,
-                        campaignName,
-                        userData.company,
-                        userData.name,
-                        currentPrice,
-                        campaignData.rows[0].uid,
-                    );
+                    if (admin.role === 'super_admin') {
+                        await mailer.sendSuperAdminNotificationEmail(admin.email, admin.name,
+                            campaignName,
+                            userData.company,
+                            userData.name,
+                            currentPrice,
+                            campaignData.rows[0].uid,
+                        );
+                    } else {
+                        await mailer.sendAdminNotificationEmail(admin.email, admin.name,
+                            campaignName,
+                            userData.company,
+                            userData.name,
+                            currentPrice,
+                            campaignData.rows[0].uid,
+                        );
+                    }
                 }
             }
             return res.status(StatusCodes.OK).json('successfully updated!');
@@ -252,15 +272,25 @@ const updateCampaignDetail: RequestHandler = async (req: Request, res: Response)
                     const userData = (await db.query('SELECT * from user_list where email = $1', [email])).rows[0];
                     await mailer.sendPublishEmail(email, userData.name, campaignName);
                     // send email to super admins
-                    const admins = await db.query('SELECT email, name FROM admin_user');
+                    const admins = await db.query('SELECT email, name, role FROM admin_user');
                     for (const admin of admins.rows) {
-                        await mailer.sendAdminNotificationEmail(admin.email, admin.name,
-                            campaignName,
-                            userData.company,
-                            userData.name,
-                            currentPrice,
-                            campaignData.rows[0].uid,
-                        );
+                        if (admin.role === 'super_admin') {
+                            await mailer.sendSuperAdminNotificationEmail(admin.email, admin.name,
+                                campaignName,
+                                userData.company,
+                                userData.name,
+                                currentPrice,
+                                campaignData.rows[0].uid,
+                            );
+                        } else {
+                            await mailer.sendAdminNotificationEmail(admin.email, admin.name,
+                                campaignName,
+                                userData.company,
+                                userData.name,
+                                currentPrice,
+                                campaignData.rows[0].uid,
+                            );
+                        }
                     }
                 }
             } else {
@@ -389,6 +419,11 @@ const updateProfile: RequestHandler = async (req: Request, res: Response) => {
     }
 };
 
+const getCPC = (budget: number) => {
+    const beehiivBudget = Math.round((budget / ((4 * (1 + 0.10)) / (1 - 0.50))) * 4) - 2;
+    return budget / (beehiivBudget / 4);
+};
+
 const clicked: RequestHandler = async (req: Request, res: Response) => {
     log.info('campaign clicked');
     try {
@@ -408,8 +443,8 @@ const clicked: RequestHandler = async (req: Request, res: Response) => {
             await db.query('insert into clicked_history (create_time, ip, campaign_id) values ($1, $2, $3)', [time, req.body.ipAddress, data.id]);
             const user = await db.query('select name from user_list where email = $1', [data.email]);
             let newPrice = Number(data.spent);
-            if (isUnique.rows.length <= 0) newPrice = Number(data.spent) + (data.demographic === 'consumer' ? 8 : 20);
-            checkCampaignState(data.email, data.name, Number(data.price), Number(data.spent), data.demographic === 'consumer' ? 8 : 20, user.rows[0].name);
+            if (isUnique.rows.length <= 0) newPrice = Number(data.spent) + getCPC(data.price);
+            checkCampaignState(data.email, data.name, Number(data.price), Number(data.spent), getCPC(data.price), user.rows[0].name);
             if (newPrice >= Number(data.price)) {
                 mailer.sendBudgetIncreaseEmail(data.email, data.name, data.price, user.rows[0].name);
                 await db.query('update campaign set click_count = click_count + 1, unique_clicks = unique_clicks + $1, state = $2 where uid = $3', [addUnique, 'paused', req.body.id]);
