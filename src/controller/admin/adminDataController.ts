@@ -97,7 +97,7 @@ const getClientDetail: RequestHandler = async (req: Request, res: Response) => {
     if (user.rows.length <= 0) return res.status(StatusCodes.BAD_REQUEST).json({ message: 'No user exists' });
 
     // get assign manager for this user
-    const admins = await db.query("SELECT * from admin_user WHERE ',' || assigned_users || ',' LIKE $1", [`%,${user.rows[0].email},%`]);
+    const admins = await db.query("SELECT * from admin_user WHERE ',' || assigned_users || ',' LIKE $1", [`%,${id},%`]);
     console.log('adm:', admins.rows);
 
     const campaign = await db.query('select * from campaign where email = $1', [user.rows[0].email]);

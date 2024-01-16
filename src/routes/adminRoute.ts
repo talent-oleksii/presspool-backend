@@ -13,6 +13,8 @@ router.post('/auth/check', adminAuth.authCheck);
 router.post('/auth/sign-up', adminAuth.signUp);
 
 router.get('/user/account-manager', adminUser.getAccountManagers);
+router.post('/user/account-manager', adminUser.assignAccountManager);
+router.put('/user/account-manager', adminUser.unassignAccountManager);
 
 router.get('/dashboard/overview', adminData.getDashboardOverviewData);
 router.get('/dashboard/campaign/list', adminData.getDashboardCampaignList);
