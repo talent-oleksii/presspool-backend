@@ -116,8 +116,8 @@ const getClientDetail: RequestHandler = async (req: Request, res: Response) => {
 
 const updateClientDetail: RequestHandler = async (req: Request, res: Response) => {
   try {
-    const { id, data } = req.body;
-    console.log('id:', id, data);
+    const { data } = req.body;
+    console.log('id:', data);
   } catch (error: any) {
     console.log('update client detail error: ', error.message);
     return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ message: error.message });

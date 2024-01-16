@@ -52,10 +52,37 @@ const unassignAccountManager: RequestHandler = async (req: Request, res: Respons
   }
 };
 
+const getNormalUsers: RequestHandler = async (_req: Request, res: Response) => {
+  try {
+    const users = await db.query('SELECT * from user_list');
+
+    return res.status(StatusCodes.OK).json(users.rows);
+  } catch (error: any) {
+    return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ message: error.message });
+  }
+};
+
+const updateAssigners: RequestHandler = async (req: Request, res: Response) => {
+  try {
+    const { data } = req.body;
+    console.log('data:', data);
+
+    for (const item of data) {
+      await db.query('UPDATE admin_user SET assigned_users = $1 where id = $2', [item.assigned_users, item.id]);
+    }
+
+    return res.status(StatusCodes.OK).json('updated!');
+  } catch (error: any) {
+    return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ message: error.message });
+  }
+};
+
 const adminUser = {
   getAccountManagers,
   assignAccountManager,
   unassignAccountManager,
+  getNormalUsers,
+  updateAssigners,
 };
 
 export default adminUser;

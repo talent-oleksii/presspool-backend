@@ -16,6 +16,9 @@ router.get('/user/account-manager', adminUser.getAccountManagers);
 router.post('/user/account-manager', adminUser.assignAccountManager);
 router.put('/user/account-manager', adminUser.unassignAccountManager);
 
+router.put('/users', adminUser.updateAssigners);
+router.get('/users', adminUser.getNormalUsers);
+
 router.get('/dashboard/overview', adminData.getDashboardOverviewData);
 router.get('/dashboard/campaign/list', adminData.getDashboardCampaignList);
 router.get('/dashboard/campaign/detail', adminData.getDashboardCampaignDetail);
