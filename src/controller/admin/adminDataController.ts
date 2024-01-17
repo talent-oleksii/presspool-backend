@@ -3,15 +3,9 @@ import { RequestHandler, Request, Response } from 'express';
 import db from '../../util/db';
 import { StatusCodes } from 'http-status-codes';
 
-const assignedIds = async (managerId: any) => {
-  const ids = await db.query('SELECT assigned_users FROM admin_user WHERE id = $1', [managerId]);
-};
-
 const getDashboardOverviewData: RequestHandler = async (req: Request, res: Response) => {
   console.log('get dashboard overview data called');
   try {
-    console.log('req.headers.role:', req.headers.role, req.headers.id);
-
     if (req.headers.role === 'account_manager') { // is the account manager part, send only assigned data to dashboard
       const assignedUsers = (await db.query('SELECT assigned_users FROM admin_user WHERE id = $1', [req.headers.id])).rows[0].assigned_users;
 
@@ -62,6 +56,15 @@ const getDashboardCampaignList: RequestHandler = async (req: Request, res: Respo
   console.log('get capaign list called');
   try {
     const { searchStr } = req.query;
+
+    if (req.headers.role === 'account_manager') {
+      const assignedUsers = (await db.query('SELECT assigned_users FROM admin_user WHERE id = $1', [req.headers.id])).rows[0].assigned_users;
+      const ids = assignedUsers.split(',').map((item: string) => Number(item));
+      const campaignIds = (await db.query('SELECT campaign.id FROM campaign LEFT JOIN user_list ON campaign.email = user_list.email WHERE user_list.id = ANY($1) GROUP BY campaign.id', [ids])).rows;
+      const camIds = campaignIds.map(item => Number(item.id));
+      const campaign = await db.query('SELECT id, name from campaign where name like $1 AND id = ANY($2)', [`%${searchStr}%`, camIds]);
+      return res.status(StatusCodes.OK).json(campaign.rows);
+    }
     const campaign = await db.query('SELECT id, name from campaign where name like $1', [`%${searchStr}%`]);
 
     return res.status(StatusCodes.OK).json(campaign.rows);
@@ -96,6 +99,13 @@ const getDashboardClient: RequestHandler = async (req: Request, res: Response) =
   console.log('get dashboard client called');
   try {
     const { searchStr } = req.query;
+    if (req.headers.role === 'account_manager') {
+      const assignedUsers = (await db.query('SELECT assigned_users FROM admin_user WHERE id = $1', [req.headers.id])).rows[0].assigned_users;
+      const ids = assignedUsers.split(',').map((item: string) => Number(item));
+      const users = await db.query('select user_list.email, user_list.state, user_list.id, COALESCE(SUM(spent), 0) as spent, user_list.create_time, count(campaign.id) as campaign_count, user_list.name, user_list.email, user_list.avatar from user_list left join campaign on user_list.email = campaign.email where user_list.name like $1 and user_list.id = ANY($2) group by user_list.id', [`%${searchStr}%`, ids]);
+
+      return res.status(StatusCodes.OK).json(users.rows);
+    }
     const users = await db.query('select user_list.email, user_list.state, user_list.id, COALESCE(SUM(spent), 0) as spent, user_list.create_time, count(campaign.id) as campaign_count, user_list.name, user_list.email, user_list.avatar from user_list left join campaign on user_list.email = campaign.email where user_list.name like $1 group by user_list.id', [`%${searchStr}%`]);
 
     return res.status(StatusCodes.OK).json(users.rows);
