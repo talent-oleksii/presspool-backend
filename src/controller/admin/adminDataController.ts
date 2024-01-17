@@ -3,10 +3,39 @@ import { RequestHandler, Request, Response } from 'express';
 import db from '../../util/db';
 import { StatusCodes } from 'http-status-codes';
 
+const assignedIds = async (managerId: any) => {
+  const ids = await db.query('SELECT assigned_users FROM admin_user WHERE id = $1', [managerId]);
+};
+
 const getDashboardOverviewData: RequestHandler = async (req: Request, res: Response) => {
   console.log('get dashboard overview data called');
   try {
-    console.log('req.headers.role:', req.headers.role);
+    console.log('req.headers.role:', req.headers.role, req.headers.id);
+
+    if (req.headers.role === 'account_manager') { // is the account manager part, send only assigned data to dashboard
+      const assignedUsers = (await db.query('SELECT assigned_users FROM admin_user WHERE id = $1', [req.headers.id])).rows[0].assigned_users;
+
+      // WHERE id = ANY($1), [item.map(id)]
+      const ids = assignedUsers.split(',').map((item: string) => Number(item));
+      const clientCount = await db.query('SELECT count(*) as total_count, count(*) FILTER (where email_verified = $1) as inactive_count from user_list WHERE id = ANY($2)', [0, ids]);
+      const campaignIds = (await db.query('SELECT campaign.id FROM campaign LEFT JOIN user_list ON campaign.email = user_list.email WHERE user_list.id = ANY($1) GROUP BY campaign.id', [ids])).rows;
+      const camIds = campaignIds.map(item => Number(item.id));
+      const campaignCount = await db.query('SELECT count(*) FILTER (WHERE state = $1) as active_count, count(*) FILTER (WHERE state = $2) as draft_count, SUM(price) as total_revenue, SUM(spent) as total_spent, SUM(billed) as total_profit from campaign WHERE campaign.id = ANY($3)', ['active', 'draft', camIds]);
+      const clickedData = await db.query('SELECT create_time, id, campaign_id FROM clicked_history WHERE campaign_id = ANY($1)', [camIds]);
+
+      return res.status(StatusCodes.OK).json({
+        totalClient: clientCount.rows[0].total_count,
+        inactiveClient: clientCount.rows[0].inactive_count,
+        activeCampaign: campaignCount.rows[0].active_count,
+        draftCampaign: campaignCount.rows[0].draft_count,
+        totalRevenue: campaignCount.rows[0].total_revenue,
+        totalSpent: campaignCount.rows[0].total_spent,
+        totalProfit: campaignCount.rows[0].total_profit,
+        unpaid: campaignCount.rows[0].total_spent - campaignCount.rows[0].total_profit,
+        clicked: clickedData.rows,
+      });
+    }
+
     const clientCount = await db.query('SELECT count(*) as total_count, count(*) FILTER (where email_verified = $1) as inactive_count from user_list', [0]);
     const campaignCount = await db.query('SELECT count(*) FILTER (WHERE state = $1) as active_count, count(*) FILTER (WHERE state = $2) as draft_count, SUM(price) as total_revenue, SUM(spent) as total_spent, SUM(billed) as total_profit from campaign', ['active', 'draft']);
 
