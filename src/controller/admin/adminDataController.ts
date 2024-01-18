@@ -155,8 +155,9 @@ const getClientDetail: RequestHandler = async (req: Request, res: Response) => {
 
 const updateClientDetail: RequestHandler = async (req: Request, res: Response) => {
   try {
-    const { data } = req.body;
-    console.log('id:', data);
+    const { id, note } = req.body;
+    await db.query('UPDATE user_list SET note = $1 where id = $2', [note, id]);
+    return res.status(StatusCodes.OK).json('updated!');
   } catch (error: any) {
     console.log('update client detail error: ', error.message);
     return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ message: error.message });
