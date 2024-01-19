@@ -11,6 +11,7 @@ dotenv.config({ path: './.env' });
 const stripe = new Stripe(process.env.STRIPE_SECRET as string);
 
 async function initializeClient() {
+  console.log('dd:', process.env.GOOGLE_ANALYTIC_PRIVATE_KEY);
   try {
     const client = new BetaAnalyticsDataClient({
       credentials: {
@@ -114,7 +115,7 @@ async function runReport(client: BetaAnalyticsDataClient, propertyId: any,) {
   try {
     const [response] = await client.runReport({
       property: `properties/${propertyId}`,
-      dateRanges: [{ startDate: '2024-01-17', endDate: '2024-01-20' }],
+      dateRanges: [{ startDate: '2024-01-15', endDate: '2024-01-20' }],
       dimensions: [{ name: 'fullPageUrl' }],
       metrics: [{
         name: 'totalUsers'
