@@ -2,6 +2,7 @@ import { RequestHandler, Request, Response } from "express";
 import { StatusCodes } from "http-status-codes/build/cjs/status-codes";
 import axios from "axios";
 import { v4 } from "uuid";
+import CryptoJS from 'crypto-js';
 
 import db from '../util/db';
 import useAirTable from "../util/useAirTable";
@@ -70,7 +71,8 @@ const addCampaign: RequestHandler = async (req: Request, res: Response) => {
     log.info('add campaign called');
     try {
         const time = moment().valueOf();
-        const uid = v4();
+        const uiData = (await db.query('SELECT page_url FROM campaign_ui WHERE id = $1', [req.body.uiId])).rows[0];
+        const uid = encodeURIComponent(CryptoJS.AES.encrypt(uiData.page_url, process.env.PRESSPOOL_AES_KEY as string).toString());
         // Get if user payment verified or not
         // const verifiedData = await db.query('SELECT verified from user_list where email = $1', [req.body.email]);
         let campaignState = req.body.state;

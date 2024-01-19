@@ -2,12 +2,36 @@ import Stripe from 'stripe';
 import dotenv from 'dotenv';
 import log from './logger';
 import db from './db';
+import { BetaAnalyticsDataClient } from '@google-analytics/data';
 
 import mailer from './mailer';
 
 dotenv.config({ path: './.env' });
 
 const stripe = new Stripe(process.env.STRIPE_SECRET as string);
+
+async function initializeClient() {
+  try {
+    const client = new BetaAnalyticsDataClient({
+      credentials: {
+        // type: process.env.GOOGLE_ANALYTIC_TYPE,
+        client_email: process.env.GOOGLE_ANALYTIC_CLIENT_EMAIL,
+        private_key: process.env.GOOGLE_ANALYTIC_PRIVATE_KEY,
+        // private_key_id: process.env.GOOGLE_ANALYTIC_PRIVATE_KEY_ID,
+        // project_id: process.env.GOOGLE_ANALYTIC_PROJECT_ID,
+        // client_id: process.env.GOOGLE_ANALYTIC_CLIENT_ID,
+        // client_secret?: string;
+        // refresh_token: process.env.GOOGLE_ANALYTIC_TOKEN_URI,
+        // quota_project_id: process.env.GOOGLE_ANALYTIC_PROJECT_ID,
+        // universe_domain: process.env.GOOGLE_ANALYTIC_UNIVERSE_DOMAIN,
+      }
+    });
+    return client;
+  } catch (e) {
+    console.error(`Error initializing GA4 client: ${e}`);
+    return null;
+  }
+}
 
 const billingFunction = async () => { // Here we notify users about billing
   try {
@@ -76,9 +100,76 @@ const mailingFunction = async () => {
   }
 };
 
+async function runReport(client: BetaAnalyticsDataClient, propertyId: any,) {
+  // const dimensions = [{ name: "date" }, { name: "eventName" }, { name: "pagePath" }];
+  // const metrics = [{ name: "eventCount" }, { name: 'totalUsers' }];
+
+  // const request = {
+  //   property: `properties/${propertyId}`,
+  //   dimensions: dimensions,
+  //   metrics: metrics,
+  //   dateRanges: [{ startDate: startDate, endDate: endDate }],
+  // };
+
+  try {
+    const [response] = await client.runReport({
+      property: `properties/${propertyId}`,
+      dateRanges: [{ startDate: '2024-01-17', endDate: '2024-01-20' }],
+      dimensions: [{ name: 'fullPageUrl' }],
+      metrics: [{
+        name: 'totalUsers'
+      }, {
+        name: 'sessions'
+      }, {
+        name: 'activeUsers'
+      }, {
+        name: 'newUsers'
+      }, {
+        name: 'screenPageViews',
+      }],
+      // metrics: [{ name: 'sessions' }],
+      // dimensions: [{ name: 'country' }]
+    });
+    return response;
+  } catch (e) {
+    console.error(`Error running GA4 report: ${e}`);
+    return null;
+  }
+}
+
+const scrapeFunction = async () => {
+  console.log('get from google analytics is running...');
+  try {
+    const client: BetaAnalyticsDataClient = await initializeClient() as BetaAnalyticsDataClient;
+    const propertyId = "410414057";
+    const response: any = await runReport(client, propertyId);
+
+    if (!response) {
+      console.error('Failed to fetch report data');
+      return;
+    }
+
+    const result = response.rows.map((item: any) => ({
+      fullPageUrl: item.dimensionValues[0].value,
+      totalUsers: item.metricValues[0].value,
+      sessions: item.metricValues[1].value,
+      activeUsers: item.metricValues[2].value,
+      newUsers: item.metricValues[3].value,
+      screenPageViews: item.metricValues[4].value,
+    }));
+
+    console.log(result);
+
+
+  } catch (error) {
+    console.log('error:', error);
+  }
+};
+
 const cronFunction = {
   billingFunction,
   mailingFunction,
+  scrapeFunction,
 };
 
 export default cronFunction;

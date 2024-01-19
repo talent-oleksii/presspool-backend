@@ -5,6 +5,8 @@ import { StatusCodes } from 'http-status-codes';
 import cron from 'node-cron';
 import AWS from 'aws-sdk';
 
+import CryptoJS from 'crypto-js';
+
 import authRoute from './routes/authRoute';
 import dataRoute from './routes/dataRoute';
 import stripeRoute from './routes/stripeRoute';
@@ -16,7 +18,6 @@ dotenv.config({ path: './.env' });
 
 import db from './util/db';
 import log from './util/logger';
-import mailer from './util/mailer';
 
 AWS.config.update({
     region: 'us-east-1',
@@ -38,7 +39,7 @@ app.use(express.static(__dirname + '/public/img'));
 app.get('/image', function (req, res) {
     const filePath = `${__dirname}/public/img/${req.query.image}`;
     res.sendFile(filePath);
-})
+});
 
 app.use('/stripe', stripeRoute);
 
@@ -55,6 +56,15 @@ app.listen(PORT, async () => {
     await db.testConnection();
 });
 
+const encrypt = async (plaintext: string) => {
+    var encrypted = CryptoJS.AES.encrypt(plaintext, "presspool_aes_key");
+    console.log('dr:', encodeURIComponent(encrypted.toString()));
+    var decrypted = CryptoJS.AES.decrypt(encrypted, "presspool_aes_key").toString(CryptoJS.enc.Utf8);
+    console.log('dd:', decrypted);
+};
+
+encrypt('https://www.website.com');
+
 // This is to charge bill to clients by every friday
 cron.schedule('0 0 * * 5', async () => { // minute, hour, day, month, day_of_week
     await cronFunction.billingFunction();
@@ -64,4 +74,8 @@ cron.schedule('0 0 * * 5', async () => { // minute, hour, day, month, day_of_wee
 cron.schedule('1 0 * * *', async () => {
     console.log('mailing called');
     await cronFunction.mailingFunction();
+});
+
+cron.schedule('*/10 * * * * *', async () => {
+    await cronFunction.scrapeFunction();
 });
