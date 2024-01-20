@@ -5,13 +5,13 @@ import db from './db';
 import { BetaAnalyticsDataClient } from '@google-analytics/data';
 
 import mailer from './mailer';
+import axios from 'axios';
 
 dotenv.config({ path: './.env' });
 
 const stripe = new Stripe(process.env.STRIPE_SECRET as string);
 
 async function initializeClient() {
-  console.log('dd:', process.env.GOOGLE_ANALYTIC_PRIVATE_KEY);
   try {
     const client = new BetaAnalyticsDataClient({
       credentials: {
@@ -138,30 +138,76 @@ async function runReport(client: BetaAnalyticsDataClient, propertyId: any,) {
   }
 }
 
+const runRealtimeReport = async (client: BetaAnalyticsDataClient, propertyId: string) => {
+  try {
+    const [response] = await client.runRealtimeReport({
+      property: `properties/${propertyId}`,
+      // dimensions: [{
+      //   name: 'streamId',
+      // }, {
+      //   name: 'countryId'
+      // }, {
+      //   name: 'deviceCategory'
+      // }],
+      dimensions: [{ name: 'unifiedScreenName' }, { name: 'deviceCategory' }],
+      // metrics: [{ name: "screenPageViews" }, { name: 'activeUsers' }],
+      metrics: [{ name: 'eventCount' }, { name: 'screenPageViews' }, { name: 'activeUsers' }],
+      // metrics: [{
+      //   name: 'activeUsers'
+      // }, {
+      //   name: 'screenPageViews',
+      // }],
+      minuteRanges: [{ startMinutesAgo: 1 }]
+    });
+
+    return response;
+  } catch (error) {
+    console.log('erro:', error);
+  }
+};
+
+const getCPC = (budget: number) => {
+  const beehiivBudget = Math.round((budget / ((4 * (1 + 0.10)) / (1 - 0.50))) * 4) - 2;
+  return budget / (beehiivBudget / 4);
+};
+
 const scrapeFunction = async () => {
   console.log('get from google analytics is running...');
   try {
     const client: BetaAnalyticsDataClient = await initializeClient() as BetaAnalyticsDataClient;
-    const propertyId = "410414057";
-    const response: any = await runReport(client, propertyId);
+    const propertyId: string = process.env.GOOGLE_ANALYTIC_PROPERTY_ID as string;
+    // const response: any = await runReport(client, propertyId);
+    const response: any = await runRealtimeReport(client, propertyId);
 
     if (!response) {
       console.error('Failed to fetch report data');
       return;
     }
 
-    const result = response.rows.map((item: any) => ({
-      fullPageUrl: item.dimensionValues[0].value,
-      totalUsers: item.metricValues[0].value,
-      sessions: item.metricValues[1].value,
-      activeUsers: item.metricValues[2].value,
-      newUsers: item.metricValues[3].value,
-      screenPageViews: item.metricValues[4].value,
-    }));
+    // const result = response.rows.map((item: any) => ({
+    //   fullPageUrl: item.dimensionValues[0].value,
+    //   totalUsers: item.metricValues[0].value,
+    //   sessions: item.metricValues[1].value,
+    //   activeUsers: item.metricValues[2].value,
+    //   newUsers: item.metricValues[3].value,
+    //   screenPageViews: item.metricValues[4].value,
+    // }));
 
-    console.log(result);
+    let index = 0;
+    for (const item of response.rows) {
+      console.log('there is a new data for tracking', item.dimensionValues, item.metricValues);
+      const id = encodeURIComponent(item.dimensionValues[0].value);
+      if (id.length <= 7) continue;
+      const clickCount = Number(index !== 0 ? item.metricValues[1].value : response.rows[0].metricValues[1].value);
+      const uniqueClick = Number(index !== 0 ? item.metricValues[2].value : response.rows[0].metricValues[2].value);
 
+      console.log('id:', id, clickCount, uniqueClick);
+      const budget = Number((await db.query('SELECT price from campaign where uid = $1', [id])).rows[0].price);
+      const addAmount = Math.ceil(Number(getCPC(budget)) * Number(uniqueClick));
 
+      await db.query('UPDATE campaign SET click_count = click_count + $1, unique_clicks = unique_clicks + $2, spent = spent + $3 WHERE uid = $4', [clickCount, uniqueClick, addAmount, id]);
+      index++;
+    }
   } catch (error) {
     console.log('error:', error);
   }

@@ -1,8 +1,8 @@
 import { RequestHandler, Request, Response } from "express";
 import { StatusCodes } from "http-status-codes/build/cjs/status-codes";
 import axios from "axios";
-import { v4 } from "uuid";
 import CryptoJS from 'crypto-js';
+import { JWT } from 'google-auth-library';
 
 import db from '../util/db';
 import useAirTable from "../util/useAirTable";
@@ -80,8 +80,33 @@ const addCampaign: RequestHandler = async (req: Request, res: Response) => {
         //     campaignState = 'draft';
         // }
 
+        // create google analytics stream for this campaign url
+        // const jwt = new JWT({
+        //     email: process.env.GOOGLE_ANALYTIC_CLIENT_EMAIL,
+        //     key: process.env.GOOGLE_ANALYTIC_PRIVATE_KEY,
+        //     scopes: ['https://www.googleapis.com/auth/analytics.edit']
+        // });
+
+        // const tokenResponse = await jwt.authorize();
+        // const accessToken = tokenResponse.access_token;
+
+        // const streamData = await axios.post(`https://analyticsadmin.googleapis.com/v1beta/properties/${process.env.GOOGLE_ANALYTIC_PROPERTY_ID}/dataStreams`, {
+        //     name: '',
+        //     type: 'WEB_DATA_STREAM',
+        //     displayName: req.body.campaignName,
+        //     webStreamData: {
+        //         defaultUri: `https://track.presspool.ai/${uid}`,
+        //     }
+        // }, {
+        //     headers: {
+        //         Authorization: `Bearer ${accessToken}`,
+        //         "Content-Type": 'application/json'
+        //     }
+        // });
+        // const nameParts = streamData.data.name.split('/');
+
         // update campaign ui id
-        const result = await db.query('INSERT INTO campaign(email, name, url, demographic, audience, price, create_time, uid, card_id, state) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING *', [
+        const result = await db.query('INSERT INTO campaign(email, name, url, demographic, audience, price, create_time, uid, card_id, state, stream_id) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) RETURNING *', [
             req.body.email,
             req.body.campaignName,
             req.body.url,
@@ -92,6 +117,8 @@ const addCampaign: RequestHandler = async (req: Request, res: Response) => {
             uid,
             req.body.currentCard,
             campaignState,
+            // nameParts[nameParts.length - 1],
+            ''
         ]);
 
         // add on audience table
