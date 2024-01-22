@@ -65,6 +65,7 @@ cron.schedule('1 0 * * *', async () => {
     await cronFunction.mailingFunction();
 });
 
+//This should be opened before deploy
 cron.schedule('*/2 * * * *', async () => {
     await cronFunction.scrapeFunction();
 });

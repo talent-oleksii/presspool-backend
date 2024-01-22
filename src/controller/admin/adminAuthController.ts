@@ -64,10 +64,10 @@ const signIn: RequestHandler = async (req: Request, res: Response) => {
 const signUp: RequestHandler = async (req: Request, res: Response) => {
   console.log('admkin sign up api called');
   try {
-    const { email, fullName, password } = req.body;
+    const { email, fullName, password, link } = req.body;
     const now = moment().valueOf();
 
-    const data = await db.query('INSERT INTO admin_user (email, name, password, create_time, role) VALUES ($1, $2, $3, $4, $5) RETURNING *', [email, fullName, password, now, 'account_manager']);
+    const data = await db.query('INSERT INTO admin_user (email, name, password, create_time, role, link) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *', [email, fullName, password, now, 'account_manager', link]);
     const token = generateToken({ email });
 
     return res.status(StatusCodes.OK).json({
