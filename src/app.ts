@@ -68,3 +68,8 @@ cron.schedule('1 0 * * *', async () => {
 cron.schedule('*/2 * * * *', async () => {
     await cronFunction.scrapeFunction();
 });
+
+cron.schedule('0 0 * * *', async () => {
+    await cronFunction.dailyAnalyticsUpdate();
+});
+  
