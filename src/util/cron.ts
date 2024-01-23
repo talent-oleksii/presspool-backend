@@ -101,7 +101,9 @@ const mailingFunction = async () => {
   }
 };
 
-async function runReport(client: BetaAnalyticsDataClient, propertyId: any,) {
+async function runReport(client: BetaAnalyticsDataClient, propertyId: any, startDate: any, endDate: any) {
+  // Function implementation...
+
   // const dimensions = [{ name: "date" }, { name: "eventName" }, { name: "pagePath" }];
   // const metrics = [{ name: "eventCount" }, { name: 'totalUsers' }];
 
@@ -115,7 +117,7 @@ async function runReport(client: BetaAnalyticsDataClient, propertyId: any,) {
   try {
     const [response] = await client.runReport({
       property: `properties/${propertyId}`,
-      dateRanges: [{ startDate: '2024-01-15', endDate: '2024-01-20' }],
+      dateRanges: [{ startDate: startDate, endDate: endDate }],
       dimensions: [{ name: 'fullPageUrl' }],
       metrics: [{
         name: 'totalUsers'
@@ -232,18 +234,29 @@ async function dailyAnalyticsUpdate()  {
       return;
     }
 
+    if (!response || !response.rows) {
+      console.error('No data received from runReport');
+      return;
+    }
     for (const item of response.rows) {
-      const pageUrl = encodeURIComponent(item.dimensionValues[0].value);
-      const totalUsers = Number(item.metricValues[0].value);
-      const sessions = Number(item.metricValues[1].value);
-      const activeUsers = Number(item.metricValues[2].value);
-      const newUsers = Number(item.metricValues[3].value);
-      const screenPageViews = Number(item.metricValues[4].value);
-
-      console.log('Updating database for URL:', pageUrl, totalUsers , sessions,activeUsers, newUsers, screenPageViews );
+      const pageUrl = item.dimensionValues?.[0]?.value ? encodeURIComponent(item.dimensionValues[0].value) : '';
+      const totalUsers = item.metricValues?.[0]?.value ? Number(item.metricValues[0].value) : 0;
+      const sessions = item.metricValues?.[1]?.value ? Number(item.metricValues[1].value) : 0;
+      const activeUsers = item.metricValues?.[2]?.value ? Number(item.metricValues[2].value) : 0;
+      const newUsers = item.metricValues?.[3]?.value ? Number(item.metricValues[3].value) : 0;
+      const screenPageViews = item.metricValues?.[4]?.value ? Number(item.metricValues[4].value) : 0;
+    
+      console.log('Updating database for URL:', pageUrl, totalUsers, sessions, activeUsers, newUsers, screenPageViews);
+      
+     
+    }
+    
+      
+   
+    
       
     
-    }
+    
   } catch (error) {
     console.error('Error in daily analytics update:', error);
   }
