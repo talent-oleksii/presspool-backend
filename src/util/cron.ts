@@ -213,10 +213,51 @@ const scrapeFunction = async () => {
   }
 };
 
+async function dailyAnalyticsUpdate()  {
+  console.log('Running daily analytics update...');
+
+  // Calculate yesterday's date for the report
+  const today = new Date();
+  const yesterday = new Date(today.getFullYear(), today.getMonth(), today.getDate() - 1);
+  const startDate = yesterday.toISOString().split('T')[0]; // Format as 'YYYY-MM-DD'
+  const endDate = startDate; // Same as startDate for daily data
+
+  try {
+    const client = await initializeClient() as BetaAnalyticsDataClient;
+    const propertyId = process.env.GOOGLE_ANALYTIC_PROPERTY_ID as string;
+
+    const response = await runReport(client, propertyId, startDate, endDate);
+    if (!response) {
+      console.error('Failed to fetch report data');
+      return;
+    }
+
+    for (const item of response.rows) {
+      const pageUrl = encodeURIComponent(item.dimensionValues[0].value);
+      const totalUsers = Number(item.metricValues[0].value);
+      const sessions = Number(item.metricValues[1].value);
+      const activeUsers = Number(item.metricValues[2].value);
+      const newUsers = Number(item.metricValues[3].value);
+      const screenPageViews = Number(item.metricValues[4].value);
+
+      console.log('Updating database for URL:', pageUrl, totalUsers , sessions,activeUsers, newUsers, screenPageViews );
+      
+    
+    }
+  } catch (error) {
+    console.error('Error in daily analytics update:', error);
+  }
+}
+
+
+
+
 const cronFunction = {
   billingFunction,
   mailingFunction,
   scrapeFunction,
+  dailyAnalyticsUpdate,
 };
 
 export default cronFunction;
+
