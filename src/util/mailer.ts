@@ -370,7 +370,7 @@ const sendAdminNotificationEmail = async (email: string, adminName: string, camp
       // text: content,
       html: `
       <p style="margin-top: 15px;">Hi ${adminName}</p>
-      <p>${userName}'s "${campaignName}" has been submitted for review. Expected turnaround is 24-48 hours. Please be ready for any client queries or changes.</a>
+      <p>${userName}'s "${campaignName}" has been submitted for review. Expected turnaround is 24-48 hours. Please be ready for any client queries or changes.</p>
       <p>Thanks,</p>
       <p>Rica</p>
       `,
@@ -389,6 +389,36 @@ const sendAdminNotificationEmail = async (email: string, adminName: string, camp
   }
 };
 
+const sendInviteEmail = async (adminName: string, email: string, link: string) => {
+  console.log('send invite emails');
+  try {
+    const mailComposer = new MailComposer({
+      from: 'Rica Mae-PressPool Support Team<rica@presspool.ai>',
+      to: email,
+      subject: `Exclusive Invitation to Join PressPool!`,
+      // text: content,
+      html: `
+      <p style="margin-top: 15px;">${adminName} has invited you to PressPool, where AI meets precision marketing. </p>
+      <p>Join us for targeted audience reach and campaign success.</p>
+      <p>Click <a href='${link}' target='_blank'>here</a> to get started!</p>
+      <p>Cheers</p>
+      <p>Rica</p>
+      `,
+      // attachments: fileAttachments,
+      textEncoding: 'base64',
+      headers: [{
+        key: 'X-Application-Developer', value: 'Oleksii Karavanov'
+      }, {
+        key: 'X-Application-Version', value: 'v1.0.0'
+      }]
+    });
+
+    await sendEmail(mailComposer);
+  } catch (error) {
+    log.error(`send invite email error: ${error}`);
+  }
+};
+
 const mailer = {
   sendWelcomeEmail,
   sendForgotPasswordEmail,
@@ -401,6 +431,8 @@ const mailer = {
 
   sendAdminNotificationEmail,
   sendSuperAdminNotificationEmail,
+
+  sendInviteEmail,
 }
 
 export default mailer;

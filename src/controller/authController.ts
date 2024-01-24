@@ -86,6 +86,7 @@ const clientSignUp: RequestHandler = async (req: Request, res: Response) => {
     log.info('Sign up api called');
 
     const { fullName, email, password, company } = req.body;
+    let { linkUrl } = req.body;
 
     const isExist = await db.query('select * from user_list where email = $1', [email]);
     if (isExist.rows.length >= 1) {
@@ -93,7 +94,7 @@ const clientSignUp: RequestHandler = async (req: Request, res: Response) => {
     }
 
     const time = moment().valueOf();
-    await db.query('insert into user_list (create_time, name, email, password, company, verified, user_type, email_verified) values ($1, $2, $3, $4, $5, $6, $7, $8)', [
+    const newUser = await db.query('insert into user_list (create_time, name, email, password, company, verified, user_type, email_verified) values ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *', [
         time,
         fullName,
         email,
@@ -103,6 +104,16 @@ const clientSignUp: RequestHandler = async (req: Request, res: Response) => {
         "client",
         0
     ]);
+
+    linkUrl = `https://go.presspool.ai/${linkUrl}`;
+    // assign to account manager if that's a affiliate link
+    const adminUser = await db.query('SELECT id, assigned_users from admin_user WHERE link = $1', [linkUrl]);
+    if (adminUser.rows.length > 0) {
+        const value = adminUser.rows[0].assigned_users;
+        const assignedUsers: Array<string> = value && value.length > 0 ? adminUser.rows[0].assigned_users.split(',') : [];
+        assignedUsers.push(newUser.rows[0].id);
+        await db.query('UPDATE admin_user SET assigned_users = $1 WHERE id = $2', [assignedUsers.join(','), adminUser.rows[0].id]);
+    }
 
     useAirTable("Users", 'post', {
         'Full Name': fullName,

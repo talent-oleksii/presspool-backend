@@ -2,6 +2,7 @@ import { RequestHandler, Request, Response } from 'express';
 
 import db from '../../util/db';
 import { StatusCodes } from 'http-status-codes';
+import mailer from '../../util/mailer';
 
 const getDashboardOverviewData: RequestHandler = async (req: Request, res: Response) => {
   console.log('get dashboard overview data called');
@@ -164,6 +165,24 @@ const updateClientDetail: RequestHandler = async (req: Request, res: Response) =
   }
 }
 
+const inviteClient: RequestHandler = async (req: Request, res: Response) => {
+  try {
+    const { emails, link } = req.body;
+    const emailList = emails.split(',');
+
+    const adminUser = await db.query('SELECT name from admin_user WHERE link = $1', [link]);
+
+    for (const email of emailList) {
+      await mailer.sendInviteEmail(adminUser.rows[0].name, email, link);
+    }
+
+    return res.status(StatusCodes.OK).json('sent!');
+  } catch (error: any) {
+    console.log('invite error:', error.message);
+    return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ message: error.message });
+  }
+};
+
 const adminData = {
   getDashboardOverviewData,
   getDashboardCampaignList,
@@ -172,6 +191,8 @@ const adminData = {
   getClientDetail,
   updateClientDetail,
   updateDashboardClient,
+
+  inviteClient,
 };
 
 export default adminData;
