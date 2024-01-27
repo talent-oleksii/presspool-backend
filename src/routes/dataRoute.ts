@@ -31,13 +31,14 @@ router.post('/campaign', data.addCampaign);
 router.get('/campaign', data.getCampaign);
 router.post('/audience', data.addAudience);
 router.get('/audience', data.getAudience);
+router.get('/region', data.getRegion);
 router.get('/campaign_detail', data.getCampaignDetail);
 router.put('/campaign_detail', data.updateCampaignDetail);
 router.post('/campaign_ui', upload.fields([
-  { name: 'image', maxCount: 10 }
+  { name: 'image', maxCount: 10 }, { name: 'additional_file' }
 ]), data.addCampaignUI);
 router.put('/campaign_ui', upload.fields([
-  { name: 'image', maxCount: 10 }
+  { name: 'image', maxCount: 10 }, { name: 'additional_file' }
 ]), data.updateCampaignUI);
 router.get('/audience', data.getAudience);
 

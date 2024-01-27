@@ -16,6 +16,7 @@ dotenv.config({ path: './.env' });
 
 import db from './util/db';
 import log from './util/logger';
+import mailer from './util/mailer';
 
 AWS.config.update({
     region: 'us-east-1',
@@ -54,6 +55,8 @@ app.listen(PORT, async () => {
     await db.testConnection();
 });
 
+mailer.sendInviteEmail('Test Admin', 'gabe@pryzmweb.com', 'https://go.presspool.ai');
+
 // This is to charge bill to clients by every friday
 cron.schedule('0 0 * * 5', async () => { // minute, hour, day, month, day_of_week
     await cronFunction.billingFunction();
@@ -73,4 +76,3 @@ cron.schedule('*/2 * * * *', async () => {
 cron.schedule('0 0 * * *', async () => {
     await cronFunction.dailyAnalyticsUpdate();
 });
-  

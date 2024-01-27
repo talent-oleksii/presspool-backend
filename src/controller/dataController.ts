@@ -57,6 +57,18 @@ const getAudience: RequestHandler = async (_req: Request, res: Response) => {
     }
 };
 
+const getRegion: RequestHandler = async (_req: Request, res: Response) => {
+    log.info('get region ');
+
+    try {
+        const result = await db.query('select * from region order by create_time desc');
+        return res.status(StatusCodes.OK).json(result.rows);
+    } catch (error) {
+        log.error(`get region error: ${error}`);
+        return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json(error);
+    }
+};
+
 const getPricing: RequestHandler = async (_req: Request, res: Response) => {
     log.info('get pricing called');
     useAirTable('Pricing', 'get')?.then(data => {
@@ -134,6 +146,20 @@ const addCampaign: RequestHandler = async (req: Request, res: Response) => {
                 }
             }
         }
+        // add on region table
+        const region = req.body.currentRegion;
+        for (const item of region) {
+            const count = await db.query('SELECT * FROM region WHERE name = $1', [item]);
+
+            if (count.rows.length <= 0) {
+                try {
+                    await db.query('INSERT INTO region (name, email, create_time) VALUES ($1, $2, $3) ON CONFLICT (name) DO NOTHING', [item, req.body.email, time]);
+                } catch (error) {
+                    console.error('Error inserting into region:', error);
+                }
+            }
+        }
+
         await db.query('update campaign_ui set campaign_id = $1 where id = $2', [result.rows[0].id, req.body.uiId]);
 
         const retVal = await db.query('select *, campaign.id as id, campaign_ui.id as ui_id from campaign left join campaign_ui on campaign.id = campaign_ui.campaign_id where campaign.email = $1 and campaign.id = $2', [req.body.email, result.rows[0].id]);
@@ -353,16 +379,19 @@ const addCampaignUI: RequestHandler = async (req: Request, res: Response) => {
     try {
         if (!req.files || !(req.files as any)['image']) return res.status(StatusCodes.BAD_REQUEST).json({ message: 'No image provided!' });
         const image = (req.files as any)['image'][0].location;
+        let additionalFiles = (req.files as any)['additional_file'];
         const { email, headLine, body, cta, pageUrl, noNeedCheck } = req.body;
+        additionalFiles = additionalFiles ? additionalFiles.map((item: any) => item.location).join(',') : '';
 
-        const result = await db.query('insert into campaign_ui (email, headline, body, cta, image, page_url, no_need_check) values ($1, $2, $3, $4, $5, $6, $7) returning *', [
+        const result = await db.query('insert into campaign_ui (email, headline, body, cta, image, page_url, no_need_check, additional_files) values ($1, $2, $3, $4, $5, $6, $7, $8) returning *', [
             email,
             headLine,
             body,
             cta,
             image,
             pageUrl,
-            noNeedCheck
+            noNeedCheck,
+            additionalFiles
         ]);
 
         const data = result.rows[0];
@@ -381,22 +410,26 @@ const updateCampaignUI: RequestHandler = async (req: Request, res: Response) => 
     try {
         const image = (req.files as any)['image'] ? (req.files as any)['image'][0].location : '';
         const { id, headLine, body, cta, pageUrl, noNeedCheck } = req.body;
+        let additionalFiles = (req.files as any)['additional_file'];
+        additionalFiles = additionalFiles ? additionalFiles.map((item: any) => item.location).join(',') : '';
         let result: any = undefined;
         if (image.length > 2) {
-            result = await db.query('update campaign_ui set headline = $1, body = $2, cta = $3, page_url = $4, image = $5 where id = $6 returning *', [
+            result = await db.query('update campaign_ui set headline = $1, body = $2, cta = $3, page_url = $4, image = $5, additional_files = $6 where id = $7 returning *', [
                 headLine,
                 body,
                 cta,
                 pageUrl,
                 image,
+                additionalFiles,
                 id
             ]);
         } else {
-            result = await db.query('update campaign_ui set headline = $1, body = $2, cta = $3, page_url = $4 where id = $5 returning *', [
+            result = await db.query('update campaign_ui set headline = $1, body = $2, cta = $3, page_url = $4, additional_files = $5 where id = $6 returning *', [
                 headLine,
                 body,
                 cta,
                 pageUrl,
+                additionalFiles,
                 id
             ]);
         }
@@ -578,6 +611,7 @@ const data = {
     getPricing,
     addCampaign,
     getCampaign,
+    getRegion,
     getAudience,
     addAudience,
     addCampaignUI,
