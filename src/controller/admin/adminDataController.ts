@@ -138,9 +138,9 @@ const getClientDetail: RequestHandler = async (req: Request, res: Response) => {
 
     // get assign manager for this user
     const admins = await db.query("SELECT * from admin_user WHERE ',' || assigned_users || ',' LIKE $1", [`%,${id},%`]);
-    console.log('adm:', admins.rows);
 
-    const campaign = await db.query('select * from campaign where email = $1', [user.rows[0].email]);
+
+    const campaign = await db.query('select campaign.*, campaign_ui.additional_files from campaign LEFT JOIN campaign_ui ON campaign_ui.campaign_id = campaign.id where campaign.email = $1', [user.rows[0].email]);
 
     return res.status(StatusCodes.OK).json({
       userData: user.rows[0],
