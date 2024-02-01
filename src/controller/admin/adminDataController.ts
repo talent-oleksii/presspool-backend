@@ -154,6 +154,23 @@ const getClientDetail: RequestHandler = async (req: Request, res: Response) => {
   }
 };
 
+const getClientCampaign: RequestHandler = async (req: Request, res: Response) => {
+  try {
+    const { campaignId } = req.query;
+
+    const data = await db.query(`
+      SELECT campaign.name, campaign.click_count, campaign.unique_clicks, campaign.billed, campaign.email, campaign.state, user_list.company, user_list.name as user_name, user_list.avatar
+      FROM campaign LEFT JOIN user_list ON campaign.email = user_list.email
+      WHERE campaign.id = $1
+    `, [campaignId]);
+
+    return res.status(StatusCodes.OK).json(data.rows[0]);
+  } catch (error: any) {
+    console.log('get client campaign detail error:', error.message);
+    return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ message: error.message });
+  }
+};
+
 const updateClientDetail: RequestHandler = async (req: Request, res: Response) => {
   try {
     const { id, note } = req.body;
@@ -189,6 +206,7 @@ const adminData = {
   getDashboardCampaignDetail,
   getDashboardClient,
   getClientDetail,
+  getClientCampaign,
   updateClientDetail,
   updateDashboardClient,
 

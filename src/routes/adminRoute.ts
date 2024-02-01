@@ -28,6 +28,7 @@ router.put('/dashboard/client', adminData.updateDashboardClient);
 
 router.get('/client', adminData.getClientDetail);
 router.put('/client', adminData.updateClientDetail);
+router.get('/client-campaign', adminData.getClientCampaign);
 
 router.get('/data/campaign', campaign.getCampaign);
 
