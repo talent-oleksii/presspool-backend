@@ -83,7 +83,7 @@ const addCampaign: RequestHandler = async (req: Request, res: Response) => {
     log.info('add campaign called');
     try {
         const time = moment().valueOf();
-        const uiData = (await db.query('SELECT page_url FROM campaign_ui WHERE id = $1', [req.body.uiId])).rows[0];
+        const uiData = (await db.query('SELECT * FROM campaign_ui WHERE id = $1', [req.body.uiId])).rows[0];
         const uid = encodeURIComponent(CryptoJS.AES.encrypt(uiData.page_url, process.env.PRESSPOOL_AES_KEY as string).toString());
         // Get if user payment verified or not
         // const verifiedData = await db.query('SELECT verified from user_list where email = $1', [req.body.email]);
@@ -118,7 +118,7 @@ const addCampaign: RequestHandler = async (req: Request, res: Response) => {
         // const nameParts = streamData.data.name.split('/');
 
         // update campaign ui id
-        const result = await db.query('INSERT INTO campaign(email, name, url, demographic, audience, price, create_time, uid, card_id, state, stream_id) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) RETURNING *', [
+        const result = await db.query('INSERT INTO campaign(email, name, url, demographic, audience, price, create_time, uid, card_id, state, stream_id, region) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12) RETURNING *', [
             req.body.email,
             req.body.campaignName,
             req.body.url,
@@ -130,7 +130,8 @@ const addCampaign: RequestHandler = async (req: Request, res: Response) => {
             req.body.currentCard,
             campaignState,
             // nameParts[nameParts.length - 1],
-            ''
+            '',
+            JSON.stringify(req.body.currentRegion),
         ]);
 
         // add on audience table
@@ -148,6 +149,7 @@ const addCampaign: RequestHandler = async (req: Request, res: Response) => {
         }
         // add on region table
         const region = req.body.currentRegion;
+        console.log('dd:', region);
         for (const item of region) {
             const count = await db.query('SELECT * FROM region WHERE name = $1', [item]);
 
@@ -160,7 +162,7 @@ const addCampaign: RequestHandler = async (req: Request, res: Response) => {
             }
         }
 
-        await db.query('update campaign_ui set campaign_id = $1 where id = $2', [result.rows[0].id, req.body.uiId]);
+        // const uiData = await db.query('update campaign_ui set campaign_id = $1 where id = $2 RETURNING *', [result.rows[0].id, req.body.uiId]);
 
         const retVal = await db.query('select *, campaign.id as id, campaign_ui.id as ui_id from campaign left join campaign_ui on campaign.id = campaign_ui.campaign_id where campaign.email = $1 and campaign.id = $2', [req.body.email, result.rows[0].id]);
         const data = retVal.rows[0];
@@ -179,6 +181,8 @@ const addCampaign: RequestHandler = async (req: Request, res: Response) => {
                         userData.name,
                         req.body.currentPrice,
                         uid,
+                        uiData.image,
+                        uiData.additional_files.split(','),
                     );
                 } else {
                     await mailer.sendAdminNotificationEmail(admin.email, admin.name,
@@ -270,13 +274,29 @@ const getCampaignDetail: RequestHandler = async (req: Request, res: Response) =>
 const updateCampaignDetail: RequestHandler = async (req: Request, res: Response) => {
     log.info('update campaign detail called');
     try {
-        const { id, email, campaignName, url, currentTarget, currentAudience, currentPrice, type, state, currentCard } = req.body;
+        const { id, email, campaignName, url, currentTarget, currentAudience, currentRegion, currentPrice, type, state, currentCard } = req.body;
+
+        // add on region table
+        const time = moment().valueOf();
+        const region = currentRegion;
+        for (const item of region) {
+            const count = await db.query('SELECT * FROM region WHERE name = $1', [item]);
+
+            if (count.rows.length <= 0) {
+                try {
+                    await db.query('INSERT INTO region (name, email, create_time) VALUES ($1, $2, $3) ON CONFLICT (name) DO NOTHING', [item, email, time]);
+                } catch (error) {
+                    console.error('Error inserting into region:', error);
+                }
+            }
+        }
 
         if (type === 'state') {
             const campaign = await db.query('select card_id from campaign where id = $1', [id]);
             const cardId = campaign.rows[0].card_id;
             if ((cardId === null || cardId.length <= 0) && state === 'active') return res.status(StatusCodes.BAD_GATEWAY).json({ message: 'You must set up billing method to activate that campaign' });
             const campaignData = await db.query('update campaign set state = $1 where id = $2 returning *', [state, id]);
+            const uiData = (await db.query('SELECT * FROM campaign_ui WHERE campaign_id = $1', [id])).rows[0];
 
             if (state === 'active') {
                 //send email to client
@@ -292,6 +312,8 @@ const updateCampaignDetail: RequestHandler = async (req: Request, res: Response)
                             userData.name,
                             currentPrice,
                             campaignData.rows[0].uid,
+                            uiData.image,
+                            uiData.additional_files.split(','),
                         );
                     } else {
                         await mailer.sendAdminNotificationEmail(admin.email, admin.name,
@@ -311,7 +333,7 @@ const updateCampaignDetail: RequestHandler = async (req: Request, res: Response)
             return res.status(StatusCodes.OK).json('successfully updated!');
         } else {
             if (state) {
-                const campaignData = await db.query('update campaign set email = $1, name = $2, url = $3, demographic = $4, newsletter = $5, price = $6, card_id = $7, state = $8 where id = $9 returning *', [
+                const campaignData = await db.query('update campaign set email = $1, name = $2, url = $3, demographic = $4, newsletter = $5, price = $6, card_id = $7, state = $8, region = $9 where id = $10 returning *', [
                     email,
                     campaignName,
                     url,
@@ -320,10 +342,12 @@ const updateCampaignDetail: RequestHandler = async (req: Request, res: Response)
                     currentPrice,
                     currentCard,
                     state,
+                    JSON.stringify(currentRegion),
                     id,
                 ]);
                 if (state === 'active') {
                     //send email to client
+                    const uiData = (await db.query('SELECT * FROM campaign_ui WHERE campaign_id = $1', [id])).rows[0];
                     const userData = (await db.query('SELECT * from user_list where email = $1', [email])).rows[0];
                     await mailer.sendPublishEmail(email, userData.name, campaignName);
                     // send email to super admins
@@ -336,6 +360,8 @@ const updateCampaignDetail: RequestHandler = async (req: Request, res: Response)
                                 userData.name,
                                 currentPrice,
                                 campaignData.rows[0].uid,
+                                uiData.image,
+                                uiData.additional_files.split(','),
                             );
                         } else {
                             await mailer.sendAdminNotificationEmail(admin.email, admin.name,
@@ -349,7 +375,7 @@ const updateCampaignDetail: RequestHandler = async (req: Request, res: Response)
                     }
                 }
             } else {
-                await db.query('update campaign set email = $1, name = $2, url = $3, demographic = $4, newsletter = $5, price = $6, card_id = $7 where id = $8', [
+                await db.query('update campaign set email = $1, name = $2, url = $3, demographic = $4, newsletter = $5, price = $6, card_id = $7, region = $8 where id = $9', [
                     email,
                     campaignName,
                     url,
@@ -357,6 +383,7 @@ const updateCampaignDetail: RequestHandler = async (req: Request, res: Response)
                     currentAudience,
                     currentPrice,
                     currentCard,
+                    JSON.stringify(currentRegion),
                     id,
                 ]);
             }

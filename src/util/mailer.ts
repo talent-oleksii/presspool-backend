@@ -328,9 +328,14 @@ const sendAddTemmateEmail = async (ownerName: string, companyName: string, email
 };
 
 // (Math.round((req.body.currentPrice / ((4 * (1 + 0.10)) / (1 - 0.50))) * 4) - 2).toString(),
-const sendSuperAdminNotificationEmail = async (email: string, adminName: string, campaignName: string, company: string, userName: string, price: string, uid: string) => {
+const sendSuperAdminNotificationEmail = async (email: string, adminName: string, campaignName: string, company: string, userName: string, price: string, uid: string, heroImage: string, additional: Array<string>) => {
   console.log('send super admin notification emails');
   try {
+    let additionalFiles = '';
+    for (const fileName of additional) {
+      const parts = fileName.split('/');
+      additionalFiles += `<p><a href="${fileName}" download="${parts[parts.length - 1]}">${parts[parts.length - 1]}</a></p>`;
+    }
     const mailComposer = new MailComposer({
       from: 'Rica Mae-PressPool Support Team<rica@presspool.ai>',
       to: email,
@@ -342,6 +347,12 @@ const sendSuperAdminNotificationEmail = async (email: string, adminName: string,
       <p>Company: ${company}</p>
       <p>Our Tracking url: https://track.presspool.ai/${uid} </p>
       <p>Beehiiv Budget: ${(Math.round((Number(price) / ((4 * (1 + 0.10)) / (1 - 0.50))) * 4) - 2).toString()}</p>
+      <div>
+        <p>Hero Image:</p>
+        <p><a href="${heroImage}" download="hero-image.png">Hero Image</a></p>
+        <p>Additional Files:</p>
+        ${additionalFiles}
+      </div>
       <p>Thanks,</p>
       <p>Rica</p>
       `,
