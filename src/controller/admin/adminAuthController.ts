@@ -4,6 +4,7 @@ import { StatusCodes } from "http-status-codes/build/cjs/status-codes";
 
 import moment from 'moment';
 import db from "../../util/db";
+import mailer from "../../util/mailer";
 
 const secretKey = "presspool-admin-ai";
 const generateToken = (payload: any) => {
@@ -80,10 +81,72 @@ const signUp: RequestHandler = async (req: Request, res: Response) => {
   }
 };
 
+const generateRandomNumbers = (count: number) => {
+  const randomNumbers = [];
+  for (let i = 0; i < count; i++) {
+    const randomNumber = Math.floor(Math.random() * 10); // Adjust the range as needed
+    randomNumbers.push(randomNumber);
+  }
+
+  return randomNumbers.join('');
+};
+
+const sendPasswordEmail: RequestHandler = async (req: Request, res: Response) => {
+  try {
+    const { email } = req.body;
+
+    const isExist = await db.query('select * from admin_user where email = $1', [email]);
+
+    if (isExist.rows.length <= 0) {
+      return res.status(StatusCodes.BAD_REQUEST).json({ message: 'The email does not exist. Please Sign Up first' });
+    }
+
+    const random = generateRandomNumbers(5);
+    await db.query('UPDATE admin_user SET password_reset = $1 WHERE email = $2', [random, email]);
+    mailer.sendForgotPasswordEmail(email, random, isExist.rows[0].name);
+    return res.status(StatusCodes.OK).json({ message: 'Password Reset email sent to admin user!' });
+  } catch (error: any) {
+    console.log('error:', error);
+    return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ message: error.message });
+  }
+};
+
+const verifyPasswordEmail: RequestHandler = async (req: Request, res: Response) => {
+  try {
+    const { email, code } = req.body;
+
+    const isSame = await db.query('SELECT * from admin_user WHERE email = $1 AND password_reset = $2 ', [email, code]);
+    if (isSame.rows.length <= 0) {
+      return res.status(StatusCodes.BAD_REQUEST).json({ message: 'Code is not valid' });
+    }
+    return res.status(StatusCodes.OK).json('ok');
+  } catch (error: any) {
+    console.log('error:', error);
+    return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ message: error.message });
+  }
+};
+
+const changePassword: RequestHandler = async (req: Request, res: Response) => {
+  console.log('password reset called');
+  try {
+    const { email, password } = req.body;
+
+    await db.query('UPDATE admin_user SET password = $1 WHERE email = $2', [password, email]);
+
+    return res.status(StatusCodes.OK).json('ok');
+  } catch (error: any) {
+    console.log('error:', error);
+    return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ message: error.message });
+  }
+};
+
 const adminAuth = {
   authCheck,
   signIn,
   signUp,
+  sendPasswordEmail,
+  verifyPasswordEmail,
+  changePassword,
 };
 
 export default adminAuth;

@@ -11,6 +11,9 @@ const router: Router = express.Router();
 router.post('/auth/login', adminAuth.signIn);
 router.post('/auth/check', adminAuth.authCheck);
 router.post('/auth/sign-up', adminAuth.signUp);
+router.post('/auth/password', adminAuth.sendPasswordEmail);
+router.post('/auth/verify-password-email', adminAuth.verifyPasswordEmail);
+router.put('/auth/password', adminAuth.changePassword);
 
 router.get('/user/account-manager', adminUser.getAccountManagers);
 router.post('/user/account-manager', adminUser.assignAccountManager);
