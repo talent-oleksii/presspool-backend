@@ -56,13 +56,10 @@ const sendWelcomeEmail = async (emailAddress: string, userName: string, payload:
       html: `
       <p>Hello ${firstName}</p>
       <p>Welcome to Presspool!</p>
-      <p>We are glad to have you here.</p>
+      <pThrilled to have you at PressPool! Ready to get started? Your personalized campaign management platform awaits.</p>
       <a href='https://go.presspool.ai/verify/${payload.token}'
-      style="color: #6c63ff; text-decoration:underline;" target="_blank">Click here to verify your email</a>
-      <p>To kick things off (if you haven't already): </p>
-      <p style="margin-left: 25px;">1. Join Our Slack Channel - It's the hub for instant answers, our expert team's insights, and real-time updates.</p>
-      <p style="margin-left: 25px;">2. Bookmark Your Platform Dashboard - Your one-stop shop to create, track, and manage all campaigns.</p>
-      <p>Need assistance? Remember, we're just a message away.</p>
+      style="color: #6c63ff; text-decoration:underline;" target="_blank">Click here to activate your account</a>
+      <p>If you need any support or have questions, reach out anytime.</p>
       <p style="margin-top: 15px;">Warmly,<p>
       <p>Rica</p>
       `,
