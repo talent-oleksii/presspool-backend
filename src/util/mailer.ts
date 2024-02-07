@@ -433,16 +433,14 @@ const sendInviteAccountManagerEmail = async (email: string) => {
     const mailComposer = new MailComposer({
       from: 'Rica Mae-PressPool Support Team<rica@presspool.ai>',
       to: email,
-      subject: `Welcome Aboard, Let's Dive In 🚀`,
+      subject: `Get Set Up with PressPool!`,
       // text: content,
       html: `
-      <p style="margin-top: 15px;">Hi Welcome to Presspool! </p>
-      <p>Your dashboard is all set up - you're ready to track campaigns, manage clients, and grow our network</p>
-      <p>To drive in, simply use this link to set your password and unlock your Account Manager portal: <a href='https://go.presspool.ai/admin/signup'
-      style="color: #6c63ff; text-decoration:underline;" target="_blank">Presspool Admin Portal</a></p>
-      <p>Lets get started!</p>
-      <p>Cheers,</p>
-      <p>Rica</p>
+      <p style="margin-top: 15px;">Welcome to PressPool! You're invited to join us as an Account Manager.</p>
+      <p>Just click <a href='https://go.presspool.ai/admin/signup' style="color: #6c63ff; text-decoration:underline;" target="_blank">this link</a> to begin and access your new dashboard where you'll track campaigns and connect with clients.</p>
+      <p>Excited to have you on board. Let's get going! </p>
+      <p style="margin:0px">Cheers,</p>
+      <p style="margin:0px">Rica</p>
       `,
       // attachments: fileAttachments,
       textEncoding: 'base64',
