@@ -427,6 +427,38 @@ const sendInviteEmail = async (adminName: string, email: string, link: string) =
   }
 };
 
+const sendInviteAccountManagerEmail = async (email: string) => {
+  console.log('send invite account maanger emails');
+  try {
+    const mailComposer = new MailComposer({
+      from: 'Rica Mae-PressPool Support Team<rica@presspool.ai>',
+      to: email,
+      subject: `Welcome Aboard, Let's Dive In 🚀`,
+      // text: content,
+      html: `
+      <p style="margin-top: 15px;">Hi Welcome to Presspool! </p>
+      <p>Your dashboard is all set up - you're ready to track campaigns, manage clients, and grow our network</p>
+      <p>To drive in, simply use this link to set your password and unlock your Account Manager portal: <a href='https://go.presspool.ai/admin/signup'
+      style="color: #6c63ff; text-decoration:underline;" target="_blank">Presspool Admin Portal</a></p>
+      <p>Lets get started!</p>
+      <p>Cheers,</p>
+      <p>Rica</p>
+      `,
+      // attachments: fileAttachments,
+      textEncoding: 'base64',
+      headers: [{
+        key: 'X-Application-Developer', value: 'Oleksii Karavanov'
+      }, {
+        key: 'X-Application-Version', value: 'v1.0.0'
+      }]
+    });
+
+    await sendEmail(mailComposer);
+  } catch (error) {
+    log.error(`send invite email error: ${error}`);
+  }
+};
+
 const mailer = {
   sendWelcomeEmail,
   sendForgotPasswordEmail,
@@ -441,6 +473,7 @@ const mailer = {
   sendSuperAdminNotificationEmail,
 
   sendInviteEmail,
+  sendInviteAccountManagerEmail,
 }
 
 export default mailer;

@@ -200,6 +200,18 @@ const inviteClient: RequestHandler = async (req: Request, res: Response) => {
   }
 };
 
+const inviteAccountManager: RequestHandler = async (req: Request, res: Response) => {
+  try {
+    const { emails } = req.body;
+    await mailer.sendInviteAccountManagerEmail(emails);
+
+    return res.status(StatusCodes.OK).json('sent!');
+  } catch (error: any) {
+    console.log('invite account manager error: ', error.message);
+    return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ message: error.message });
+  }
+};
+
 const adminData = {
   getDashboardOverviewData,
   getDashboardCampaignList,
@@ -211,6 +223,7 @@ const adminData = {
   updateDashboardClient,
 
   inviteClient,
+  inviteAccountManager,
 };
 
 export default adminData;

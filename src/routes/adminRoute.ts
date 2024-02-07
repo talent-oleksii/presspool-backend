@@ -36,5 +36,6 @@ router.get('/client-campaign', adminData.getClientCampaign);
 router.get('/data/campaign', campaign.getCampaign);
 
 router.post('/invite', adminData.inviteClient);
+router.post('/invite-am', adminData.inviteAccountManager);
 
 export default router;
