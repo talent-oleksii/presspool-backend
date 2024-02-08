@@ -185,13 +185,15 @@ const addCampaign: RequestHandler = async (req: Request, res: Response) => {
                         uiData.additional_files.split(','),
                     );
                 } else {
-                    await mailer.sendAdminNotificationEmail(admin.email, admin.name,
-                        req.body.campaignName,
-                        userData.company,
-                        userData.name,
-                        req.body.currentPrice,
-                        uid,
-                    );
+                    if (admin.assigned_users.includes(userData.id)) {
+                        await mailer.sendAdminNotificationEmail(admin.email, admin.name,
+                            req.body.campaignName,
+                            userData.company,
+                            userData.name,
+                            req.body.currentPrice,
+                            uid,
+                        );
+                    }
                 }
             }
         }
@@ -316,13 +318,15 @@ const updateCampaignDetail: RequestHandler = async (req: Request, res: Response)
                             uiData.additional_files.split(','),
                         );
                     } else {
-                        await mailer.sendAdminNotificationEmail(admin.email, admin.name,
-                            campaignName,
-                            userData.company,
-                            userData.name,
-                            currentPrice,
-                            campaignData.rows[0].uid,
-                        );
+                        if (admin.assigned_users.includes(userData.id)) {
+                            await mailer.sendAdminNotificationEmail(admin.email, admin.name,
+                                campaignName,
+                                userData.company,
+                                userData.name,
+                                currentPrice,
+                                campaignData.rows[0].uid,
+                            );
+                        }
                     }
                 }
             }
@@ -351,7 +355,7 @@ const updateCampaignDetail: RequestHandler = async (req: Request, res: Response)
                     const userData = (await db.query('SELECT * from user_list where email = $1', [email])).rows[0];
                     await mailer.sendPublishEmail(email, userData.name, campaignName);
                     // send email to super admins
-                    const admins = await db.query('SELECT email, name, role FROM admin_user');
+                    const admins = await db.query('SELECT email, name, role, assigned_users FROM admin_user');
                     for (const admin of admins.rows) {
                         if (admin.role === 'super_admin') {
                             await mailer.sendSuperAdminNotificationEmail(admin.email, admin.name,
@@ -364,13 +368,15 @@ const updateCampaignDetail: RequestHandler = async (req: Request, res: Response)
                                 uiData.additional_files.split(','),
                             );
                         } else {
-                            await mailer.sendAdminNotificationEmail(admin.email, admin.name,
-                                campaignName,
-                                userData.company,
-                                userData.name,
-                                currentPrice,
-                                campaignData.rows[0].uid,
-                            );
+                            if (admin.assigned_users.includes(userData.id)) {
+                                await mailer.sendAdminNotificationEmail(admin.email, admin.name,
+                                    campaignName,
+                                    userData.company,
+                                    userData.name,
+                                    currentPrice,
+                                    campaignData.rows[0].uid,
+                                );
+                            }
                         }
                     }
                 }
