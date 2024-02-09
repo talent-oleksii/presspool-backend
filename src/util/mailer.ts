@@ -51,17 +51,15 @@ const sendWelcomeEmail = async (emailAddress: string, userName: string, payload:
     const mailComposer = new MailComposer({
       from: 'Rica Mae-PressPool Support Team<rica@presspool.ai>',
       to: emailAddress,
-      subject: `Welcome Aboard, ${firstName}! Let's Drive In 🚀`,
+      subject: `Welcome Aboard, ${firstName}! Let's Dive In 🚀`,
       // text: content,
       html: `
       <p>Hello ${firstName}</p>
-      <p>Welcome to Presspool!</p>
-      <pThrilled to have you at PressPool! Ready to get started? Your personalized campaign management platform awaits.</p>
-      <a href='https://go.presspool.ai/verify/${payload.token}'
-      style="color: #6c63ff; text-decoration:underline;" target="_blank">Click here to activate your account</a>
-      <p>If you need any support or have questions, reach out anytime.</p>
-      <p style="margin-top: 15px;">Warmly,<p>
-      <p>Rica</p>
+      <p>Thrilled to have you at PressPool! Ready to get started? Your personalized campaign management platform awaits.</p>
+      <p>Click here to activate your account: <a href='https://go.presspool.ai/verify/${payload.token}' style="color: #6c63ff; text-decoration:underline;" target="_blank">Access your Dashboard link.</a></p>
+      <p>If you need any support or have questions, join our <a href='https://join.slack.com/t/presspoolsupport/shared_invite/zt-1ytywzzld-974gUfTB8zCYlP4~f5XT1Q'>Slack Support here</a>.</p>
+      <p style="margin:0px">Warmly,<p>
+      <p style="margin:0px">Rica</p>
       `,
       // attachments: fileAttachments,
       textEncoding: 'base64',
