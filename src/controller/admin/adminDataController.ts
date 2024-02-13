@@ -216,6 +216,9 @@ const addGuide: RequestHandler = async (req: Request, res: Response) => {
   try {
     const { title, description, type, fileType } = req.body;
     console.log('ttt:', title, description, type, fileType);
+
+    const data = await db.query('');
+    return res.status(StatusCodes.OK).json(data);
   } catch (error: any) {
     console.log('add guide error:', error.message);
     return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ message: error.message });
