@@ -212,6 +212,16 @@ const inviteAccountManager: RequestHandler = async (req: Request, res: Response)
   }
 };
 
+const addGuide: RequestHandler = async (req: Request, res: Response) => {
+  try {
+    const { title, description, type, fileType } = req.body;
+    console.log('ttt:', title, description, type, fileType);
+  } catch (error: any) {
+    console.log('add guide error:', error.message);
+    return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ message: error.message });
+  }
+};
+
 const adminData = {
   getDashboardOverviewData,
   getDashboardCampaignList,
@@ -224,6 +234,8 @@ const adminData = {
 
   inviteClient,
   inviteAccountManager,
+
+  addGuide,
 };
 
 export default adminData;

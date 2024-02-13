@@ -1,10 +1,32 @@
 import express, { Router } from 'express';
+import multer from 'multer';
+import multerS3 from 'multer-s3';
+import { S3 } from '@aws-sdk/client-s3';
+
 import campaign from '../controller/admin/campaign';
 import adminAuth from '../controller/admin/adminAuthController';
 import adminData from '../controller/admin/adminDataController';
 import adminUser from '../controller/admin/adminUserController';
 
 const router: Router = express.Router();
+
+const s3 = new S3({
+  region: 'us-east-1',
+  credentials: {
+    accessKeyId: process.env.AWS_ACCESS_KEY as string,
+    secretAccessKey: process.env.AWS_SECRET_KEY as string,
+  }
+});
+const upload = multer({
+  storage: multerS3({
+    s3,
+    acl: 'public-read',
+    bucket: 'presspool-upload-images',
+    key: function (_req: any, file: any, cb: any) {
+      cb(null, file.originalname);
+    }
+  })
+});
 
 // Define routes
 
@@ -32,6 +54,10 @@ router.put('/dashboard/client', adminData.updateDashboardClient);
 router.get('/client', adminData.getClientDetail);
 router.put('/client', adminData.updateClientDetail);
 router.get('/client-campaign', adminData.getClientCampaign);
+
+router.post('/guide', upload.fields([
+  { name: 'attatch', maxCount: 1 }, { name: 'thumbnail', maxCount: 1 }
+]), adminData.addGuide);
 
 router.get('/data/campaign', campaign.getCampaign);
 

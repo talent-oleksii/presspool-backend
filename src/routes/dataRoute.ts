@@ -22,7 +22,7 @@ const upload = multer({
       cb(null, file.originalname);
     }
   })
-})
+});
 
 // Define routes
 router.get('/newsletter', data.getNewsletter);
