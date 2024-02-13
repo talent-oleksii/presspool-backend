@@ -54,10 +54,10 @@ const sendWelcomeEmail = async (emailAddress: string, userName: string, payload:
       subject: `Welcome Aboard, ${firstName}! Let's Dive In 🚀`,
       // text: content,
       html: `
-      <p>Hello ${firstName}</p>
-      <p>Thrilled to have you at PressPool! Ready to get started? Your personalized campaign management platform awaits.</p>
-      <p>Click here to activate your account: <a href='https://go.presspool.ai/verify/${payload.token}' style="color: #6c63ff; text-decoration:underline;" target="_blank">Access your Dashboard link.</a></p>
-      <p>If you need any support or have questions, join our <a href='https://join.slack.com/t/presspoolsupport/shared_invite/zt-1ytywzzld-974gUfTB8zCYlP4~f5XT1Q'>Slack Support here</a>.</p>
+      <p>Hey ${firstName}</p>
+      <p>We are thrilled to have you at PressPool! Ready to get started? Your personalized campaign management platform awaits.</p>
+      <p>Click here to activate your account: <a href='https://go.presspool.ai/verify/${payload.token}' style="color: #6c63ff; text-decoration:underline;" target="_blank">Access your Dashboard link</a>.</p>
+      <p>If you need any support or have questions, join our <a href='https://join.slack.com/t/presspoolsupport/shared_invite/zt-1ytywzzld-974gUfTB8zCYlP4~f5XT1Q'>slack support here</a>.</p>
       <p style="margin:0px">Warmly,<p>
       <p style="margin:0px">Rica</p>
       `,
@@ -80,14 +80,14 @@ const sendForgotPasswordEmail = async (emailAddress: string, code: string, userN
   const mailComposer = new MailComposer({
     from: 'Rica Mae-PressPool Support Team<rica@presspool.ai>',
     to: emailAddress,
-    subject: 'Important: Reset your password',
+    subject: 'Important: Your password reset code',
     // text: content,
     html: `
     <p>Hey ${userName}</p>
     <p>Here is your code to reset your password:</p>
     <p>${code}</p>
-    <p style="margin-top: 30px;">Best,</p>
-    <p>Rica</p>
+    <p style="margin:0px">Best,</p>
+    <p style="margin:0px">Rica</p>
     `,
     // attachments: fileAttachments,
     textEncoding: 'base64',
@@ -110,34 +110,23 @@ const sendTutorialEmail = async (emailAddress: string, userName: string) => {
       subject: `Hey ${firstName}, ready to start your campaign?`,
       // text: content,
       html: `
-      <div>Hello ${firstName}, <br/>
-
-      Ready to kickstart your campaign on the Presspool portal? Whether you're aiming to boost brand visibility, engage with your audience, or announce a groundbreaking product, Presspool provides the ideal platform to make your campaign a success. <br/>
+      <p>Hey ${firstName}, </p>
+      <p>Ready to kickstart your campaign on the Presspool platform? We’re ready to refer your solution to a highly targeted and engaged audience, all we need is your first campaign submission.</p>
+      <p>Here’s how to get the ball rolling:</p>
+      <p style="font-weight: 700; margin-top:20px;">Step 1: Login to Your Presspool Account</p>
+      <p>Visit <a href="https://go.presspool.ai" target="_blank"">Presspool Portal URL</a> and log in to your account using your credentials.</p>
+      <p style="font-weight: 700; margin-top: 10px;">Step 2: Click the ‘Create New Campaign’ Button</p>
+      <p style="margin:0px">Once logged in, locate and click the "Create New Campaign" button on the top left of your screen. This will prompt you to fill in essential details such as the campaign title, copy, budget, and target audience.</p>
       
-      <div style="font-weight: 700; margin-top:20px;">Step 1: Login to Your Presspool Account</div>
-      Visit <a href="https://go.presspool.ai" target="_blank"">Presspool Portal URL</a> and log in to your account using your credentials. <br/>
+      <p style="font-weight: 700; margin-top: 10px;">Step 3: Get On-Demand Expert Support</p>
+      <p>Second guessing your campaign details? Get expert content support from our VP of Content Ray by booking a <a href="https://calendly.com/ray-content-support/content-consultation" target="_blank">complimentary consultation here</a> Our goal is for you to be 100% comfortable and confident in your campaign before launch.</p>
+      <p style="font-weight: 700; margin-top: 10px;">Step 4: Add Billing, Review and Confirm</p>
+      <p>Add your billing information via our secure Stripe integration and then take a moment to review all the campaign information you entered. Once satisfied, click on the "Submit" button to initiate your campaign. Our software will then immediately begin sourcing the highest quality audience while you sit back and watch the warm leads roll in!</p>
+            
+      <p>We’re so excited to get you started and to grow together! We value win-win partnerships and can’t wait to grow with you. If you need anything else, reach out directly or be sure to <a href="https://join.slack.com/t/presspoolsupport/shared_invite/zt-1ytywzzld-974gUfTB8zCYlP4~f5XT1Q" target="_blank">join us on Slack</a> for 1:1 support.</p>
       
-      <div style="font-weight: 700; margin-top: 10px;">Step 2: Navigate to the Campaign Section</div>
-      Once logged in, locate the "Campaigns" section on the dashboard. This is where you can initiate and manage all your campaigns. <br/>
-      
-      <div style="font-weight: 700; margin-top: 10px;">Step 3: Create a New Campaign</div>
-      Click on the "Create New Campaign" button. This will prompt you to fill in essential details such as campaign title, objective, and target audience. Make sure to provide clear and concise information to attract the right attention.<br/>
-      
-      <div style="font-weight: 700; margin-top: 10px;">Step 4: Craft Your Campaign Content</div>
-      Compose a compelling campaign message and attach your campaign hero image. We recommend a high resolution logo or an image that encapsulates your brand to make your campaign visually appealing.<br/>
-      
-      <div style="font-weight: 700; margin-top: 10px;">Step 5: Set Campaign Parameters</div>
-      Specify the duration, geographical reach, and other relevant parameters for your campaign. This ensures that your message reaches the intended audience at the right time and place.<br/>
-      
-      <div style="font-weight: 700; margin-top: 10px;">Step 6: Review and Confirm</div>
-      Take a moment to review all the information you've entered. Once satisfied, click on the "Submit" button to initiate your campaign.
-      
-      
-      <div style="margin-top:30px;">If you have any further questions, we’re here to assist you. </div>
-      
-      <div style="margin-top:15px;">Warmly, </div>
-      Rica
-      </div>
+      <p style="margin: 0px">Warmly,</p>
+      <p style="margin: 0px">Rica</p>
       `,
       // attachments: fileAttachments,
       textEncoding: 'base64',
@@ -160,14 +149,14 @@ const sendPublishEmail = async (emailAddress: string, userName: string, campaign
     const mailComposer = new MailComposer({
       from: 'Rica Mae-PressPool Support Team<rica@presspool.ai>',
       to: emailAddress,
-      subject: `Your Campaign "${campaignName}" is Under Review`,
+      subject: `Congrats! Your Campaign "${campaignName}" has been submitted!`,
       // text: content,
       html: `
       <p>Hi ${userName},</p>
-      <p style="margin-top: 15px;">Just a heads-up: your campaign "${campaignName}" is now in review. We'll give it a quick check and get it live within 24-48 hours.</p>
-      <p style="margin-top: 15px;">Got any questions or need to make changes? Just hit reply or head to your dashboard.</p>
-      <p style="margin-top: 15px;">We'll be in touch soon!</p>
-      <p style="margin-top: 15px;">Cheers,</p>
+      <p>Congratulations! Your campaign "${campaignName}"has successfully been submitted and is now in review. Our system is currently reviewing the details and matching it with the highest quality audience.</p>
+      <p>You should start to see traction within the next 2-5 business days, so keep an eye on your dashboard to track clicks and campaign performance in real-time.</p>
+      <p>We’ll be sure to update you with anything else either via email or Slack.</p>
+      <p>Cheers,</p>
       <p>Rica</p>
       `,
       // attachments: fileAttachments,
@@ -194,17 +183,18 @@ const sendBudgetIncreaseEmail = async (emailAddress: string, campaignName: strin
       // text: content,
       html: `
       <p>Hey ${userName}</p>
-      <p style="margin-top: 15px">Your campaign on Presspool has reached its allocated budget limit and is now complete</p>
-      <p style="margin-top: 30px">Campaign Name: ${campaignName}</p>
-      <p>Budget: $${budget}</p>
-      <p>Status: Budget consumed</p>
-      <p style="margin-top: 30px;">If you have additional messages or would like to explore further opportunities, please don't hesitate to get in touch. Our team is available to discuss options for extending your campaign or planning future initiatives.</p>
-      <p style="margin-top: 15px;">In the meantime, if you wish to increase the budget of your campaign,simply:</p>
-      <p style="margin-left: 20px;">1. <a href="https://go.presspool.ai/campaign/all">Go to your campaigns</a></p>
-      <p style="margin-left: 20px;">2. Edit your campaign’s budget by increasing the amount; and</p>
-      <p style="margin-left: 20px;">3. Click submit to save</p>
-      <p style="margin-top: 30px;">Warmly,</p>
-      <p>Rica</p>
+      <p>Your campaign has reached its allocated budget limit and is now complete.</p>
+      <p><span style="font-weight:700">Campaign Name</span>: ${campaignName}</p>
+      <p><span style="font-weight:700">Budget</span>: $${budget}</p>
+      <p><span style="font-weight:700">Status</span>: Budget consumed</p>
+      <p>Our team is ready and available to discuss options for extending your campaign or planning future initiatives. Please reach out here or Slack and we can schedule a call to review and discuss.</p>
+      <p>In the meantime, if you wish to increase the budget of your campaign, simply:</p>
+      <p style="font-weight:700; margin-left: 20px; margin-top:0px; margin-bottom: 0px;">1. Go to your ‘Campaigns’ tab</a></p>
+      <p style="font-weight:700; margin-left: 20px; margin-top:0px; margin-bottom: 0px;">2. Edit your campaign’s budget by increasing the amount</p>
+      <p style="font-weight:700; margin-left: 20px; margin-top:0px; margin-bottom: 0px;">3. Click submit to save</p>
+      <p>You can also easily create a new campaign using the same process you used to create this campaign!</p>
+      <p style="margin: 0px">Warmly,</p>
+      <p style="margin: 0px">Rica</p>
       `,
       // attachments: fileAttachments,
       textEncoding: 'base64',
@@ -230,19 +220,18 @@ const sendBudgetReachEmail = async (emailAddress: string, campaignName: string, 
     const mailComposer = new MailComposer({
       from: 'Rica Mae-PressPool Support Team<rica@presspool.ai>',
       to: emailAddress,
-      subject: `Your Campaign ${campaignName} Budget is ${percentage}% Consumed`,
+      subject: `Your Campaign ${campaignName} Budget is ${percentage}% Utilized`,
       // text: content,
       html: `
       <p>Hey ${userName},</p>
-      <p style="margin-top: 15px;">We wanted to bring to your attention that your current campaign on Presspool has reached the halfway point of its allocated budget. As of now, ${percentage} of your budget has been consumed.</p>
-      <p style="margin-top: 15px;">Keeping you informed about your campaign's progress is essential to ensure its success.</p>
-      <p>If you wish to incrase your budget, simply:</p>
-      <p style="margin-left: 20px;">1. <a href="https://go.presspool.ai/campaign/all">Go to your campaigns</a></p>
-      <p style="margin-left: 20px;">2. Edit your campaign’s budget by increasing the amount; and</p>
-      <p style="margin-left: 20px;">3. Click submit to save.</p>
-      <p style="margin-top: 15px;">If you have any questions or would like to discuss optimizing your remaining budget for maximum impact, please feel free to reach out!</p>
-      <p style="margin-top: 20px;">Warmly,</p>
-      <p>Rica</p>
+      <p>We wanted to bring to your attention that your current campaign on Presspool has reached ${percentage}% of your allotted budget.</p>
+      <p>Keeping you informed about your campaign's progress is essential to ensure its success. If you wish to increase your budget, simply:</p>
+      <p style="font-weight:700; margin-left: 20px; margin-top:0px; margin-bottom: 0px;">1. <a href="https://go.presspool.ai/campaign/all">Go to your campaigns</a></p>
+      <p style="font-weight:700; margin-left: 20px; margin-top:0px; margin-bottom: 0px;">2. Edit your campaign’s budget by increasing the amount; and</p>
+      <p style="font-weight:700; margin-left: 20px; margin-top:0px; margin-bottom: 0px;">3. Click submit to save.</p>
+      <p>If you have any questions or would like to discuss optimizing your remaining budget for maximum impact, please feel free to reach out!</p>
+      <p style="margin:0px">Warmly,</p>
+      <p style="margin:0px">Rica</p>
       `,
       // attachments: fileAttachments,
       textEncoding: 'base64',
@@ -268,16 +257,16 @@ const sendPurchaseEmail = async (emailAddress: string, userName: string, descrip
       // text: content,
       html: `
       <p>Hey ${userName}</p>
-      <p style="margin-top: 15px;">Happy Friday! We hope this message finds you well. We're excited to share that our latest weekly report is now available.</p> 
-      <p style="margin-top: 15px; font-weight: 700;">How to Access the Report:</p>
-      <p>Simply go to your dashboard to review your live reporting data: <a href="https://go.presspool.ai/campaign/all" target="_blank">To your dashboard</a></p>
-      <p style="margin-top: 15px; font-weight: 700;">Your Feedback Matters:</p>
+      <p>Happy Friday! We hope this message finds you well. We're excited to share that our latest weekly report is now available.</p> 
+      <p style="margin-top: 15px; font-weight: 700; margin-bottom: 0px;">How to Access the Report:</p>
+      <p>Simply go to your dashboard to review your live reporting data: <a href="https://go.presspool.ai" target="_blank">To your dashboard</a></p>
+      <p style="margin-top: 15px; font-weight: 700; margin-botom: 0px;">Your Feedback Matters:</p>
       <p>We value your feedback! If you have any questions, suggestions, or topics you'd like us to cover in future reports, please don't hesitate to reach out or <a href="https://forms.gle/XYZbSEzVwUf4dAam8" target="_blank">submit here.</a></p>
-      <p style="margin-top: 15px;">We appreciate your continued partnership and look forward to keeping you informed.</p>
-      <p style="margin-top: 15px;">Note: We continually optimize your campaigns as our system continues to learn from the campaign data, so expect better and better results as time goes on.</p>
-      <p style="margin-top: 15px;">Have a fantastic weekend!</p>
-      <p style="margin-top: 15px;">Warmly,</p>
-      <p>Rica</p>
+      <p>We appreciate your continued partnership and look forward to keeping you informed.</p>
+      <p>Note: We continually optimize your campaigns as our system continues to learn from the campaign data, so expect better and better results as time goes on.</p>
+      <p>Have a fantastic weekend!</p>
+      <p style="margin:0px;">Warmly,</p>
+      <p style="margin:0px;">Rica</p>
       `,
       // attachments: fileAttachments,
       textEncoding: 'base64',

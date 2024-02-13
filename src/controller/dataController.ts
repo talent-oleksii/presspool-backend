@@ -557,20 +557,20 @@ const clicked: RequestHandler = async (req: Request, res: Response) => {
 };
 
 const checkCampaignState = (email: string, campaignName: string, totalPrice: number, spent: number, cpc: number, userName: string) => {
-    const value50 = totalPrice / 2;
-    const value75 = totalPrice * 75 / 100;
-    const value100 = totalPrice;
+    // const value50 = totalPrice / 2;
+    const value80 = totalPrice * 80 / 100;
+    // const value100 = totalPrice;
 
     // check if budget reached 50%
-    if (value50 - cpc / 2 <= spent && spent <= value50 + cpc / 2) {
-        mailer.sendBudgetReachEmail(email, campaignName, '50%', userName);
+    if (value80 - cpc / 2 <= spent && spent <= value80 + cpc / 2) {
+        mailer.sendBudgetReachEmail(email, campaignName, '80', userName);
     }
-    if (value75 - cpc / 2 <= spent && spent <= value75 + cpc / 2) {
-        mailer.sendBudgetReachEmail(email, campaignName, '75%', userName);
-    }
-    if (value100 <= spent) {
-        mailer.sendBudgetReachEmail(email, campaignName, '100%', userName);
-    }
+    // if (value75 - cpc / 2 <= spent && spent <= value75 + cpc / 2) {
+    //     mailer.sendBudgetReachEmail(email, campaignName, '75%', userName);
+    // }
+    // if (value100 <= spent) {
+    //     mailer.sendBudgetReachEmail(email, campaignName, '100%', userName);
+    // }
 };
 
 const getUnbilled: RequestHandler = async (req: Request, res: Response) => {
