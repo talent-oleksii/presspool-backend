@@ -162,7 +162,7 @@ const addCampaign: RequestHandler = async (req: Request, res: Response) => {
             }
         }
 
-        // const uiData = await db.query('update campaign_ui set campaign_id = $1 where id = $2 RETURNING *', [result.rows[0].id, req.body.uiId]);
+        await db.query('update campaign_ui set campaign_id = $1 where id = $2 RETURNING *', [result.rows[0].id, req.body.uiId]);
 
         const retVal = await db.query('select *, campaign.id as id, campaign_ui.id as ui_id from campaign left join campaign_ui on campaign.id = campaign_ui.campaign_id where campaign.email = $1 and campaign.id = $2', [req.body.email, result.rows[0].id]);
         const data = retVal.rows[0];
@@ -185,7 +185,7 @@ const addCampaign: RequestHandler = async (req: Request, res: Response) => {
                         uiData.additional_files.split(','),
                     );
                 } else {
-                    if (admin.assigned_users.includes(userData.id)) {
+                    if (admin?.assigned_users?.includes(userData.id)) {
                         await mailer.sendAdminNotificationEmail(admin.email, admin.name,
                             req.body.campaignName,
                             userData.company,
@@ -318,7 +318,7 @@ const updateCampaignDetail: RequestHandler = async (req: Request, res: Response)
                             uiData.additional_files.split(','),
                         );
                     } else {
-                        if (admin.assigned_users.includes(userData.id)) {
+                        if (admin?.assigned_users?.includes(userData.id)) {
                             await mailer.sendAdminNotificationEmail(admin.email, admin.name,
                                 campaignName,
                                 userData.company,
@@ -368,7 +368,7 @@ const updateCampaignDetail: RequestHandler = async (req: Request, res: Response)
                                 uiData.additional_files.split(','),
                             );
                         } else {
-                            if (admin.assigned_users.includes(userData.id)) {
+                            if (admin?.assigned_users?.includes(userData.id)) {
                                 await mailer.sendAdminNotificationEmail(admin.email, admin.name,
                                     campaignName,
                                     userData.company,
