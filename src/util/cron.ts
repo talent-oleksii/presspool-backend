@@ -169,7 +169,7 @@ const runRealtimeReport = async (client: BetaAnalyticsDataClient, propertyId: st
 };
 
 const getCPC = (budget: number) => {
-  const beehiivBudget = Math.round((budget / ((4 * (1 + 0.10)) / (1 - 0.50))) * 4) - 2;
+  const beehiivBudget = Math.round((budget / ((4 * (1 + 0.10)) / (1 - 0.60))) * 4) - 2;
   return budget / (beehiivBudget / 4);
 };
 
@@ -215,7 +215,7 @@ const scrapeFunction = async () => {
   }
 };
 
-async function dailyAnalyticsUpdate()  {
+async function dailyAnalyticsUpdate() {
   console.log('Running daily analytics update...');
 
   // Calculate yesterday's date for the report
@@ -245,18 +245,18 @@ async function dailyAnalyticsUpdate()  {
       const activeUsers = item.metricValues?.[2]?.value ? Number(item.metricValues[2].value) : 0;
       const newUsers = item.metricValues?.[3]?.value ? Number(item.metricValues[3].value) : 0;
       const screenPageViews = item.metricValues?.[4]?.value ? Number(item.metricValues[4].value) : 0;
-    
+
       console.log('Updating database for URL:', pageUrl, totalUsers, sessions, activeUsers, newUsers, screenPageViews);
-      
-     
+
+
     }
-    
-      
-   
-    
-      
-    
-    
+
+
+
+
+
+
+
   } catch (error) {
     console.error('Error in daily analytics update:', error);
   }

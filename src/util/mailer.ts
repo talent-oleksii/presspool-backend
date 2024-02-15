@@ -330,7 +330,7 @@ const sendSuperAdminNotificationEmail = async (email: string, adminName: string,
       <p>${userName}'s "${campaignName}" has been submitted for review. Expected turnaround is 24-48 hours. Please be ready for any client queries or changes.</p>
       <p>Company: ${company}</p>
       <p>Our Tracking url: https://track.presspool.ai/${uid} </p>
-      <p>Beehiiv Budget: ${(Math.round((Number(price) / ((4 * (1 + 0.10)) / (1 - 0.50))) * 4) - 2).toString()}</p>
+      <p>Beehiiv Budget: ${(Math.round((Number(price) / ((4 * (1 + 0.10)) / (1 - 0.60))) * 4) - 2).toString()}</p>
       <div>
         <p>Hero Image:</p>
         <p><a href="${heroImage}" download="hero-image.png">Hero Image</a></p>
