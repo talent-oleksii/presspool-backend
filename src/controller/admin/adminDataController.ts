@@ -3,6 +3,7 @@ import { RequestHandler, Request, Response } from 'express';
 import db from '../../util/db';
 import { StatusCodes } from 'http-status-codes';
 import mailer from '../../util/mailer';
+import moment from 'moment';
 
 const getDashboardOverviewData: RequestHandler = async (req: Request, res: Response) => {
   console.log('get dashboard overview data called');
@@ -214,13 +215,42 @@ const inviteAccountManager: RequestHandler = async (req: Request, res: Response)
 
 const addGuide: RequestHandler = async (req: Request, res: Response) => {
   try {
-    const { title, description, type, fileType } = req.body;
-    console.log('ttt:', title, description, type, fileType);
+    const { title, description, type, fileType, link } = req.body;
+    if (!req.files || !(req.files as any)['thumbnail']) return res.status(StatusCodes.BAD_REQUEST).json({ message: 'No image or file provided!' });
+    const attach = (req.files as any)['attach'] ? (req.files as any)['attach'][0].location : link;
+    const thumbnail = (req.files as any)['thumbnail'][0].location;
+    const now = moment().valueOf().toString();
 
-    const data = await db.query('');
-    return res.status(StatusCodes.OK).json(data);
+    const newData = await db.query('INSERT INTO guide (create_time, title, description, type, attach, thumbnail, file_type) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *',
+      [now, title, description, type, attach, thumbnail, fileType]
+    );
+
+    return res.status(StatusCodes.OK).json(newData.rows[0]);
   } catch (error: any) {
     console.log('add guide error:', error.message);
+    return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ message: error.message });
+  }
+};
+
+const getGuide: RequestHandler = async (_req: Request, res: Response) => {
+  try {
+    const data = await db.query('SELECT * FROM guide');
+
+    return res.status(StatusCodes.OK).json(data.rows);
+  } catch (error: any) {
+    console.log('get guide error:', error.message);
+    return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ message: error.message });
+  }
+};
+
+const deleteGuide: RequestHandler = async (req: Request, res: Response) => {
+  console.log('delete guide clicked');
+  try {
+    const { id } = req.query;
+    await db.query('DELETE FROM guide WHERE id = $1', [id]);
+
+    return res.status(StatusCodes.OK).json('deleted!');
+  } catch (error: any) {
     return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ message: error.message });
   }
 };
@@ -239,6 +269,8 @@ const adminData = {
   inviteAccountManager,
 
   addGuide,
+  getGuide,
+  deleteGuide,
 };
 
 export default adminData;
