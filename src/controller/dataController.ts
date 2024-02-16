@@ -639,6 +639,18 @@ const updateTeamMember: RequestHandler = async (req: Request, res: Response) => 
     }
 };
 
+const getGuide: RequestHandler = async (_req: Request, res: Response) => {
+    console.log('get guide called');
+    try {
+        const data = await db.query('SELECT * FROM guide');
+
+        return res.status(StatusCodes.OK).json(data.rows);
+    } catch (error: any) {
+        console.log('get guide error:', error.message);
+        return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ message: error.message });
+    }
+};
+
 const data = {
     getNewsletter,
     getPricing,
@@ -659,6 +671,8 @@ const data = {
     updateProfile,
     addTeamMeber,
     updateTeamMember,
+
+    getGuide,
 };
 
 export default data;

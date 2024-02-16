@@ -51,4 +51,6 @@ router.put('/team-member', data.updateTeamMember);
 
 router.post('/clicked', data.clicked);
 
+router.get('/guide', data.getGuide);
+
 export default router;
