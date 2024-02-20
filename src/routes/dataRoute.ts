@@ -44,7 +44,7 @@ router.put('/campaign_ui', upload.fields([
 router.get('/audience', data.getAudience);
 
 router.get('/profile', data.getProfile);
-router.put('/profile', upload.fields([{ name: 'avatar', maxCount: 10 }]), data.updateProfile);
+router.put('/profile', upload.fields([{ name: 'avatar', maxCount: 10 }, { name: 'team_avatar', maxCount: 2 }]), data.updateProfile);
 router.get('/unbilled', data.getUnbilled);
 
 router.post('/team-member', data.addTeamMeber);

@@ -519,12 +519,16 @@ const updateProfile: RequestHandler = async (req: Request, res: Response) => {
     try {
         if (!req.files || !(req.files as any)['avatar']) return res.status(StatusCodes.BAD_REQUEST).json({ message: 'No image provided!' });
         const avatar = (req.files as any)['avatar'][0].location;
+        const teamAvatar = (req.files as any)['team_avatar'][0].location;
         const { email } = req.body;
         if (avatar) {
             await db.query('update user_list set avatar = $1 where email = $2', [avatar, email]);
         }
+        if (teamAvatar) {
+            await db.query('update user_list set team_avatar = $1 where email = $2', [teamAvatar, email]);
+        }
 
-        return res.status(StatusCodes.OK).json({ avatar });
+        return res.status(StatusCodes.OK).json({ avatar, teamAvatar });
 
     } catch (error: any) {
         log.error(`update profile error: ${error}`);
