@@ -517,7 +517,7 @@ const getProfile: RequestHandler = async (req: Request, res: Response) => {
 const updateProfile: RequestHandler = async (req: Request, res: Response) => {
     log.info('update profile clicked');
     try {
-        if (!req.files || !(req.files as any)['avatar']) return res.status(StatusCodes.BAD_REQUEST).json({ message: 'No image provided!' });
+        if (!req.files) return res.status(StatusCodes.BAD_REQUEST).json({ message: 'No images are provided!' });
         const avatar = (req.files as any)['avatar'][0].location;
         const teamAvatar = (req.files as any)['team_avatar'][0].location;
         const { email } = req.body;
