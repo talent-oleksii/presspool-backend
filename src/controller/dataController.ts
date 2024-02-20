@@ -218,12 +218,12 @@ const getCampaign: RequestHandler = async (req: Request, res: Response) => {
         // check if this email is manager or admin
         const teamList = await db.query('select owner, role, campaign_list from team_list where manager = $1', [email]);
         for (const item of teamList.rows) {
-            if (item.role === 'admin') {
-                const ownerCampaigns = await db.query('select id from campaign where email = $1', [item.owner]);
-                ownerCampaigns.rows.forEach(item => ids.push(Number(item.id)));
-            } else if (item.role === 'manager') {
-                item.campaign_list.split(',').map((item: string) => ids.push(Number(item)));
-            }
+            // if (item.role === 'admin') {
+            const ownerCampaigns = await db.query('select id from campaign where email = $1', [item.owner]);
+            ownerCampaigns.rows.forEach(item => ids.push(Number(item.id)));
+            // } else if (item.role === 'manager') {
+            //     item.campaign_list.split(',').map((item: string) => ids.push(Number(item)));
+            // }
         }
 
         let query = 'SELECT *, campaign.id as id, campaign_ui.id as ui_id from campaign left join campaign_ui on campaign.id = campaign_ui.campaign_id where campaign.id = ANY($1)';
@@ -499,7 +499,7 @@ const getProfile: RequestHandler = async (req: Request, res: Response) => {
     try {
         const { email } = req.query;
         const data = await db.query('select * from user_list where email = $1', [email]);
-        const teamData = await db.query('SELECT team_list.*, user_list.name, user_list.avatar FROM team_list LEFT JOIN user_list ON team_list.manager = user_list.email  WHERE owner = $1', [email]);
+        const teamData = await db.query('SELECT team_list.*, user_list.name, user_list.avatar, user_list.team_avatar FROM team_list LEFT JOIN user_list ON team_list.manager = user_list.email  WHERE owner = $1', [email]);
 
         const ret = data.rows[0];
 
@@ -518,9 +518,10 @@ const updateProfile: RequestHandler = async (req: Request, res: Response) => {
     log.info('update profile clicked');
     try {
         if (!req.files) return res.status(StatusCodes.BAD_REQUEST).json({ message: 'No images are provided!' });
-        const avatar = (req.files as any)['avatar'][0].location;
-        const teamAvatar = (req.files as any)['team_avatar'][0].location;
+        const avatar = (req.files as any)['avatar'] ? (req.files as any)['avatar'][0].location : null;
+        const teamAvatar = (req.files as any)['team_avatar'] ? (req.files as any)['team_avatar'][0].location : null;
         const { email } = req.body;
+        console.log('dfdf:', avatar, teamAvatar, email);
         if (avatar) {
             await db.query('update user_list set avatar = $1 where email = $2', [avatar, email]);
         }
