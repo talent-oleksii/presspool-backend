@@ -258,6 +258,24 @@ const getCampaign: RequestHandler = async (req: Request, res: Response) => {
     }
 };
 
+const deleteCampaign: RequestHandler = async (req: Request, res: Response) => {
+    log.info('delete campaign called');
+    try {
+        const { id } = req.query;
+        const campaignData = await db.query('SELECT * FROM campaign WHERE id = $1', [id]);
+        if (campaignData.rows[0].state !== 'draft') {
+            return res.status(StatusCodes.BAD_REQUEST).json('can not delete campaign while they are in active stage');
+        }
+        await db.query('DELETE FROM campaign_ui WHERE campaign_id = $1', [id]);
+        await db.query('DELETE FROM campaign WHERE id = $1', [id]);
+
+        return res.status(StatusCodes.OK).json('deleted!');
+    } catch (error: any) {
+        log.error(`delete campaign error: ${error.message}`);
+        return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json(error.message);
+    }
+};
+
 const getCampaignDetail: RequestHandler = async (req: Request, res: Response) => {
     log.info('get campaign detail called');
     try {
@@ -656,6 +674,7 @@ const data = {
     getPricing,
     addCampaign,
     getCampaign,
+    deleteCampaign,
     getRegion,
     getAudience,
     addAudience,
