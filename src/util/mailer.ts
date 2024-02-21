@@ -312,7 +312,7 @@ const sendAddTemmateEmail = async (ownerName: string, companyName: string, email
 };
 
 // (Math.round((req.body.currentPrice / ((4 * (1 + 0.10)) / (1 - 0.50))) * 4) - 2).toString(),
-const sendSuperAdminNotificationEmail = async (email: string, adminName: string, campaignName: string, company: string, userName: string, price: string, uid: string, heroImage: string, additional: Array<string>) => {
+const sendSuperAdminNotificationEmail = async (email: string, adminName: string, campaignName: string, company: string, userName: string, price: string, uid: string, heroImage: string, additional: Array<string>, headline: string, body: string, cta: string, pageUrl: string, url: string) => {
   console.log('send super admin notification emails');
   try {
     let additionalFiles = '';
@@ -329,9 +329,20 @@ const sendSuperAdminNotificationEmail = async (email: string, adminName: string,
       <p style="margin-top: 15px;">Hi ${adminName}</p>
       <p>${userName}'s "${campaignName}" has been submitted for review. Expected turnaround is 24-48 hours. Please be ready for any client queries or changes.</p>
       <p>Company: ${company}</p>
+      <p style="font-weight:700">DO NOT CLICK THIS LINK OR IT WILL CHARGE THE CLIENT</p>
       <p>Our Tracking url: https://track.presspool.ai/${uid} </p>
       <p>Beehiiv Budget: ${(Math.round((Number(price) / ((4 * (1 + 0.10)) / (1 - 0.60))) * 4) - 2).toString()}</p>
-      <div>
+      <div style="margin-left: 20px">
+        <p>Website URL:</p>
+        <p>${url}</p>
+        <p>Headline:</p>
+        <p>${headline}</p>
+        <p>Body:</p>
+        <p>${body}</p>
+        <p>CTA:</p>
+        <p>${cta}</p>
+        <p>CTA Link:</p>
+        <p>${pageUrl}</p>
         <p>Hero Image:</p>
         <p><a href="${heroImage}" download="hero-image.png">Hero Image</a></p>
         <p>Additional Files:</p>
@@ -355,7 +366,7 @@ const sendSuperAdminNotificationEmail = async (email: string, adminName: string,
   }
 };
 
-const sendAdminNotificationEmail = async (email: string, adminName: string, campaignName: string, company: string, userName: string, price: string, uid: string) => {
+const sendAdminNotificationEmail = async (email: string, adminName: string, campaignName: string, company: string, userName: string, price: string, uid: string, headline: string, body: string, cta: string, pageUrl: string) => {
   console.log('send admin notification emails');
   try {
     const mailComposer = new MailComposer({

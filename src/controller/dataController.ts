@@ -149,7 +149,6 @@ const addCampaign: RequestHandler = async (req: Request, res: Response) => {
         }
         // add on region table
         const region = req.body.currentRegion;
-        console.log('dd:', region);
         for (const item of region) {
             const count = await db.query('SELECT * FROM region WHERE name = $1', [item]);
 
@@ -174,7 +173,7 @@ const addCampaign: RequestHandler = async (req: Request, res: Response) => {
             // send email to super admins
             const admins = await db.query('SELECT email, name, role FROM admin_user');
             for (const admin of admins.rows) {
-                if (admin.role === 'super_admin') {
+                if (admin.role === 'super_admin' || admin?.assigned_users?.includes(userData.id)) {
                     await mailer.sendSuperAdminNotificationEmail(admin.email, admin.name,
                         req.body.campaignName,
                         userData.company,
@@ -183,18 +182,24 @@ const addCampaign: RequestHandler = async (req: Request, res: Response) => {
                         uid,
                         uiData.image,
                         uiData.additional_files.split(','),
+                        uiData.headline,
+                        uiData.body,
+                        uiData.cta,
+                        uiData.page_url,
+                        req.body.url,
                     );
-                } else {
-                    if (admin?.assigned_users?.includes(userData.id)) {
-                        await mailer.sendAdminNotificationEmail(admin.email, admin.name,
-                            req.body.campaignName,
-                            userData.company,
-                            userData.name,
-                            req.body.currentPrice,
-                            uid,
-                        );
-                    }
                 }
+                // else {
+                //     if (admin?.assigned_users?.includes(userData.id)) {
+                //         await mailer.sendAdminNotificationEmail(admin.email, admin.name,
+                //             req.body.campaignName,
+                //             userData.company,
+                //             userData.name,
+                //             req.body.currentPrice,
+                //             uid,
+                //         );
+                //     }
+                // }
             }
         }
 
@@ -325,7 +330,7 @@ const updateCampaignDetail: RequestHandler = async (req: Request, res: Response)
                 // send email to super admins
                 const admins = await db.query('SELECT email, name, role FROM admin_user');
                 for (const admin of admins.rows) {
-                    if (admin.role === 'super_admin') {
+                    if (admin.role === 'super_admin' || admin?.assigned_users?.includes(userData.id)) {
                         await mailer.sendSuperAdminNotificationEmail(admin.email, admin.name,
                             campaignName,
                             userData.company,
@@ -334,18 +339,28 @@ const updateCampaignDetail: RequestHandler = async (req: Request, res: Response)
                             campaignData.rows[0].uid,
                             uiData.image,
                             uiData.additional_files.split(','),
+                            uiData.headline,
+                            uiData.body,
+                            uiData.cta,
+                            uiData.page_url,
+                            campaignData.rows[0].url,
                         );
-                    } else {
-                        if (admin?.assigned_users?.includes(userData.id)) {
-                            await mailer.sendAdminNotificationEmail(admin.email, admin.name,
-                                campaignName,
-                                userData.company,
-                                userData.name,
-                                currentPrice,
-                                campaignData.rows[0].uid,
-                            );
-                        }
                     }
+                    // else {
+                    //     if (admin?.assigned_users?.includes(userData.id)) {
+                    //         await mailer.sendAdminNotificationEmail(admin.email, admin.name,
+                    //             campaignName,
+                    //             userData.company,
+                    //             userData.name,
+                    //             currentPrice,
+                    //             campaignData.rows[0].uid,
+                    //             uiData.headline,
+                    //             uiData.body,
+                    //             uiData.cta,
+                    //             uiData.page_url
+                    //         );
+                    //     }
+                    // }
                 }
             }
             return res.status(StatusCodes.OK).json('successfully updated!');
@@ -375,7 +390,7 @@ const updateCampaignDetail: RequestHandler = async (req: Request, res: Response)
                     // send email to super admins
                     const admins = await db.query('SELECT email, name, role, assigned_users FROM admin_user');
                     for (const admin of admins.rows) {
-                        if (admin.role === 'super_admin') {
+                        if (admin.role === 'super_admin' || admin?.assigned_users?.includes(userData.id)) {
                             await mailer.sendSuperAdminNotificationEmail(admin.email, admin.name,
                                 campaignName,
                                 userData.company,
@@ -384,18 +399,24 @@ const updateCampaignDetail: RequestHandler = async (req: Request, res: Response)
                                 campaignData.rows[0].uid,
                                 uiData.image,
                                 uiData.additional_files.split(','),
+                                uiData.headline,
+                                uiData.body,
+                                uiData.cta,
+                                uiData.page_url,
+                                url
                             );
-                        } else {
-                            if (admin?.assigned_users?.includes(userData.id)) {
-                                await mailer.sendAdminNotificationEmail(admin.email, admin.name,
-                                    campaignName,
-                                    userData.company,
-                                    userData.name,
-                                    currentPrice,
-                                    campaignData.rows[0].uid,
-                                );
-                            }
                         }
+                        // else {
+                        //     if (admin?.assigned_users?.includes(userData.id)) {
+                        //         await mailer.sendAdminNotificationEmail(admin.email, admin.name,
+                        //             campaignName,
+                        //             userData.company,
+                        //             userData.name,
+                        //             currentPrice,
+                        //             campaignData.rows[0].uid,
+                        //         );
+                        //     }
+                        // }
                     }
                 }
             } else {
