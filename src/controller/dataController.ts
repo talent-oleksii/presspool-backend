@@ -175,14 +175,16 @@ const addCampaign: RequestHandler = async (req: Request, res: Response) => {
         }
         //add on position table
         const position = req.body.currentPosition;
-        for (const item of position) {
-            const count = await db.query('SELECT * FROM position WHERE name = $1', [item]);
+        if (position) {
+            for (const item of position) {
+                const count = await db.query('SELECT * FROM position WHERE name = $1', [item]);
 
-            if (count.rows.length <= 0) {
-                try {
-                    await db.query('INSERT INTO position (name, email, create_time) VALUES ($1, $2, $3) ON CONFLICT (name) DO NOTHING', [item, req.body.email, time]);
-                } catch (error) {
-                    console.error('Error inserting into position:', error);
+                if (count.rows.length <= 0) {
+                    try {
+                        await db.query('INSERT INTO position (name, email, create_time) VALUES ($1, $2, $3) ON CONFLICT (name) DO NOTHING', [item, req.body.email, time]);
+                    } catch (error) {
+                        console.error('Error inserting into position:', error);
+                    }
                 }
             }
         }
@@ -356,14 +358,16 @@ const updateCampaignDetail: RequestHandler = async (req: Request, res: Response)
         }
 
         const position = currentPosition;
-        for (const item of position) {
-            const count = await db.query('SELECT * FROM position WHERE name = $1', [item]);
+        if (position) {
+            for (const item of position) {
+                const count = await db.query('SELECT * FROM position WHERE name = $1', [item]);
 
-            if (count.rows.length <= 0) {
-                try {
-                    await db.query('INSERT INTO position (name, email, create_time) VALUES ($1, $2, $3) ON CONFLICT (name) DO NOTHING', [item, email, time]);
-                } catch (error) {
-                    console.error('Error inserting into position:', error);
+                if (count.rows.length <= 0) {
+                    try {
+                        await db.query('INSERT INTO position (name, email, create_time) VALUES ($1, $2, $3) ON CONFLICT (name) DO NOTHING', [item, email, time]);
+                    } catch (error) {
+                        console.error('Error inserting into position:', error);
+                    }
                 }
             }
         }
