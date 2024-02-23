@@ -29,6 +29,7 @@ router.get('/newsletter', data.getNewsletter);
 router.get('/pricing', data.getPricing);
 router.post('/campaign', data.addCampaign);
 router.get('/campaign', data.getCampaign);
+router.get('/position', data.getPosition);
 router.delete('/campaign', data.deleteCampaign);
 router.post('/audience', data.addAudience);
 router.get('/audience', data.getAudience);
@@ -41,7 +42,6 @@ router.post('/campaign_ui', upload.fields([
 router.put('/campaign_ui', upload.fields([
   { name: 'image', maxCount: 10 }, { name: 'additional_file' }
 ]), data.updateCampaignUI);
-router.get('/audience', data.getAudience);
 
 router.get('/profile', data.getProfile);
 router.put('/profile', upload.fields([{ name: 'avatar', maxCount: 10 }, { name: 'team_avatar', maxCount: 2 }]), data.updateProfile);

@@ -57,6 +57,18 @@ const getAudience: RequestHandler = async (_req: Request, res: Response) => {
     }
 };
 
+const getPosition: RequestHandler = async (_req: Request, res: Response) => {
+    log.info('get position');
+
+    try {
+        const result = await db.query('select * from position order by create_time desc');
+        return res.status(StatusCodes.OK).json(result.rows);
+    } catch (error: any) {
+        log.error(`get position error: ${error}`);
+        return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json(error.message);
+    }
+};
+
 const getRegion: RequestHandler = async (_req: Request, res: Response) => {
     log.info('get region ');
 
@@ -118,7 +130,7 @@ const addCampaign: RequestHandler = async (req: Request, res: Response) => {
         // const nameParts = streamData.data.name.split('/');
 
         // update campaign ui id
-        const result = await db.query('INSERT INTO campaign(email, name, url, demographic, audience, price, create_time, uid, card_id, state, stream_id, region) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12) RETURNING *', [
+        const result = await db.query('INSERT INTO campaign(email, name, url, demographic, audience, price, create_time, uid, card_id, state, stream_id, region, position) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13) RETURNING *', [
             req.body.email,
             req.body.campaignName,
             req.body.url,
@@ -132,6 +144,7 @@ const addCampaign: RequestHandler = async (req: Request, res: Response) => {
             // nameParts[nameParts.length - 1],
             '',
             JSON.stringify(req.body.currentRegion),
+            JSON.stringify(req.body.currentPosition),
         ]);
 
         // add on audience table
@@ -157,6 +170,19 @@ const addCampaign: RequestHandler = async (req: Request, res: Response) => {
                     await db.query('INSERT INTO region (name, email, create_time) VALUES ($1, $2, $3) ON CONFLICT (name) DO NOTHING', [item, req.body.email, time]);
                 } catch (error) {
                     console.error('Error inserting into region:', error);
+                }
+            }
+        }
+        //add on position table
+        const position = req.body.currentPosition;
+        for (const item of position) {
+            const count = await db.query('SELECT * FROM position WHERE name = $1', [item]);
+
+            if (count.rows.length <= 0) {
+                try {
+                    await db.query('INSERT INTO position (name, email, create_time) VALUES ($1, $2, $3) ON CONFLICT (name) DO NOTHING', [item, req.body.email, time]);
+                } catch (error) {
+                    console.error('Error inserting into position:', error);
                 }
             }
         }
@@ -299,7 +325,7 @@ const getCampaignDetail: RequestHandler = async (req: Request, res: Response) =>
 const updateCampaignDetail: RequestHandler = async (req: Request, res: Response) => {
     log.info('update campaign detail called');
     try {
-        const { id, email, campaignName, url, currentTarget, currentAudience, currentRegion, currentPrice, type, state, currentCard } = req.body;
+        const { id, email, campaignName, url, currentTarget, currentAudience, currentRegion, currentPosition, currentPrice, type, state, currentCard } = req.body;
 
         // add on region table
         const time = moment().valueOf();
@@ -312,6 +338,32 @@ const updateCampaignDetail: RequestHandler = async (req: Request, res: Response)
                     await db.query('INSERT INTO region (name, email, create_time) VALUES ($1, $2, $3) ON CONFLICT (name) DO NOTHING', [item, email, time]);
                 } catch (error) {
                     console.error('Error inserting into region:', error);
+                }
+            }
+        }
+
+        const audience = currentAudience;
+        for (const item of audience) {
+            const count = await db.query('SELECT * FROM audience WHERE name = $1', [item]);
+
+            if (count.rows.length <= 0) {
+                try {
+                    await db.query('INSERT INTO audience (name, email, create_time) VALUES ($1, $2, $3) ON CONFLICT (name) DO NOTHING', [item, email, time]);
+                } catch (error) {
+                    console.error('Error inserting into audience:', error);
+                }
+            }
+        }
+
+        const position = currentPosition;
+        for (const item of position) {
+            const count = await db.query('SELECT * FROM position WHERE name = $1', [item]);
+
+            if (count.rows.length <= 0) {
+                try {
+                    await db.query('INSERT INTO position (name, email, create_time) VALUES ($1, $2, $3) ON CONFLICT (name) DO NOTHING', [item, email, time]);
+                } catch (error) {
+                    console.error('Error inserting into position:', error);
                 }
             }
         }
@@ -370,7 +422,7 @@ const updateCampaignDetail: RequestHandler = async (req: Request, res: Response)
             return res.status(StatusCodes.OK).json('successfully updated!');
         } else {
             if (state) {
-                const campaignData = await db.query('update campaign set email = $1, name = $2, url = $3, demographic = $4, newsletter = $5, price = $6, card_id = $7, state = $8, region = $9 where id = $10 returning *', [
+                const campaignData = await db.query('update campaign set email = $1, name = $2, url = $3, demographic = $4, newsletter = $5, price = $6, card_id = $7, state = $8, region = $9, position = $10 where id = $11 returning *', [
                     email,
                     campaignName,
                     url,
@@ -380,6 +432,7 @@ const updateCampaignDetail: RequestHandler = async (req: Request, res: Response)
                     currentCard,
                     state,
                     JSON.stringify(currentRegion),
+                    JSON.stringify(currentPosition),
                     id,
                 ]);
                 if (state === 'active') {
@@ -703,6 +756,7 @@ const data = {
     deleteCampaign,
     getRegion,
     getAudience,
+    getPosition,
     addAudience,
     addCampaignUI,
     getCampaignDetail,
