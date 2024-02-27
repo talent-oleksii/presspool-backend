@@ -279,7 +279,7 @@ const getCampaign: RequestHandler = async (req: Request, res: Response) => {
         log.info(`query: ${query}, values; ${values}`);
         result = await db.query(query, values);
 
-        const clickedData = await db.query('SELECT create_time, id, campaign_id FROM clicked_history WHERE campaign_id = ANY($1)', [result.rows.map((item: any) => Number(item.id))]);
+        const clickedData = await db.query('SELECT create_time, id, campaign_id, count FROM clicked_history WHERE campaign_id = ANY($1)', [result.rows.map((item: any) => Number(item.id))]);
 
         return res.status(StatusCodes.OK).json({
             data: result.rows,

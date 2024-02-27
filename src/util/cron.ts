@@ -6,6 +6,7 @@ import { BetaAnalyticsDataClient } from '@google-analytics/data';
 
 import mailer from './mailer';
 import axios from 'axios';
+import moment from 'moment';
 
 dotenv.config({ path: './.env' });
 
@@ -118,7 +119,7 @@ async function runReport(client: BetaAnalyticsDataClient, propertyId: any, start
     const [response] = await client.runReport({
       property: `properties/${propertyId}`,
       dateRanges: [{ startDate: startDate, endDate: endDate }],
-      dimensions: [{ name: 'fullPageUrl' }],
+      dimensions: [{ name: 'fullPageUrl' }, { name: 'country' }, { name: 'deviceCategory' }, { name: 'date' }],
       metrics: [{
         name: 'totalUsers'
       }, {
@@ -151,15 +152,16 @@ const runRealtimeReport = async (client: BetaAnalyticsDataClient, propertyId: st
       // }, {
       //   name: 'deviceCategory'
       // }],
-      dimensions: [{ name: 'unifiedScreenName' }, { name: 'deviceCategory' }],
-      // metrics: [{ name: "screenPageViews" }, { name: 'activeUsers' }],
-      metrics: [{ name: 'eventCount' }, { name: 'screenPageViews' }, { name: 'activeUsers' }],
+      dimensions: [{ name: 'eventName' }],
+      metricAggregations: [4], // metricaggregation.count
+      metrics: [{ name: 'eventCount ' }],
+      dimensionFilter: { filter: { fieldName: 'pageLocation', stringFilter: { matchType: 'CONTAINS' } } },
       // metrics: [{
       //   name: 'activeUsers'
       // }, {
       //   name: 'screenPageViews',
       // }],
-      minuteRanges: [{ startMinutesAgo: 1 }]
+      // minuteRanges: [{ startMinutesAgo: 1 }]
     });
 
     return response;
@@ -220,7 +222,7 @@ async function dailyAnalyticsUpdate() {
 
   // Calculate yesterday's date for the report
   const today = new Date();
-  const yesterday = new Date(today.getFullYear(), today.getMonth(), today.getDate() - 1);
+  const yesterday = new Date(today.getFullYear(), today.getMonth(), today.getDate() + 1);
   const startDate = yesterday.toISOString().split('T')[0]; // Format as 'YYYY-MM-DD'
   const endDate = startDate; // Same as startDate for daily data
 
@@ -228,7 +230,7 @@ async function dailyAnalyticsUpdate() {
     const client = await initializeClient() as BetaAnalyticsDataClient;
     const propertyId = process.env.GOOGLE_ANALYTIC_PROPERTY_ID as string;
 
-    const response = await runReport(client, propertyId, startDate, endDate);
+    const response = await runReport(client, propertyId, '2024-02-18', endDate);
     if (!response) {
       console.error('Failed to fetch report data');
       return;
@@ -238,24 +240,38 @@ async function dailyAnalyticsUpdate() {
       console.error('No data received from runReport');
       return;
     }
-    for (const item of response.rows) {
-      const pageUrl = item.dimensionValues?.[0]?.value ? encodeURIComponent(item.dimensionValues[0].value) : '';
-      const totalUsers = item.metricValues?.[0]?.value ? Number(item.metricValues[0].value) : 0;
-      const sessions = item.metricValues?.[1]?.value ? Number(item.metricValues[1].value) : 0;
-      const activeUsers = item.metricValues?.[2]?.value ? Number(item.metricValues[2].value) : 0;
-      const newUsers = item.metricValues?.[3]?.value ? Number(item.metricValues[3].value) : 0;
-      const screenPageViews = item.metricValues?.[4]?.value ? Number(item.metricValues[4].value) : 0;
+    const campaigns = await db.query('SELECT id, uid FROM campaign');
 
-      console.log('Updating database for URL:', pageUrl, totalUsers, sessions, activeUsers, newUsers, screenPageViews);
+    for (const campaign of campaigns.rows) {
+      let uniqueClicks = 0, totalClicks = 0;
+      for (const item of response.rows) {
+        // console.log('id:', item.dimensionValues, item.metricValues);
+        const pageUrl = item.dimensionValues?.[0]?.value ? encodeURIComponent(item.dimensionValues[0].value) : '';
+        if (!pageUrl.includes(campaign.uid)) continue;
+        const country = item.dimensionValues?.[1]?.value ? item.dimensionValues[1].value : '';
+        const device = item.dimensionValues?.[2]?.value ? item.dimensionValues[2].value : '';
+        const time = item.dimensionValues?.[3]?.value ? item.dimensionValues[3].value : '';
+        const totalUsers = item.metricValues?.[0]?.value ? Number(item.metricValues[0].value) : 0;
+        const sessions = item.metricValues?.[1]?.value ? Number(item.metricValues[1].value) : 0;
+        const activeUsers = item.metricValues?.[2]?.value ? Number(item.metricValues[2].value) : 0;
+        const newUsers = item.metricValues?.[3]?.value ? Number(item.metricValues[3].value) : 0;
+        const screenPageViews = item.metricValues?.[4]?.value ? Number(item.metricValues[4].value) : 0;
 
+        const timeOf = moment(time, 'YYYYMMDD').valueOf();
+        console.log('time:', time, country, device, screenPageViews);
+        await db.query('INSERT INTO clicked_history (create_time, ip, campaign_id, device, count) VALUES ($1, $2, $3, $4, $5)', [
+          timeOf,
+          country,
+          campaign.id,
+          device,
+          screenPageViews
+        ]);
 
+        uniqueClicks += Number(totalUsers);
+        totalClicks += Number(screenPageViews);
+      }
+      console.log('tot click:', uniqueClicks, totalClicks, campaign.id);
     }
-
-
-
-
-
-
 
   } catch (error) {
     console.error('Error in daily analytics update:', error);
