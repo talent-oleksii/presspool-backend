@@ -79,7 +79,6 @@ const signIn: RequestHandler = async (req: Request, res: Response) => {
         console.log('err:', error.message);
         return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ message: error.message });
     });
-
 };
 
 const clientSignUp: RequestHandler = async (req: Request, res: Response) => {
@@ -139,6 +138,31 @@ const clientSignUp: RequestHandler = async (req: Request, res: Response) => {
         console.log('err:', error);
         return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ message: error.message });
     });
+};
+
+const creatorSignUp: RequestHandler = async (req: Request, res: Response) => {
+    log.info('creator sign up called');
+
+    try {
+        const { fullName, email, password, newsletter } = req.body;
+
+        const isExist = await db.query('SELECT * FROM creator_list WHERE email = $1', [email]);
+        if (isExist.rows.length >= 1) {
+            return res.status(StatusCodes.BAD_REQUEST).json({ message: 'Same Email Exists!' });
+        }
+
+        const time = moment().valueOf();
+        const newUser = await db.query('INSERT INTO creator_list (create_time, name, email, password, newsletter, verified, user_type, email_verified) values ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *', [
+            time, fullName, email, password, newsletter, 0, 'creator', 0
+        ]);
+
+        return res.status(StatusCodes.OK).json({
+            ...newUser.rows[0],
+            token: generateToken({ email }),
+        });
+    } catch (error: any) {
+        return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json(error.message);
+    }
 };
 
 const verifyEmail: RequestHandler = async (req: Request, res: Response) => {
@@ -239,6 +263,8 @@ const auth = {
     sendPasswordEmail,
     verifyPasswordEmail,
     changePassword,
+
+    creatorSignUp,
 };
 
 export default auth;
