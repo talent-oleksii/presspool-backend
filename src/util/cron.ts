@@ -271,6 +271,7 @@ async function dailyAnalyticsUpdate() {
         const screenPageViews = item.metricValues?.[4]?.value ? Number(item.metricValues[4].value) : 0;
 
         const timeOf = moment(time, 'YYYYMMDD').valueOf();
+        await db.query('DELETE FROM clicked_history WHERE id = $1', campaign.id);
         await db.query('INSERT INTO clicked_history (create_time, ip, campaign_id, device, count) VALUES ($1, $2, $3, $4, $5)', [
           timeOf,
           country,
