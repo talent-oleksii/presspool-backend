@@ -69,8 +69,8 @@ cron.schedule('1 0 * * *', async () => {
 });
 
 //This should be opened before deploy
-cron.schedule('*/30 * * * * *', async () => {
-    // await cronFunction.scrapeFunction();
+cron.schedule('*/3 * * * *', async () => {
+    await cronFunction.scrapeFunction();
     // await cronFunction.dailyAnalyticsUpdate();
 });
 

@@ -163,16 +163,23 @@ const runRealtimeReport = async (client: BetaAnalyticsDataClient, propertyId: st
       // }, {
       //   name: 'deviceCategory'
       // }],
-      dimensions: [{ name: 'eventName' }],
-      metricAggregations: [4], // metricaggregation.count
-      metrics: [{ name: 'eventCount ' }],
-      dimensionFilter: { filter: { fieldName: 'pageLocation', stringFilter: { matchType: 'CONTAINS' } } },
+      // dimensions: [{ name: 'country' }, { name: 'unifiedScreenName' }, { name: 'deviceCategory' }, { name: 'minutesAgo' }],
+      dimensions: [{ name: 'unifiedScreenName' }, { name: 'country' }],
+      metrics: [{ name: 'activeUsers' }, { name: 'screenPageViews' }],
+      // metrics: [{ name: 'eventCount' }],
+      // dimensionFilter: {
+      //   filter: { fieldName: 'pageView' }
+      // },
+      // dimensionFilter: { filter: { fieldName: 'pageLocation' } },
+      // dimensionFilter: {
+      //   filter: { fieldName: 'pageView' }
+      // },
       // metrics: [{
       //   name: 'activeUsers'
       // }, {
       //   name: 'screenPageViews',
       // }],
-      // minuteRanges: [{ startMinutesAgo: 1 }]
+      minuteRanges: [{ startMinutesAgo: 3 }]
     });
 
     return response;
@@ -208,20 +215,38 @@ const scrapeFunction = async () => {
     //   screenPageViews: item.metricValues[4].value,
     // }));
 
-    let index = 0;
     for (const item of response.rows) {
       console.log('there is a new data for tracking', item.dimensionValues, item.metricValues);
-      const id = encodeURIComponent(item.dimensionValues[0].value);
-      if (id.length <= 7) continue;
-      const clickCount = Number(index !== 0 ? item.metricValues[1].value : response.rows[0].metricValues[1].value);
-      const uniqueClick = Number(index !== 0 ? item.metricValues[2].value : response.rows[0].metricValues[2].value);
+      // const id = encodeURIComponent(item.dimensionValues[0].value);
+      // if (id.length <= 7) continue;
 
-      console.log('id:', id, clickCount, uniqueClick);
-      const budget = Number((await db.query('SELECT price from campaign where uid = $1', [id])).rows[0].price);
-      const addAmount = Math.ceil(Number(getCPC(budget)) * Number(uniqueClick));
+      const clickCount = item.metricValues[0].value;
+      const uniqueClick = item.metricValues[1].value;
+      const uid = item.metricValues[0].value;
 
-      await db.query('UPDATE campaign SET click_count = click_count + $1, unique_clicks = unique_clicks + $2, spent = spent + $3 WHERE uid = $4', [clickCount, uniqueClick, addAmount, id]);
-      index++;
+      try {
+        if (uid.length > 2) {
+          const campaign = await db.query('SELECT price from campaign where uid = $1', [uid]);
+          if (campaign.rows.length <= 0) continue;
+          const addAmount = Math.ceil(Number(getCPC(5000)) * Number(uniqueClick));
+
+          console.log(`${uid} updated: ${uniqueClick}, ${addAmount}`);
+
+          await db.query('UPDATE campaign SET click_count = click_count + $1, unique_clicks = unique_clicks + $2, spent = spent + $3 WHERE uid = $4', [clickCount, uniqueClick, addAmount, uid]);
+        }
+      } catch (error: any) {
+        console.log('real time report updating error: ', error);
+        continue;
+      }
+
+      // const clickCount = Number(index !== 0 ? item.metricValues[1].value : response.rows[0].metricValues[1].value);
+      // const uniqueClick = Number(index !== 0 ? item.metricValues[2].value : response.rows[0].metricValues[2].value);
+
+      // console.log('id:', id, clickCount, uniqueClick);
+      // const budget = Number((await db.query('SELECT price from campaign where uid = $1', [id])).rows[0].price);
+      // const addAmount = Math.ceil(Number(getCPC(budget)) * Number(uniqueClick));
+
+      // await db.query('UPDATE campaign SET click_count = click_count + $1, unique_clicks = unique_clicks + $2, spent = spent + $3 WHERE uid = $4', [clickCount, uniqueClick, addAmount, id]);
     }
   } catch (error) {
     console.log('error:', error);
@@ -236,7 +261,6 @@ async function dailyAnalyticsUpdate() {
   const yesterday = new Date(today.getFullYear(), today.getMonth(), today.getDate() + 1);
   const startDate = yesterday.toISOString().split('T')[0]; // Format as 'YYYY-MM-DD'
   const endDate = startDate; // Same as startDate for daily data
-  console.log('end:', endDate);
 
   try {
     const client = await initializeClient() as BetaAnalyticsDataClient;
@@ -252,7 +276,6 @@ async function dailyAnalyticsUpdate() {
       console.error('No data received from runReport');
       return;
     }
-    console.log('resp:', response.rows);
     const campaigns = await db.query('SELECT id, uid FROM campaign');
 
     for (const campaign of campaigns.rows) {
@@ -260,7 +283,6 @@ async function dailyAnalyticsUpdate() {
       for (const item of response.rows) {
         const pageUrl = item.dimensionValues?.[0]?.value ? encodeURIComponent(item.dimensionValues[0].value) : '';
         if (!pageUrl.includes(campaign.uid)) continue;
-        console.log('id:', item.dimensionValues, item.metricValues);
         const country = item.dimensionValues?.[1]?.value ? item.dimensionValues[1].value : '';
         const device = item.dimensionValues?.[2]?.value ? item.dimensionValues[2].value : '';
         const time = item.dimensionValues?.[3]?.value ? item.dimensionValues[3].value : '';
