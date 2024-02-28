@@ -38,11 +38,17 @@ async function initializeClient() {
 const billingFunction = async () => { // Here we notify users about billing
   try {
     console.log('billined called');
-    const activeCampaigns = await db.query('SELECT campaign.id, campaign.name, campaign.email, campaign.billed, campaign.spent, campaign.card_id from campaign LEFT JOIN card_info ON campaign.card_id = card_info.card_id  where state = $1', ['active']);
+    const activeCampaigns = await db.query('SELECT campaign.id, campaign.name, campaign.price, campaign.email, campaign.billed, campaign.spent, campaign.card_id from campaign LEFT JOIN card_info ON campaign.card_id = card_info.card_id  where state = $1', ['active']);
     for (const campaign of activeCampaigns.rows) {
-      const billAmount = (Number(campaign.spent) - Number(campaign.billed)) * 100;
+      // decide how much to bill
+      let billAmount = 0;
+      if (Number(campaign.spent) > (Number(campaign.price) - Number(campaign.billed))) billAmount = (Number(campaign.price) - Number(campaign.billed)) * 100;
+      else billAmount = Number(campaign.spent) * 100;
+
+      if (Number(campaign.billed) >= Number(campaign.price)) billAmount = 0;
+      //end
       if (billAmount === 0) continue;
-      console.log('billing campaign:', campaign);
+      console.log('billned campaign:', campaign, 'amount:', billAmount);
       let customer;
       const existingCustomers = await stripe.customers.list({ email: campaign.email as string });
 
@@ -52,21 +58,26 @@ const billingFunction = async () => { // Here we notify users about billing
         customer = await stripe.customers.create({ email: campaign.email as string });
       }
 
-      await stripe.paymentIntents.create({
-        customer: customer.id,
-        amount: billAmount,
-        currency: 'usd',
-        payment_method: campaign.card_id,
-        automatic_payment_methods: {
-          enabled: true,
-          allow_redirects: 'never',
-        },
-        metadata: {
-          state: 'weekly'
-        },
-        description: `${campaign.name}`,
-        confirm: true,
-      });
+      try {
+        await stripe.paymentIntents.create({
+          customer: customer.id,
+          amount: billAmount,
+          currency: 'usd',
+          payment_method: campaign.card_id,
+          automatic_payment_methods: {
+            enabled: true,
+            allow_redirects: 'never',
+          },
+          metadata: {
+            state: 'weekly'
+          },
+          description: `${campaign.name}`,
+          confirm: true,
+        });
+      } catch (error) {
+        console.log('error:', error);
+        continue;
+      }
 
       // update billed information on database
       const newBilled = Number(campaign.billed) + billAmount / 100;
@@ -225,6 +236,7 @@ async function dailyAnalyticsUpdate() {
   const yesterday = new Date(today.getFullYear(), today.getMonth(), today.getDate() + 1);
   const startDate = yesterday.toISOString().split('T')[0]; // Format as 'YYYY-MM-DD'
   const endDate = startDate; // Same as startDate for daily data
+  console.log('end:', endDate);
 
   try {
     const client = await initializeClient() as BetaAnalyticsDataClient;
@@ -240,14 +252,15 @@ async function dailyAnalyticsUpdate() {
       console.error('No data received from runReport');
       return;
     }
+    console.log('resp:', response.rows);
     const campaigns = await db.query('SELECT id, uid FROM campaign');
 
     for (const campaign of campaigns.rows) {
       let uniqueClicks = 0, totalClicks = 0;
       for (const item of response.rows) {
-        // console.log('id:', item.dimensionValues, item.metricValues);
         const pageUrl = item.dimensionValues?.[0]?.value ? encodeURIComponent(item.dimensionValues[0].value) : '';
         if (!pageUrl.includes(campaign.uid)) continue;
+        console.log('id:', item.dimensionValues, item.metricValues);
         const country = item.dimensionValues?.[1]?.value ? item.dimensionValues[1].value : '';
         const device = item.dimensionValues?.[2]?.value ? item.dimensionValues[2].value : '';
         const time = item.dimensionValues?.[3]?.value ? item.dimensionValues[3].value : '';
@@ -258,7 +271,6 @@ async function dailyAnalyticsUpdate() {
         const screenPageViews = item.metricValues?.[4]?.value ? Number(item.metricValues[4].value) : 0;
 
         const timeOf = moment(time, 'YYYYMMDD').valueOf();
-        console.log('time:', time, country, device, screenPageViews);
         await db.query('INSERT INTO clicked_history (create_time, ip, campaign_id, device, count) VALUES ($1, $2, $3, $4, $5)', [
           timeOf,
           country,
@@ -270,7 +282,7 @@ async function dailyAnalyticsUpdate() {
         uniqueClicks += Number(totalUsers);
         totalClicks += Number(screenPageViews);
       }
-      console.log('tot click:', uniqueClicks, totalClicks, campaign.id);
+      await db.query('UPDATE campaign set click_count = $1, spent = $2, unique_clicks = $3 WHERE id = $4', [totalClicks, Math.ceil(uniqueClicks * getCPC(5000)), uniqueClicks, campaign.id]);
     }
 
   } catch (error) {
