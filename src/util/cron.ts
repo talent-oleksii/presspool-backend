@@ -164,7 +164,7 @@ const runRealtimeReport = async (client: BetaAnalyticsDataClient, propertyId: st
       //   name: 'deviceCategory'
       // }],
       // dimensions: [{ name: 'country' }, { name: 'unifiedScreenName' }, { name: 'deviceCategory' }, { name: 'minutesAgo' }],
-      dimensions: [{ name: 'unifiedScreenName' }, { name: 'country' }],
+      dimensions: [{ name: 'unifiedScreenName' }, { name: 'country' }, { name: 'full_url' }],
       metrics: [{ name: 'activeUsers' }, { name: 'screenPageViews' }],
       // metrics: [{ name: 'eventCount' }],
       // dimensionFilter: {
@@ -223,7 +223,7 @@ const scrapeFunction = async () => {
       const clickCount = item.metricValues[0].value;
       const uniqueClick = item.metricValues[1].value;
       const uid = encodeURIComponent(item.metricValues[0].value);
-
+      continue;
       try {
         if (uid.length > 2) {
           const campaign = await db.query('SELECT price from campaign where uid = $1', [uid]);

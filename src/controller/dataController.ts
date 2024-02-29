@@ -18,16 +18,18 @@ const showBaseList = async () => {
     console.log('base list:', response.data.bases);
 };
 
-const getNewsletter: RequestHandler = async (_req: Request, res: Response) => {
+const getNewsletter: RequestHandler = async (req: Request, res: Response) => {
     log.info('get newsletter called');
     // showBaseList();
 
-    useAirTable('Newsletters', 'get')?.then(data => {
-        return res.status(StatusCodes.OK).json(data.data);
-    }).catch(error => {
-        console.log('err:', error);
-        return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json(error);
-    });
+    try {
+        const { email } = req.query;
+        const newsletter = await db.query('SELECT * FROM newsletter WHERE email = $1', [email]);
+
+        return res.status(StatusCodes.OK).json(newsletter.rows);
+    } catch (error: any) {
+        return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json(error.message);
+    }
 };
 
 const addAudience: RequestHandler = async (req: Request, res: Response) => {
