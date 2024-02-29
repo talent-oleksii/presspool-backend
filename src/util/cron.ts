@@ -222,7 +222,7 @@ const scrapeFunction = async () => {
 
       const clickCount = item.metricValues[0].value;
       const uniqueClick = item.metricValues[1].value;
-      const uid = item.metricValues[0].value;
+      const uid = encodeURIComponent(item.metricValues[0].value);
 
       try {
         if (uid.length > 2) {
@@ -258,15 +258,16 @@ async function dailyAnalyticsUpdate() {
 
   // Calculate yesterday's date for the report
   const today = new Date();
-  const yesterday = new Date(today.getFullYear(), today.getMonth(), today.getDate() + 1);
-  const startDate = yesterday.toISOString().split('T')[0]; // Format as 'YYYY-MM-DD'
-  const endDate = startDate; // Same as startDate for daily data
+  const startDate = new Date(today.getFullYear(), today.getMonth(), today.getDate() - 1);
+  const endDate = new Date(today.getFullYear(), today.getMonth(), today.getDate() + 1);
+  const stD = startDate.toISOString().split('T')[0]; // Format as 'YYYY-MM-DD'
+  const enD = endDate.toISOString().split('T')[0];
 
   try {
     const client = await initializeClient() as BetaAnalyticsDataClient;
     const propertyId = process.env.GOOGLE_ANALYTIC_PROPERTY_ID as string;
 
-    const response = await runReport(client, propertyId, '2024-02-18', endDate);
+    const response = await runReport(client, propertyId, stD, enD);
     if (!response) {
       console.error('Failed to fetch report data');
       return;
@@ -293,7 +294,6 @@ async function dailyAnalyticsUpdate() {
         const screenPageViews = item.metricValues?.[4]?.value ? Number(item.metricValues[4].value) : 0;
 
         const timeOf = moment(time, 'YYYYMMDD').valueOf();
-        await db.query('DELETE FROM clicked_history WHERE id = $1', campaign.id);
         await db.query('INSERT INTO clicked_history (create_time, ip, campaign_id, device, count) VALUES ($1, $2, $3, $4, $5)', [
           timeOf,
           country,
@@ -305,6 +305,7 @@ async function dailyAnalyticsUpdate() {
         uniqueClicks += Number(totalUsers);
         totalClicks += Number(screenPageViews);
       }
+      console.log('camp id:', campaign.id, uniqueClicks, totalClicks);
       await db.query('UPDATE campaign set click_count = $1, spent = $2, unique_clicks = $3 WHERE id = $4', [totalClicks, Math.ceil(uniqueClicks * getCPC(5000)), uniqueClicks, campaign.id]);
     }
 
