@@ -1,10 +1,14 @@
-import MailComposer from 'nodemailer/lib/mail-composer';
-import { google } from 'googleapis';
+import MailComposer from "nodemailer/lib/mail-composer";
+import { google } from "googleapis";
 
-import log from './logger';
+import log from "./logger";
+import { sign } from "jsonwebtoken";
 
-
-const oAuth2Client = new google.auth.OAuth2(process.env.CLIENT_ID, process.env.CLIENT_SCRET, 'https://presspool-backend.onrender.com');
+const oAuth2Client = new google.auth.OAuth2(
+  process.env.CLIENT_ID,
+  process.env.CLIENT_SCRET,
+  "https://presspool-backend.onrender.com"
+);
 
 oAuth2Client.setCredentials({
   refresh_token: process.env.GMAIL_REFRESH_TOKEN,
@@ -12,19 +16,19 @@ oAuth2Client.setCredentials({
   token_type: process.env.GMAIL_TOKEN_TYPE,
   scope: process.env.GMAIL_SCOPE,
 });
-const gmail = google.gmail({ version: 'v1', auth: oAuth2Client });
+const gmail = google.gmail({ version: "v1", auth: oAuth2Client });
 
 const fileAttachments = [
   {
-    filename: 'attachment1.txt',
-    content: 'This is a plain text file sent as an attachment',
+    filename: "attachment1.txt",
+    content: "This is a plain text file sent as an attachment",
   },
   // {
   //   path: path.join(__dirname, './attachment2.txt'),
   // },
   {
-    filename: 'websites.pdf',
-    path: 'https://www.labnol.org/files/cool-websites.pdf',
+    filename: "websites.pdf",
+    path: "https://www.labnol.org/files/cool-websites.pdf",
   },
 
   // {
@@ -35,21 +39,25 @@ const fileAttachments = [
 
 const sendEmail = async (mailComposer: MailComposer) => {
   const message = await mailComposer.compile().build();
-  const raw = Buffer.from(message).toString('base64');
+  const raw = Buffer.from(message).toString("base64");
 
   await gmail.users.messages.send({
-    userId: 'rica@presspool.ai',
+    userId: "rica@presspool.ai",
     requestBody: {
       raw,
-    }
+    },
   });
 };
 
-const sendWelcomeEmail = async (emailAddress: string, userName: string, payload: any) => {
+const sendWelcomeEmail = async (
+  emailAddress: string,
+  userName: string,
+  payload: any
+) => {
   try {
-    const firstName = userName.split(' ')[0];
+    const firstName = userName.split(" ")[0];
     const mailComposer = new MailComposer({
-      from: 'Rica Mae-PressPool Support Team<rica@presspool.ai>',
+      from: "Rica Mae-PressPool Support Team<rica@presspool.ai>",
       to: emailAddress,
       subject: `Welcome Aboard, ${firstName}! Let's Dive In 🚀`,
       // text: content,
@@ -62,12 +70,17 @@ const sendWelcomeEmail = async (emailAddress: string, userName: string, payload:
       <p style="margin:0px">Rica</p>
       `,
       // attachments: fileAttachments,
-      textEncoding: 'base64',
-      headers: [{
-        key: 'X-Application-Developer', value: 'Oleksii Karavanov'
-      }, {
-        key: 'X-Application-Version', value: 'v1.0.0'
-      }]
+      textEncoding: "base64",
+      headers: [
+        {
+          key: "X-Application-Developer",
+          value: "Oleksii Karavanov",
+        },
+        {
+          key: "X-Application-Version",
+          value: "v1.0.0",
+        },
+      ],
     });
 
     await sendEmail(mailComposer);
@@ -76,11 +89,15 @@ const sendWelcomeEmail = async (emailAddress: string, userName: string, payload:
   }
 };
 
-const sendForgotPasswordEmail = async (emailAddress: string, code: string, userName: string) => {
+const sendForgotPasswordEmail = async (
+  emailAddress: string,
+  code: string,
+  userName: string
+) => {
   const mailComposer = new MailComposer({
-    from: 'Rica Mae-PressPool Support Team<rica@presspool.ai>',
+    from: "Rica Mae-PressPool Support Team<rica@presspool.ai>",
     to: emailAddress,
-    subject: 'Important: Your password reset code',
+    subject: "Important: Your password reset code",
     // text: content,
     html: `
     <p>Hey ${userName}</p>
@@ -90,12 +107,17 @@ const sendForgotPasswordEmail = async (emailAddress: string, code: string, userN
     <p style="margin:0px">Rica</p>
     `,
     // attachments: fileAttachments,
-    textEncoding: 'base64',
-    headers: [{
-      key: 'X-Application-Developer', value: 'Oleksii Karavanov'
-    }, {
-      key: 'X-Application-Version', value: 'v1.0.0'
-    }]
+    textEncoding: "base64",
+    headers: [
+      {
+        key: "X-Application-Developer",
+        value: "Oleksii Karavanov",
+      },
+      {
+        key: "X-Application-Version",
+        value: "v1.0.0",
+      },
+    ],
   });
 
   await sendEmail(mailComposer);
@@ -103,9 +125,9 @@ const sendForgotPasswordEmail = async (emailAddress: string, code: string, userN
 
 const sendTutorialEmail = async (emailAddress: string, userName: string) => {
   try {
-    const firstName = userName.split(' ')[0];
+    const firstName = userName.split(" ")[0];
     const mailComposer = new MailComposer({
-      from: 'Rica Mae-PressPool Support Team<rica@presspool.ai>',
+      from: "Rica Mae-PressPool Support Team<rica@presspool.ai>",
       to: emailAddress,
       subject: `Hey ${firstName}, ready to start your campaign?`,
       // text: content,
@@ -129,12 +151,17 @@ const sendTutorialEmail = async (emailAddress: string, userName: string) => {
       <p style="margin: 0px">Rica</p>
       `,
       // attachments: fileAttachments,
-      textEncoding: 'base64',
-      headers: [{
-        key: 'X-Application-Developer', value: 'Oleksii Karavanov'
-      }, {
-        key: 'X-Application-Version', value: 'v1.0.0'
-      }]
+      textEncoding: "base64",
+      headers: [
+        {
+          key: "X-Application-Developer",
+          value: "Oleksii Karavanov",
+        },
+        {
+          key: "X-Application-Version",
+          value: "v1.0.0",
+        },
+      ],
     });
 
     await sendEmail(mailComposer);
@@ -143,11 +170,15 @@ const sendTutorialEmail = async (emailAddress: string, userName: string) => {
   }
 };
 
-const sendPublishEmail = async (emailAddress: string, userName: string, campaignName: string) => {
+const sendPublishEmail = async (
+  emailAddress: string,
+  userName: string,
+  campaignName: string
+) => {
   try {
     // const firstName = userName.split(' ')[0];
     const mailComposer = new MailComposer({
-      from: 'Rica Mae-PressPool Support Team<rica@presspool.ai>',
+      from: "Rica Mae-PressPool Support Team<rica@presspool.ai>",
       to: emailAddress,
       subject: `Congrats! Your Campaign "${campaignName}" has been submitted!`,
       // text: content,
@@ -160,12 +191,17 @@ const sendPublishEmail = async (emailAddress: string, userName: string, campaign
       <p>Rica</p>
       `,
       // attachments: fileAttachments,
-      textEncoding: 'base64',
-      headers: [{
-        key: 'X-Application-Developer', value: 'Oleksii Karavanov'
-      }, {
-        key: 'X-Application-Version', value: 'v1.0.0'
-      }]
+      textEncoding: "base64",
+      headers: [
+        {
+          key: "X-Application-Developer",
+          value: "Oleksii Karavanov",
+        },
+        {
+          key: "X-Application-Version",
+          value: "v1.0.0",
+        },
+      ],
     });
 
     await sendEmail(mailComposer);
@@ -174,12 +210,17 @@ const sendPublishEmail = async (emailAddress: string, userName: string, campaign
   }
 };
 
-const sendBudgetIncreaseEmail = async (emailAddress: string, campaignName: string, budget: string, userName: string) => {
+const sendBudgetIncreaseEmail = async (
+  emailAddress: string,
+  campaignName: string,
+  budget: string,
+  userName: string
+) => {
   try {
     const mailComposer = new MailComposer({
-      from: 'Rica Mae-PressPool Support Team<rica@presspool.ai>',
+      from: "Rica Mae-PressPool Support Team<rica@presspool.ai>",
       to: emailAddress,
-      subject: 'Your Campaign Budget Has Been Fully Utilized',
+      subject: "Your Campaign Budget Has Been Fully Utilized",
       // text: content,
       html: `
       <p>Hey ${userName}</p>
@@ -197,12 +238,17 @@ const sendBudgetIncreaseEmail = async (emailAddress: string, campaignName: strin
       <p style="margin: 0px">Rica</p>
       `,
       // attachments: fileAttachments,
-      textEncoding: 'base64',
-      headers: [{
-        key: 'X-Application-Developer', value: 'Oleksii Karavanov'
-      }, {
-        key: 'X-Application-Version', value: 'v1.0.0'
-      }]
+      textEncoding: "base64",
+      headers: [
+        {
+          key: "X-Application-Developer",
+          value: "Oleksii Karavanov",
+        },
+        {
+          key: "X-Application-Version",
+          value: "v1.0.0",
+        },
+      ],
     });
 
     await sendEmail(mailComposer);
@@ -211,14 +257,18 @@ const sendBudgetIncreaseEmail = async (emailAddress: string, campaignName: strin
   }
 };
 
-
-const sendBudgetReachEmail = async (emailAddress: string, campaignName: string, percentage: string, userName: string) => {
+const sendBudgetReachEmail = async (
+  emailAddress: string,
+  campaignName: string,
+  percentage: string,
+  userName: string
+) => {
   try {
     // const html = `
     //   <p>You campaign: ${campaignName} has reached ${percentage} of the the total budget</p>
     // `;
     const mailComposer = new MailComposer({
-      from: 'Rica Mae-PressPool Support Team<rica@presspool.ai>',
+      from: "Rica Mae-PressPool Support Team<rica@presspool.ai>",
       to: emailAddress,
       subject: `Your Campaign ${campaignName} Budget is ${percentage}% Utilized`,
       // text: content,
@@ -234,12 +284,17 @@ const sendBudgetReachEmail = async (emailAddress: string, campaignName: string, 
       <p style="margin:0px">Rica</p>
       `,
       // attachments: fileAttachments,
-      textEncoding: 'base64',
-      headers: [{
-        key: 'X-Application-Developer', value: 'Oleksii Karavanov'
-      }, {
-        key: 'X-Application-Version', value: 'v1.0.0'
-      }]
+      textEncoding: "base64",
+      headers: [
+        {
+          key: "X-Application-Developer",
+          value: "Oleksii Karavanov",
+        },
+        {
+          key: "X-Application-Version",
+          value: "v1.0.0",
+        },
+      ],
     });
 
     await sendEmail(mailComposer);
@@ -248,10 +303,14 @@ const sendBudgetReachEmail = async (emailAddress: string, campaignName: string, 
   }
 };
 
-const sendPurchaseEmail = async (emailAddress: string, userName: string, description: string) => {
+const sendPurchaseEmail = async (
+  emailAddress: string,
+  userName: string,
+  description: string
+) => {
   try {
     const mailComposer = new MailComposer({
-      from: 'Rica Mae-PressPool Support Team<rica@presspool.ai>',
+      from: "Rica Mae-PressPool Support Team<rica@presspool.ai>",
       to: emailAddress,
       subject: `${description} Weekly Reporting is Available - Stay Informed!`,
       // text: content,
@@ -269,12 +328,17 @@ const sendPurchaseEmail = async (emailAddress: string, userName: string, descrip
       <p style="margin:0px;">Rica</p>
       `,
       // attachments: fileAttachments,
-      textEncoding: 'base64',
-      headers: [{
-        key: 'X-Application-Developer', value: 'Oleksii Karavanov'
-      }, {
-        key: 'X-Application-Version', value: 'v1.0.0'
-      }]
+      textEncoding: "base64",
+      headers: [
+        {
+          key: "X-Application-Developer",
+          value: "Oleksii Karavanov",
+        },
+        {
+          key: "X-Application-Version",
+          value: "v1.0.0",
+        },
+      ],
     });
 
     await sendEmail(mailComposer);
@@ -283,26 +347,43 @@ const sendPurchaseEmail = async (emailAddress: string, userName: string, descrip
   }
 };
 
-const sendAddTemmateEmail = async (ownerName: string, companyName: string, email: string) => {
+const sendAddTemmateEmail = async (
+  ownerName: string,
+  companyName: string,
+  email: string,
+  isUserExist: boolean
+) => {
   try {
+    const secretKey = "presspool-ai";
+    const token = sign({ companyName, email }, secretKey, { expiresIn: "1d" });
+    const url = `${
+      isUserExist
+        ? `https://go.presspool.ai/login?token=${token}`
+        : `https://go.presspool.ai/client-sign-up?token=${token}`
+    }`;
     const mailComposer = new MailComposer({
-      from: 'Rica Mae-PressPool Support Team<rica@presspool.ai>',
+      from: "Rica Mae-PressPool Support Team<rica@presspool.ai>",
       to: email,
       subject: `${ownerName} invited you to join the ${companyName} team`,
       // text: content,
       html: `
       <p style="margin-top: 15px;">${ownerName} invited you to join the ${companyName} team on Presspool.ai Platform</p>
-      <a style="margin-top: 15px;" href="https://go.presspool.ai" target="_blank">Join Presspool</a>
+      <a style="margin-top: 15px;" href="${url}" target="_blank">Join Presspool</a>
       <p style="margin-top: 20px;">Warmly,</p>
       <p>Rica</p>
       `,
       // attachments: fileAttachments,
-      textEncoding: 'base64',
-      headers: [{
-        key: 'X-Application-Developer', value: 'Oleksii Karavanov'
-      }, {
-        key: 'X-Application-Version', value: 'v1.0.0'
-      }]
+      textEncoding: "base64",
+      headers: [
+        {
+          key: "X-Application-Developer",
+          value: "Oleksii Karavanov",
+        },
+        {
+          key: "X-Application-Version",
+          value: "v1.0.0",
+        },
+      ],
     });
 
     await sendEmail(mailComposer);
@@ -312,16 +393,33 @@ const sendAddTemmateEmail = async (ownerName: string, companyName: string, email
 };
 
 // (Math.round((req.body.currentPrice / ((4 * (1 + 0.10)) / (1 - 0.50))) * 4) - 2).toString(),
-const sendSuperAdminNotificationEmail = async (email: string, adminName: string, campaignName: string, company: string, userName: string, price: string, uid: string, heroImage: string, additional: Array<string>, headline: string, body: string, cta: string, pageUrl: string, url: string) => {
-  console.log('send super admin notification emails');
+const sendSuperAdminNotificationEmail = async (
+  email: string,
+  adminName: string,
+  campaignName: string,
+  company: string,
+  userName: string,
+  price: string,
+  uid: string,
+  heroImage: string,
+  additional: Array<string>,
+  headline: string,
+  body: string,
+  cta: string,
+  pageUrl: string,
+  url: string
+) => {
+  console.log("send super admin notification emails");
   try {
-    let additionalFiles = '';
+    let additionalFiles = "";
     for (const fileName of additional) {
-      const parts = fileName.split('/');
-      additionalFiles += `<p><a href="${fileName}" download="${parts[parts.length - 1]}">${parts[parts.length - 1]}</a></p>`;
+      const parts = fileName.split("/");
+      additionalFiles += `<p><a href="${fileName}" download="${
+        parts[parts.length - 1]
+      }">${parts[parts.length - 1]}</a></p>`;
     }
     const mailComposer = new MailComposer({
-      from: 'Rica Mae-PressPool Support Team<rica@presspool.ai>',
+      from: "Rica Mae-PressPool Support Team<rica@presspool.ai>",
       to: email,
       subject: `Review Needed: ${userName}'s "${campaignName}" Submitted`,
       // text: content,
@@ -331,7 +429,9 @@ const sendSuperAdminNotificationEmail = async (email: string, adminName: string,
       <p>Company: ${company}</p>
       <p style="font-weight:700">DO NOT CLICK THIS LINK OR IT WILL CHARGE THE CLIENT</p>
       <p>Our Tracking url: https://track.presspool.ai/${uid} </p>
-      <p>Beehiiv Budget: ${(Math.round((Number(price) / ((4 * (1 + 0.10)) / (1 - 0.60))) * 4) - 2).toString()}</p>
+      <p>Beehiiv Budget: ${(
+        Math.round((Number(price) / ((4 * (1 + 0.1)) / (1 - 0.6))) * 4) - 2
+      ).toString()}</p>
       <div style="margin-left: 20px">
         <p>Website URL:</p>
         <p>${url}</p>
@@ -352,12 +452,17 @@ const sendSuperAdminNotificationEmail = async (email: string, adminName: string,
       <p>Rica</p>
       `,
       // attachments: fileAttachments,
-      textEncoding: 'base64',
-      headers: [{
-        key: 'X-Application-Developer', value: 'Oleksii Karavanov'
-      }, {
-        key: 'X-Application-Version', value: 'v1.0.0'
-      }]
+      textEncoding: "base64",
+      headers: [
+        {
+          key: "X-Application-Developer",
+          value: "Oleksii Karavanov",
+        },
+        {
+          key: "X-Application-Version",
+          value: "v1.0.0",
+        },
+      ],
     });
 
     await sendEmail(mailComposer);
@@ -366,11 +471,23 @@ const sendSuperAdminNotificationEmail = async (email: string, adminName: string,
   }
 };
 
-const sendAdminNotificationEmail = async (email: string, adminName: string, campaignName: string, company: string, userName: string, price: string, uid: string, headline: string, body: string, cta: string, pageUrl: string) => {
-  console.log('send admin notification emails');
+const sendAdminNotificationEmail = async (
+  email: string,
+  adminName: string,
+  campaignName: string,
+  company: string,
+  userName: string,
+  price: string,
+  uid: string,
+  headline: string,
+  body: string,
+  cta: string,
+  pageUrl: string
+) => {
+  console.log("send admin notification emails");
   try {
     const mailComposer = new MailComposer({
-      from: 'Rica Mae-PressPool Support Team<rica@presspool.ai>',
+      from: "Rica Mae-PressPool Support Team<rica@presspool.ai>",
       to: email,
       subject: `Review Needed: ${userName}'s "${campaignName}" Submitted`,
       // text: content,
@@ -381,12 +498,17 @@ const sendAdminNotificationEmail = async (email: string, adminName: string, camp
       <p>Rica</p>
       `,
       // attachments: fileAttachments,
-      textEncoding: 'base64',
-      headers: [{
-        key: 'X-Application-Developer', value: 'Oleksii Karavanov'
-      }, {
-        key: 'X-Application-Version', value: 'v1.0.0'
-      }]
+      textEncoding: "base64",
+      headers: [
+        {
+          key: "X-Application-Developer",
+          value: "Oleksii Karavanov",
+        },
+        {
+          key: "X-Application-Version",
+          value: "v1.0.0",
+        },
+      ],
     });
 
     await sendEmail(mailComposer);
@@ -395,11 +517,15 @@ const sendAdminNotificationEmail = async (email: string, adminName: string, camp
   }
 };
 
-const sendInviteEmail = async (adminName: string, email: string, link: string) => {
-  console.log('send invite emails');
+const sendInviteEmail = async (
+  adminName: string,
+  email: string,
+  link: string
+) => {
+  console.log("send invite emails");
   try {
     const mailComposer = new MailComposer({
-      from: 'Rica Mae-PressPool Support Team<rica@presspool.ai>',
+      from: "Rica Mae-PressPool Support Team<rica@presspool.ai>",
       to: email,
       subject: `Exclusive Invitation to Join PressPool!`,
       // text: content,
@@ -411,12 +537,17 @@ const sendInviteEmail = async (adminName: string, email: string, link: string) =
       <p>Rica</p>
       `,
       // attachments: fileAttachments,
-      textEncoding: 'base64',
-      headers: [{
-        key: 'X-Application-Developer', value: 'Oleksii Karavanov'
-      }, {
-        key: 'X-Application-Version', value: 'v1.0.0'
-      }]
+      textEncoding: "base64",
+      headers: [
+        {
+          key: "X-Application-Developer",
+          value: "Oleksii Karavanov",
+        },
+        {
+          key: "X-Application-Version",
+          value: "v1.0.0",
+        },
+      ],
     });
 
     await sendEmail(mailComposer);
@@ -426,10 +557,10 @@ const sendInviteEmail = async (adminName: string, email: string, link: string) =
 };
 
 const sendInviteAccountManagerEmail = async (email: string) => {
-  console.log('send invite account maanger emails');
+  console.log("send invite account maanger emails");
   try {
     const mailComposer = new MailComposer({
-      from: 'Rica Mae-PressPool Support Team<rica@presspool.ai>',
+      from: "Rica Mae-PressPool Support Team<rica@presspool.ai>",
       to: email,
       subject: `Get Set Up with PressPool!`,
       // text: content,
@@ -441,12 +572,17 @@ const sendInviteAccountManagerEmail = async (email: string) => {
       <p style="margin:0px">Rica</p>
       `,
       // attachments: fileAttachments,
-      textEncoding: 'base64',
-      headers: [{
-        key: 'X-Application-Developer', value: 'Oleksii Karavanov'
-      }, {
-        key: 'X-Application-Version', value: 'v1.0.0'
-      }]
+      textEncoding: "base64",
+      headers: [
+        {
+          key: "X-Application-Developer",
+          value: "Oleksii Karavanov",
+        },
+        {
+          key: "X-Application-Version",
+          value: "v1.0.0",
+        },
+      ],
     });
 
     await sendEmail(mailComposer);
@@ -470,6 +606,6 @@ const mailer = {
 
   sendInviteEmail,
   sendInviteAccountManagerEmail,
-}
+};
 
 export default mailer;
