@@ -69,7 +69,8 @@ const billingFunction = async () => { // Here we notify users about billing
             allow_redirects: 'never',
           },
           metadata: {
-            state: 'weekly'
+            state: 'weekly',
+            campaignName: campaign.name,
           },
           description: `${campaign.name}`,
           confirm: true,

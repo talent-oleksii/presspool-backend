@@ -16,6 +16,7 @@ dotenv.config({ path: './.env' });
 
 import db from './util/db';
 import log from './util/logger';
+import mailer from './util/mailer';
 
 AWS.config.update({
     region: 'us-east-1',
@@ -70,7 +71,7 @@ cron.schedule('1 0 * * *', async () => {
 
 //This should be opened before deploy
 cron.schedule('*/3 * * * *', async () => {
-    await cronFunction.scrapeFunction();
+    // await cronFunction.scrapeFunction();
     // await cronFunction.dailyAnalyticsUpdate();
 });
 
@@ -78,3 +79,15 @@ cron.schedule('0 0 * * *', async () => {
     // cron.schedule('*/30 * * * * *', async () => {
     await cronFunction.dailyAnalyticsUpdate();
 });
+
+// mailer.sendPurchaseEmail('conrad@synthesia.io', 'Conrad Riparbelli', [{
+//     name: 'Generic #1 - CTA free AI video',
+//     totalClick: 2513,
+//     upTotalClick: 0,
+//     uniqueClick: 2436,
+//     upUniqueClick: 0,
+//     totalSpent: 5000,
+//     upTotalSpent: 0,
+//     avgCPC: 2,
+//     upAvgCPC: 0,
+// }]);

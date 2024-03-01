@@ -87,9 +87,23 @@ const purchaseCampaign: RequestHandler = async (req: Request, res: Response) => 
 
       return res.status(StatusCodes.OK).json('successfully purchased');
     } else if (object.metadata.state === 'weekly') {
+      console.log('meta data campaign name:', object.metadata.camapignName);
       const user = await db.query('select name from user_list where email = $1', [object.receipt_email]);
 
-      await mailer.sendPurchaseEmail(object.receipt_email, user.rows[0].name, '');
+      const campaigns = await db.query('SELECT * from campaign WHERE email = $1 and state = $2', [object.receipt_email, 'active']);
+      const data = campaigns.rows.map(item => ({
+        name: item.name,
+        totalClick: item.click_count,
+        upTotalClick: 0,
+        uniqueClick: item.unique_clicks,
+        upUniqueClick: 0,
+        totalSpent: item.billed,
+        upTotalSpent: 0,
+        avgCPC: item.billed / item.unique_clicks,
+        upAvgCPC: 0,
+      }));
+
+      await mailer.sendPurchaseEmail(object.receipt_email, user.rows[0].name, data);
       await db.query('update user_list set verified = 1 where email = $1', [object.receipt_email]);
 
       return res.status(StatusCodes.OK).json('successfully purchased');

@@ -306,26 +306,81 @@ const sendBudgetReachEmail = async (
 const sendPurchaseEmail = async (
   emailAddress: string,
   userName: string,
-  description: string
+  data: Array<any>
 ) => {
   try {
     const mailComposer = new MailComposer({
       from: "Rica Mae-PressPool Support Team<rica@presspool.ai>",
       to: emailAddress,
-      subject: `${description} Weekly Reporting is Available - Stay Informed!`,
+      subject: `Your Weekly Campaign Performance Snapshot`,
       // text: content,
       html: `
-      <p>Hey ${userName}</p>
-      <p>Happy Friday! We hope this message finds you well. We're excited to share that our latest weekly report is now available.</p> 
-      <p style="margin-top: 15px; font-weight: 700; margin-bottom: 0px;">How to Access the Report:</p>
-      <p>Simply go to your dashboard to review your live reporting data: <a href="https://go.presspool.ai" target="_blank">To your dashboard</a></p>
-      <p style="margin-top: 15px; font-weight: 700; margin-botom: 0px;">Your Feedback Matters:</p>
-      <p>We value your feedback! If you have any questions, suggestions, or topics you'd like us to cover in future reports, please don't hesitate to reach out or <a href="https://forms.gle/XYZbSEzVwUf4dAam8" target="_blank">submit here.</a></p>
-      <p>We appreciate your continued partnership and look forward to keeping you informed.</p>
-      <p>Note: We continually optimize your campaigns as our system continues to learn from the campaign data, so expect better and better results as time goes on.</p>
-      <p>Have a fantastic weekend!</p>
-      <p style="margin:0px;">Warmly,</p>
-      <p style="margin:0px;">Rica</p>
+        <div style="background: black; padding: 20px; text-align: center;">
+          <div style="background: #fffdfd; padding: 20px; border-radius: 10px; text-align: left">
+            <div style="text-align:center; width:'100%'; border-bottom: 1px solid rgba(0,0,0,0.12); padding-bottom: 15px;">
+              <img src="https://presspool-upload-images.s3.amazonaws.com/pp+full+transparent.png" width="115px"  />
+            </div>
+            <div style="border-bottom: 1px solid rgba(0,0,0,0.12); padding: 10px 0px;">
+              <p>Hey ${userName}</p>
+              <p>Hope you've had a productive week! Here's a quick look at how your campaign(s) performed over the last seven days. </p> 
+              <p>You can also view live analytics in your <a  href="https://go.presspool.ai" target="_blank">dashboard</a> for the most up-to-date metrics.</p>
+            </div>
+            ${data.map(item => {
+        return `
+                        <div key=${item.name} style="border-bottom: 1px solid rgba(0,0,0,0.12); padding: 20px 0px;">
+                          <p style="font-weight: 700; letter-spacing: -0.42px; font-size: 14px; margin-top: 0px;">${item.name}</p>
+                          <div style="display: flex;">
+                            <div style="padding: 15px; border-radius: 8px; border: 1px solid #7ffbae; min-width: 200px;">
+                              <p style="font-size: 16px; letter-spacing: -0.48px; font-weight: 500; color: #172935; margin: 0px;">Total Clicks</p>
+                              <p style="font-size: 25px; letter-spacing: -0.75px; font-weight: 600; color: #7ffbae; margin: 0px;">${item.totalClick}</p>
+                              <div style="display: flex; margin-top: 10px; align-items: center; font-size: 13px;">
+                                ${item.upTotalClick >= 0 ? '<span style="border-radius: 50px; background: #7ffbae; padding: 0px; text-align: center; width: 20px; height: 20px; color: white; margin-right: 2px;">+</span>Up' : '<span style="border-radius: 50px; background: #FF4D42; padding: 0px; text-align: center; width: 20px; height: 20px; color: white; margin-right: 2px;">-</span>Down'}
+                                <span style="color: #172935; font-size: 13px; letter-spacing: -0.3px; font-weight: 500; margin-left: 3px;">${Math.abs(item.upTotalClick)}% from last week</span>
+                              </div>
+                            </div>
+                            <div style="padding: 15px; margin-left: 30px; border-radius: 8px; border: 1px solid #7ffbae; min-width: 200px;">
+                              <p style="font-size: 16px; letter-spacing: -0.48px; font-weight: 500; color: #172935; margin: 0px;">Unique Clicks</p>
+                              <p style="font-size: 25px; letter-spacing: -0.75px; font-weight: 600; color: #7ffbae; margin: 0px;">${item.uniqueClick}</p>
+                              <div style="display: flex; margin-top: 10px; align-items: center; font-size: 13px;">
+                                ${item.upUniqueClick >= 0 ? '<span style="border-radius: 50px; background: #7ffbae; padding: 0px; text-align: center; width: 20px; height: 20px; color: white; margin-right: 2px;">+</span>Up' : '<span style="border-radius: 50px; background: #FF4D42;  padding: 0px; text-align: center; width: 20px; height: 20px; color: white; margin-right: 2px;">-</span>Down'}
+                                <span style="color: #172935; font-size: 13px; letter-spacing: -0.3px; font-weight: 500; margin-left: 3px;">${Math.abs(item.upUniqueClick)}% from last week</span>
+                              </div>
+                            </div>
+                          </div>
+                          <div style="margin-top: 20px; display: flex;">
+                            <div style="padding: 15px; border-radius: 8px; border: 1px solid #7ffbae; min-width: 200px;">
+                              <p style="font-size: 16px; letter-spacing: -0.48px; font-weight: 500; color: #172935; margin: 0px;">Total Spend</p>
+                              <p style="font-size: 25px; letter-spacing: -0.75px; font-weight: 600; color: #7ffbae; margin: 0px;">${`$${item.totalSpent}`}</p>
+                              <div style="display: flex; margin-top: 10px; align-items: center; font-size: 13px;">
+                                ${item.upTotalSpent >= 0 ? '<span style="border-radius: 50px; background: #7ffbae; padding: 0px; text-align: center; width: 20px; height: 20px; color: white; margin-right: 2px;">+</span>Up' : '<span style="border-radius: 50px; background: #FF4D42; padding: 0px; text-align: center; width: 20px; height: 20px; color: white; margin-right: 2px;">-</span>Down'}
+                                <span style="color: #172935; font-size: 13px; letter-spacing: -0.3px; font-weight: 500; margin-left: 3px;">${Math.abs(item.upTotalSpent)}% from last week</span>
+                              </div>
+                            </div>
+                            <div style="padding: 15px; margin-left: 30px; border-radius: 8px; border: 1px solid #7ffbae; min-width: 200px;">
+                              <p style="font-size: 16px; letter-spacing: -0.48px; font-weight: 500; color: #172935; margin: 0px;">AVG CPC</p>
+                              <p style="font-size: 25px; letter-spacing: -0.75px; font-weight: 600; color: #7ffbae; margin: 0px;">${item.avgCPC}</p>
+                              <div style="display: flex; margin-top: 10px; align-items: center; font-size: 13px;">
+                                ${item.upAvgCPC >= 0 ? '<span style="border-radius: 50px; background: #7ffbae; padding: 0px; text-align: center; width: 20px; height: 20px; color: white; margin-right: 2px;">+</span>Up ' : '<span style="border-radius: 50px; background: #FF4D42; padding: 0px; text-align: center; width: 20px; height: 20px; color: white; margin-right: 2px;">-</span>Down '}
+                                <span style="color: #172935; font-size: 13px; letter-spacing: -0.3px; font-weight: 500; margin-left: 3px;">${Math.abs(item.upAvgCPC)}% from last week</span>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      `;
+      }).join('')
+        }
+            <div style="border-bottom: 1px solid rgba(0,0,0,0.12); padding: 20px 0px;">
+              <p style="margin-top: 0px;">We'll continue tracking and reporting your campaign's performance.</p>
+              <p>Expect more insights next week!</p>
+              <p style="margin: 0px;">Cheers,</p>
+              <p style="margin: 0px;">Rica</p>
+            </div>
+            <div style="text-align:center; width:100%; margin-top: 10px;">
+              <img src="https://presspool-upload-images.s3.amazonaws.com/PP+logo+transparent.png" width="40px"  />
+              <p style="margin: 0px; letter-spacing: -0.24px; font-size: 10px;">© 2024 Presspool</p>
+            </div>
+          </div>
+        </div>
       `,
       // attachments: fileAttachments,
       textEncoding: "base64",
@@ -356,11 +411,10 @@ const sendAddTemmateEmail = async (
   try {
     const secretKey = "presspool-ai";
     const token = sign({ companyName, email }, secretKey, { expiresIn: "1d" });
-    const url = `${
-      isUserExist
-        ? `https://go.presspool.ai/login?token=${token}`
-        : `https://go.presspool.ai/client-sign-up?token=${token}`
-    }`;
+    const url = `${isUserExist
+      ? `https://go.presspool.ai/login?token=${token}`
+      : `https://go.presspool.ai/client-sign-up?token=${token}`
+      }`;
     const mailComposer = new MailComposer({
       from: "Rica Mae-PressPool Support Team<rica@presspool.ai>",
       to: email,
@@ -414,9 +468,8 @@ const sendSuperAdminNotificationEmail = async (
     let additionalFiles = "";
     for (const fileName of additional) {
       const parts = fileName.split("/");
-      additionalFiles += `<p><a href="${fileName}" download="${
-        parts[parts.length - 1]
-      }">${parts[parts.length - 1]}</a></p>`;
+      additionalFiles += `<p><a href="${fileName}" download="${parts[parts.length - 1]
+        }">${parts[parts.length - 1]}</a></p>`;
     }
     const mailComposer = new MailComposer({
       from: "Rica Mae-PressPool Support Team<rica@presspool.ai>",
@@ -430,8 +483,8 @@ const sendSuperAdminNotificationEmail = async (
       <p style="font-weight:700">DO NOT CLICK THIS LINK OR IT WILL CHARGE THE CLIENT</p>
       <p>Our Tracking url: https://track.presspool.ai/${uid} </p>
       <p>Beehiiv Budget: ${(
-        Math.round((Number(price) / ((4 * (1 + 0.1)) / (1 - 0.6))) * 4) - 2
-      ).toString()}</p>
+          Math.round((Number(price) / ((4 * (1 + 0.1)) / (1 - 0.6))) * 4) - 2
+        ).toString()}</p>
       <div style="margin-left: 20px">
         <p>Website URL:</p>
         <p>${url}</p>
