@@ -281,6 +281,7 @@ async function dailyAnalyticsUpdate() {
 
     for (const campaign of campaigns.rows) {
       let uniqueClicks = 0, totalClicks = 0;
+      // await db.query('delete from clicked_history where campaign_id = $1', [campaign.id]);
       for (const item of response.rows) {
         const pageUrl = item.dimensionValues?.[0]?.value ? encodeURIComponent(item.dimensionValues[0].value) : '';
         if (!pageUrl.includes(campaign.uid)) continue;
@@ -306,7 +307,7 @@ async function dailyAnalyticsUpdate() {
         totalClicks += Number(screenPageViews);
       }
       console.log('camp id:', campaign.id, uniqueClicks, totalClicks);
-      await db.query('UPDATE campaign set click_count = $1, spent = $2, unique_clicks = $3 WHERE id = $4', [totalClicks, Math.ceil(uniqueClicks * getCPC(5000)), uniqueClicks, campaign.id]);
+      await db.query('UPDATE campaign set click_count = click_count + $1, spent = spent + $2, unique_clicks = unique_clicks + $3 WHERE id = $4', [totalClicks, Math.ceil(uniqueClicks * getCPC(5000)), uniqueClicks, campaign.id]);
     }
 
   } catch (error) {
