@@ -65,15 +65,15 @@ cron.schedule('0 0 * * 5', async () => { // minute, hour, day, month, day_of_wee
 
 // This is for email triggering
 cron.schedule('1 0 * * *', async () => {
-    console.log('mailing called');
-    // await cronFunction.mailingFunction();
+    // console.log('mailing called');
+    await cronFunction.mailingFunction();
 });
 
 //This should be opened before deploy
-cron.schedule('*/3 * * * *', async () => {
-    // await cronFunction.scrapeFunction();
-    // await cronFunction.dailyAnalyticsUpdate();
-});
+// cron.schedule('*/3 * * * *', async () => {
+// await cronFunction.scrapeFunction();
+// await cronFunction.dailyAnalyticsUpdate();
+// });
 
 cron.schedule('0 0 * * *', async () => {
     // cron.schedule('*/30 * * * * *', async () => {
