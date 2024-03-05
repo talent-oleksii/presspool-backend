@@ -42,13 +42,15 @@ const billingFunction = async () => { // Here we notify users about billing
     for (const campaign of activeCampaigns.rows) {
       // decide how much to bill
       let billAmount = 0;
-      if (Number(campaign.spent) > (Number(campaign.price) - Number(campaign.billed))) billAmount = (Number(campaign.price) - Number(campaign.billed)) * 100;
-      else billAmount = Number(campaign.spent) * 100;
+      if (Number(campaign.spent) - Number(campaign.billed) > (Number(campaign.price) - Number(campaign.billed))) billAmount = (Number(campaign.price) - Number(campaign.billed)) * 100;
+      else billAmount = (Number(campaign.spent) - Number(campaign.billed)) * 100;
 
       if (Number(campaign.billed) >= Number(campaign.price)) billAmount = 0;
+      if (Number(campaign.billed) >= Number(campaign.spent)) billAmount = 0;
       //end
       if (billAmount === 0) continue;
       console.log('billned campaign:', campaign, 'amount:', billAmount);
+      // continue;
       let customer;
       const existingCustomers = await stripe.customers.list({ email: campaign.email as string });
 
@@ -61,7 +63,7 @@ const billingFunction = async () => { // Here we notify users about billing
       try {
         await stripe.paymentIntents.create({
           customer: customer.id,
-          amount: billAmount,
+          amount: (billAmount / 100) * 103,
           currency: 'usd',
           payment_method: campaign.card_id,
           automatic_payment_methods: {
@@ -72,7 +74,7 @@ const billingFunction = async () => { // Here we notify users about billing
             state: 'weekly',
             campaignName: campaign.name,
           },
-          description: `${campaign.name}`,
+          description: `${campaign.name} - $${Math.round(billAmount / 100 * 3) / 100} as fee`,
           confirm: true,
         });
       } catch (error) {
@@ -161,7 +163,7 @@ const runRealtimeReport = async (client: BetaAnalyticsDataClient, propertyId: st
       //   name: 'deviceCategory'
       // }],
       // dimensions: [{ name: 'country' }, { name: 'unifiedScreenName' }, { name: 'deviceCategory' }, { name: 'minutesAgo' }],
-      dimensions: [{ name: 'unifiedScreenName' }, { name: 'country' }, { name: 'full_url' }],
+      dimensions: [{ name: 'unifiedScreenName' }, { name: 'country' }],
       metrics: [{ name: 'activeUsers' }, { name: 'screenPageViews' }],
       // metrics: [{ name: 'eventCount' }],
       // dimensionFilter: {
