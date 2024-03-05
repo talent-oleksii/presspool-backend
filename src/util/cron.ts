@@ -131,17 +131,13 @@ async function runReport(client: BetaAnalyticsDataClient, propertyId: any, start
     const [response] = await client.runReport({
       property: `properties/${propertyId}`,
       dateRanges: [{ startDate: startDate, endDate: endDate }],
-      dimensions: [{ name: 'fullPageUrl' }, { name: 'country' }, { name: 'deviceCategory' }, { name: 'date' }],
+      dimensions: [{ name: 'fullPageUrl' }, { name: 'country' }, { name: 'deviceCategory' }, { name: 'date' }, { name: 'firstUserMedium' }],
       metrics: [{
-        name: 'totalUsers'
-      }, {
-        name: 'sessions'
-      }, {
-        name: 'activeUsers'
-      }, {
         name: 'newUsers'
       }, {
         name: 'screenPageViews',
+      }, {
+        name: 'userEngagementDuration',
       }],
       // metrics: [{ name: 'sessions' }],
       // dimensions: [{ name: 'country' }]
@@ -268,7 +264,8 @@ async function dailyAnalyticsUpdate() {
     const client = await initializeClient() as BetaAnalyticsDataClient;
     const propertyId = process.env.GOOGLE_ANALYTIC_PROPERTY_ID as string;
 
-    const response = await runReport(client, propertyId, stD, enD);
+    // const response = await runReport(client, propertyId, stD, enD);
+    const response = await runReport(client, propertyId, '2024-02-18', enD);
     if (!response) {
       console.error('Failed to fetch report data');
       return;
@@ -282,33 +279,34 @@ async function dailyAnalyticsUpdate() {
 
     for (const campaign of campaigns.rows) {
       let uniqueClicks = 0, totalClicks = 0;
-      // await db.query('delete from clicked_history where campaign_id = $1', [campaign.id]);
+      await db.query('DELETE FROM clicked_history WHERE campaign_id = $1', [campaign.id]);
       for (const item of response.rows) {
         const pageUrl = item.dimensionValues?.[0]?.value ? encodeURIComponent(item.dimensionValues[0].value) : '';
         if (!pageUrl.includes(campaign.uid)) continue;
         const country = item.dimensionValues?.[1]?.value ? item.dimensionValues[1].value : '';
         const device = item.dimensionValues?.[2]?.value ? item.dimensionValues[2].value : '';
         const time = item.dimensionValues?.[3]?.value ? item.dimensionValues[3].value : '';
+        const firstUserMedium = item.dimensionValues?.[4]?.value ? item.dimensionValues[4].value : '';
         const totalUsers = item.metricValues?.[0]?.value ? Number(item.metricValues[0].value) : 0;
-        const sessions = item.metricValues?.[1]?.value ? Number(item.metricValues[1].value) : 0;
-        const activeUsers = item.metricValues?.[2]?.value ? Number(item.metricValues[2].value) : 0;
-        const newUsers = item.metricValues?.[3]?.value ? Number(item.metricValues[3].value) : 0;
-        const screenPageViews = item.metricValues?.[4]?.value ? Number(item.metricValues[4].value) : 0;
+        const screenPageViews = item.metricValues?.[1]?.value ? Number(item.metricValues[1].value) : 0;
+        const userEngagementDuration = item.metricValues?.[2]?.value ? Number(item.metricValues[2].value) : 0;
 
         const timeOf = moment(time, 'YYYYMMDD').valueOf();
-        await db.query('INSERT INTO clicked_history (create_time, ip, campaign_id, device, count) VALUES ($1, $2, $3, $4, $5)', [
+        await db.query('INSERT INTO clicked_history (create_time, ip, campaign_id, device, count, unique_click, duration, user_medium) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)', [
           timeOf,
           country,
           campaign.id,
           device,
-          screenPageViews
+          screenPageViews,
+          totalUsers,
+          userEngagementDuration,
+          firstUserMedium
         ]);
 
         uniqueClicks += Number(totalUsers);
         totalClicks += Number(screenPageViews);
       }
-      console.log('camp id:', campaign.id, uniqueClicks, totalClicks);
-      await db.query('UPDATE campaign set click_count = click_count + $1, spent = spent + $2, unique_clicks = unique_clicks + $3 WHERE id = $4', [totalClicks, Math.ceil(uniqueClicks * getCPC(5000)), uniqueClicks, campaign.id]);
+      await db.query('UPDATE campaign set click_count = $1, spent = $2, unique_clicks = $3 WHERE id = $4', [totalClicks, Math.ceil(uniqueClicks * getCPC(5000)), uniqueClicks, campaign.id]);
     }
 
   } catch (error) {
