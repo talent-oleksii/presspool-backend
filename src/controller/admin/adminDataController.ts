@@ -255,6 +255,20 @@ const deleteGuide: RequestHandler = async (req: Request, res: Response) => {
   }
 };
 
+const getCampaignsByClient: RequestHandler = async (req: Request, res: Response) => {
+  console.log('get campaigns by client alled');
+  try {
+    const { client } = req.query;
+    const campaigns = await db.query('SELECT * FROM campaign WHERE email = $1', [client]);
+
+    return res.status(StatusCodes.OK).json(campaigns.rows);
+  } catch (error: any) {
+    console.log('get campaign error:', error.message);
+
+    return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ message: error.message });
+  }
+};
+
 const adminData = {
   getDashboardOverviewData,
   getDashboardCampaignList,
@@ -264,6 +278,7 @@ const adminData = {
   getClientCampaign,
   updateClientDetail,
   updateDashboardClient,
+  getCampaignsByClient,
 
   inviteClient,
   inviteAccountManager,

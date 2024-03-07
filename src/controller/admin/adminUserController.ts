@@ -52,12 +52,29 @@ const unassignAccountManager: RequestHandler = async (req: Request, res: Respons
   }
 };
 
-const getNormalUsers: RequestHandler = async (_req: Request, res: Response) => {
+const getNormalUsers: RequestHandler = async (req: Request, res: Response) => {
+  console.log('get normal user:');
   try {
-    const users = await db.query('SELECT * from user_list');
+    const { accountManager } = req.query;
+    let users: any = undefined;
+    if (accountManager) {
+      const assignedUsers = await db.query('SELECT assigned_users FROM admin_user WHERE id = $1', [accountManager]);
+      if (assignedUsers.rows[0].assigned_users) {
+        const arr = assignedUsers.rows[0].assigned_users.split(',');
+        users = await db.query('SELECT * from user_list WHERE id = ANY($1)', [arr]);
+      } else {
+        users = {
+          rows: []
+        };
+      }
+
+    } else {
+      users = await db.query('SELECT * from user_list');
+    }
 
     return res.status(StatusCodes.OK).json(users.rows);
   } catch (error: any) {
+    console.log('error getting normal user:', error.message);
     return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ message: error.message });
   }
 };

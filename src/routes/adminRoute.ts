@@ -55,6 +55,8 @@ router.get('/client', adminData.getClientDetail);
 router.put('/client', adminData.updateClientDetail);
 router.get('/client-campaign', adminData.getClientCampaign);
 
+router.get('/campaign', adminData.getCampaignsByClient);
+
 router.get('/guide', adminData.getGuide);
 router.post('/guide', upload.fields([
   { name: 'attach', maxCount: 1 }, { name: 'thumbnail', maxCount: 1 }
