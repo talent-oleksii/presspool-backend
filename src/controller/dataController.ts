@@ -30,15 +30,14 @@ const getNewsletter: RequestHandler = async (req: Request, res: Response) => {
     if (from && to) {
       query += " and create_time > $3 and create_time < $4";
       params = [...params, from, to];
-      if (campaignIds) {
-        query += " and campaign_id > $5";
-        params = [...params, campaignIds];
-      }
-    } else if (campaignIds) {
-      query += " and campaign_id > $2";
+    }
+    if (campaignIds) {
+      const parsedIds = (campaignIds as string[]).map((x) => Number(x));
+      query += ` and campaign_id IN(${parsedIds
+        .map((id) => "'" + id + "'")
+        .join(",")})`;
       params = [...params, campaignIds];
     }
-
     const newsletter = await db.query(query, params);
     return res.status(StatusCodes.OK).json(newsletter.rows);
   } catch (error: any) {
@@ -316,15 +315,19 @@ const getCampaign: RequestHandler = async (req: Request, res: Response) => {
 
   try {
     const { email, searchStr, from, to, campaignIds } = req.query;
+    log.info(JSON.stringify(campaignIds));
     let result: any = undefined;
 
     const ids: Array<Number> = [];
     let selectParams = [email];
     let campaignGetQuery = "select id from campaign where email = $1";
     if (campaignIds) {
-      campaignGetQuery += " AND id ANY($2)";
-      selectParams = [...selectParams, campaignIds];
+      const parsedIds = (campaignIds as string[]).map((x) => Number(x));
+      campaignGetQuery += ` AND id IN(${parsedIds
+        .map((id) => "'" + id + "'")
+        .join(",")})`;
     }
+    log.info(campaignGetQuery);
     const myCampaigns = await db.query(campaignGetQuery, selectParams);
     myCampaigns.rows.forEach((item) => ids.push(Number(item.id)));
     // check if this email is manager or admin
