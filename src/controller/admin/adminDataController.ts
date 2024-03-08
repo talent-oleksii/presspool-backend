@@ -8,45 +8,86 @@ import moment from 'moment';
 const getDashboardOverviewData: RequestHandler = async (req: Request, res: Response) => {
   console.log('get dashboard overview data called');
   try {
-    if (req.headers.role === 'account_manager') { // is the account manager part, send only assigned data to dashboard
-      const assignedUsers = (await db.query('SELECT assigned_users FROM admin_user WHERE id = $1', [req.headers.id])).rows[0].assigned_users;
+    // if (req.headers.role === 'account_manager') { // is the account manager part, send only assigned data to dashboard
+    //   const assignedUsers = (await db.query('SELECT assigned_users FROM admin_user WHERE id = $1', [req.headers.id])).rows[0].assigned_users;
 
-      // WHERE id = ANY($1), [item.map(id)]
-      const ids = assignedUsers.split(',').map((item: string) => Number(item));
-      const clientCount = await db.query('SELECT count(*) as total_count, count(*) FILTER (where email_verified = $1) as inactive_count from user_list WHERE id = ANY($2)', [0, ids]);
-      const campaignIds = (await db.query('SELECT campaign.id FROM campaign LEFT JOIN user_list ON campaign.email = user_list.email WHERE user_list.id = ANY($1) GROUP BY campaign.id', [ids])).rows;
-      const camIds = campaignIds.map(item => Number(item.id));
-      const campaignCount = await db.query('SELECT count(*) FILTER (WHERE state = $1) as active_count, count(*) FILTER (WHERE state = $2) as draft_count, SUM(price) as total_revenue, SUM(spent) as total_spent, SUM(billed) as total_profit from campaign WHERE campaign.id = ANY($3)', ['active', 'draft', camIds]);
-      const clickedData = await db.query('SELECT create_time, id, campaign_id FROM clicked_history WHERE campaign_id = ANY($1)', [camIds]);
+    //   // WHERE id = ANY($1), [item.map(id)]
+    //   const ids = assignedUsers.split(',').map((item: string) => Number(item));
+    //   const clientCount = await db.query('SELECT count(*) as total_count, count(*) FILTER (where email_verified = $1) as inactive_count from user_list WHERE id = ANY($2)', [0, ids]);
+    //   const campaignIds = (await db.query('SELECT campaign.id FROM campaign LEFT JOIN user_list ON campaign.email = user_list.email WHERE user_list.id = ANY($1) GROUP BY campaign.id', [ids])).rows;
+    //   const camIds = campaignIds.map(item => Number(item.id));
+    //   const campaignCount = await db.query('SELECT count(*) FILTER (WHERE state = $1) as active_count, count(*) FILTER (WHERE state = $2) as draft_count, SUM(price) as total_revenue, SUM(spent) as total_spent, SUM(billed) as total_profit from campaign WHERE campaign.id = ANY($3)', ['active', 'draft', camIds]);
+    //   const clickedData = await db.query('SELECT create_time, id, campaign_id FROM clicked_history WHERE campaign_id = ANY($1)', [camIds]);
 
-      return res.status(StatusCodes.OK).json({
-        totalClient: clientCount.rows[0].total_count,
-        inactiveClient: clientCount.rows[0].inactive_count,
-        activeCampaign: campaignCount.rows[0].active_count,
-        draftCampaign: campaignCount.rows[0].draft_count,
-        totalRevenue: campaignCount.rows[0].total_revenue,
-        totalSpent: campaignCount.rows[0].total_spent,
-        totalProfit: campaignCount.rows[0].total_profit,
-        unpaid: campaignCount.rows[0].total_spent - campaignCount.rows[0].total_profit,
-        clicked: clickedData.rows,
-      });
+    //   return res.status(StatusCodes.OK).json({
+    //     totalClient: clientCount.rows[0].total_count,
+    //     inactiveClient: clientCount.rows[0].inactive_count,
+    //     activeCampaign: campaignCount.rows[0].active_count,
+    //     draftCampaign: campaignCount.rows[0].draft_count,
+    //     totalRevenue: campaignCount.rows[0].total_revenue,
+    //     totalSpent: campaignCount.rows[0].total_spent,
+    //     totalProfit: campaignCount.rows[0].total_profit,
+    //     unpaid: campaignCount.rows[0].total_spent - campaignCount.rows[0].total_profit,
+    //     clicked: clickedData.rows,
+    //   });
+    // }
+
+    const { accountManagerId, clientId, campaignId, from, to } = req.query;
+
+    console.log('values:', accountManagerId, clientId, campaignId, from, to);
+
+    // const clientCount = await db.query('SELECT count(*) as total_count, count(*) FILTER (where email_verified = $1) as inactive_count from user_list', [0]);
+    // const campaignCount = await db.query('SELECT count(*) FILTER (WHERE state = $1) as active_count, count(*) FILTER (WHERE state = $2) as draft_count, SUM(price) as total_revenue, SUM(spent) as total_spent, SUM(billed) as total_profit from campaign', ['active', 'draft']);
+
+    // const clickedData = await db.query('SELECT create_time, id, campaign_id FROM clicked_history');
+
+    // return res.status(StatusCodes.OK).json({
+    //   totalClient: clientCount.rows[0].total_count,
+    //   inactiveClient: clientCount.rows[0].inactive_count,
+    //   activeCampaign: campaignCount.rows[0].active_count,
+    //   draftCampaign: campaignCount.rows[0].draft_count,
+    //   totalRevenue: campaignCount.rows[0].total_revenue,
+    //   totalSpent: campaignCount.rows[0].total_spent,
+    //   totalProfit: campaignCount.rows[0].total_profit,
+    //   unpaid: campaignCount.rows[0].total_spent - campaignCount.rows[0].total_profit,
+    //   clicked: clickedData.rows,
+    // });
+
+
+    let clicked = [], campaignData = [];
+
+    if (Number(campaignId) !== 0) {
+      clicked = (await db.query('SELECT * from clicked_history WHERE campaign_id = $1', [campaignId])).rows;
+      campaignData = (await db.query('SELECT * from campaign WHERE id = $1', [campaignId])).rows;
     }
 
-    const clientCount = await db.query('SELECT count(*) as total_count, count(*) FILTER (where email_verified = $1) as inactive_count from user_list', [0]);
-    const campaignCount = await db.query('SELECT count(*) FILTER (WHERE state = $1) as active_count, count(*) FILTER (WHERE state = $2) as draft_count, SUM(price) as total_revenue, SUM(spent) as total_spent, SUM(billed) as total_profit from campaign', ['active', 'draft']);
+    else if (Number(clientId) !== 0) {
+      const client = await db.query('SELECT email FROM user_list WHERE id = $1', [clientId]);
+      const email = client.rows[0].email;
+      campaignData = (await db.query('SELECT * FROM campaign WHERE email = $1', [email])).rows;
+      console.log('email:', email, campaignData, campaignData.map(item => item.id));
+      clicked = (await db.query('SELECT * FROM clicked_history WHERE campaign_id = ANY($1)', [campaignData.map(item => Number(item.id))])).rows;
+    }
 
-    const clickedData = await db.query('SELECT create_time, id, campaign_id FROM clicked_history');
+    else if (Number(accountManagerId) !== 0) {
+      const assinged = (await db.query('SELECT assigned_users FROM admin_user WHERE id = $1', [accountManagerId])).rows;
+      if (!assinged[0].assigned_users) {
+        clicked = [];
+        campaignData = [];
+      } else {
+        const clients = (await db.query('SELECT email FROM user_list WHERE id = ANY($1)', [assinged[0].assigned_users.split(',').map((item: any) => Number(item))])).rows;
+        campaignData = (await db.query('SELECT * FROM campaign WHERE email = ANY($1)', [clients.map(item => item.email)])).rows;
+        clicked = (await db.query('SELECT * FROM clicked_history WHERE campaign_id = ANY($1)', [campaignData.map(item => Number(item.id))])).rows;
+      }
+    } else {
+
+      campaignData = (await db.query('SELECT * from campaign')).rows;
+      clicked = (await db.query('SELECT * from clicked_history')).rows;
+    }
 
     return res.status(StatusCodes.OK).json({
-      totalClient: clientCount.rows[0].total_count,
-      inactiveClient: clientCount.rows[0].inactive_count,
-      activeCampaign: campaignCount.rows[0].active_count,
-      draftCampaign: campaignCount.rows[0].draft_count,
-      totalRevenue: campaignCount.rows[0].total_revenue,
-      totalSpent: campaignCount.rows[0].total_spent,
-      totalProfit: campaignCount.rows[0].total_profit,
-      unpaid: campaignCount.rows[0].total_spent - campaignCount.rows[0].total_profit,
-      clicked: clickedData.rows,
+      clicked: clicked,
+      campaign: campaignData,
     });
   } catch (error: any) {
     console.log('get dashboard overview error:', error.message);
