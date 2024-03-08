@@ -383,6 +383,19 @@ const getCampaign: RequestHandler = async (req: Request, res: Response) => {
   }
 };
 
+const getCampaignList: RequestHandler = async (req: Request, res: Response) => {
+  log.info('get campaign list called');
+  try {
+    const { email } = req.query;
+    const data = await db.query('SELECT id, name from campaign WHERE email = $1', [email]);
+
+    return res.status(StatusCodes.OK).json(data.rows);
+  } catch (error: any) {
+    console.log('error in getting campaign list:');
+    return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ message: error.message });
+  }
+};
+
 const deleteCampaign: RequestHandler = async (req: Request, res: Response) => {
   log.info("delete campaign called");
   try {
@@ -1029,6 +1042,7 @@ const data = {
   getPricing,
   addCampaign,
   getCampaign,
+  getCampaignList,
   deleteCampaign,
   getRegion,
   getAudience,

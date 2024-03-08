@@ -29,6 +29,7 @@ router.get('/newsletter', data.getNewsletter);
 router.get('/pricing', data.getPricing);
 router.post('/campaign', data.addCampaign);
 router.get('/campaign', data.getCampaign);
+router.get('/campaign_list', data.getCampaignList);
 router.get('/position', data.getPosition);
 router.delete('/campaign', data.deleteCampaign);
 router.post('/audience', data.addAudience);
