@@ -461,6 +461,19 @@ const updateCampaignDetail: RequestHandler = async (
       currentCard,
     } = req.body;
 
+    // update uid of campaign for tracking purpose
+    const uiData = (
+      await db.query("SELECT * FROM campaign_ui WHERE campaign_id = $1", [id])
+    ).rows[0];
+    const uid = encodeURIComponent(
+      CryptoJS.AES.encrypt(
+        uiData.page_url,
+        process.env.PRESSPOOL_AES_KEY as string
+      ).toString()
+    );
+    await db.query('UPDATE campaign set uid = $1 where id = $2', [uid, id]);
+    // Get 
+
     // add on region table
     const time = moment().valueOf();
     const region = currentRegion;
