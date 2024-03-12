@@ -461,7 +461,9 @@ const sendSuperAdminNotificationEmail = async (
   body: string,
   cta: string,
   pageUrl: string,
-  url: string
+  url: string,
+  conversion: string,
+  conversionDetail: string,
 ) => {
   console.log("send super admin notification emails");
   try {
@@ -496,6 +498,10 @@ const sendSuperAdminNotificationEmail = async (
         <p>${cta}</p>
         <p>CTA Link:</p>
         <p>${pageUrl}</p>
+        <p>Conversion Goal:</p>
+        <p>${conversion}</p>
+        <p>Conversion Detail:</p>
+        <p>${conversionDetail}</p>
         <p>Hero Image:</p>
         <p><a href="${heroImage}" download="hero-image.png">Hero Image</a></p>
         <p>Additional Files:</p>

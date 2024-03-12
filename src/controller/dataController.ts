@@ -133,36 +133,7 @@ const addCampaign: RequestHandler = async (req: Request, res: Response) => {
       ).toString()
     );
     // Get if user payment verified or not
-    // const verifiedData = await db.query('SELECT verified from user_list where email = $1', [req.body.email]);
     let campaignState = req.body.state;
-    // if (Number(verifiedData.rows[0].verified) === 1) {
-    //     campaignState = 'draft';
-    // }
-
-    // create google analytics stream for this campaign url
-    // const jwt = new JWT({
-    //     email: process.env.GOOGLE_ANALYTIC_CLIENT_EMAIL,
-    //     key: process.env.GOOGLE_ANALYTIC_PRIVATE_KEY,
-    //     scopes: ['https://www.googleapis.com/auth/analytics.edit']
-    // });
-
-    // const tokenResponse = await jwt.authorize();
-    // const accessToken = tokenResponse.access_token;
-
-    // const streamData = await axios.post(`https://analyticsadmin.googleapis.com/v1beta/properties/${process.env.GOOGLE_ANALYTIC_PROPERTY_ID}/dataStreams`, {
-    //     name: '',
-    //     type: 'WEB_DATA_STREAM',
-    //     displayName: req.body.campaignName,
-    //     webStreamData: {
-    //         defaultUri: `https://track.presspool.ai/${uid}`,
-    //     }
-    // }, {
-    //     headers: {
-    //         Authorization: `Bearer ${accessToken}`,
-    //         "Content-Type": 'application/json'
-    //     }
-    // });
-    // const nameParts = streamData.data.name.split('/');
 
     // update campaign ui id
     const result = await db.query(
@@ -286,20 +257,11 @@ const addCampaign: RequestHandler = async (req: Request, res: Response) => {
             uiData.body,
             uiData.cta,
             uiData.page_url,
-            req.body.url
+            req.body.url,
+            uiData.conversion,
+            uiData.conversion_detail,
           );
         }
-        // else {
-        //     if (admin?.assigned_users?.includes(userData.id)) {
-        //         await mailer.sendAdminNotificationEmail(admin.email, admin.name,
-        //             req.body.campaignName,
-        //             userData.company,
-        //             userData.name,
-        //             req.body.currentPrice,
-        //             uid,
-        //         );
-        //     }
-        // }
       }
     }
 
@@ -579,24 +541,11 @@ const updateCampaignDetail: RequestHandler = async (
               uiData.body,
               uiData.cta,
               uiData.page_url,
-              campaignData.rows[0].url
+              campaignData.rows[0].url,
+              uiData.conversion,
+              uiData.conversion_detail,
             );
           }
-          // else {
-          //     if (admin?.assigned_users?.includes(userData.id)) {
-          //         await mailer.sendAdminNotificationEmail(admin.email, admin.name,
-          //             campaignName,
-          //             userData.company,
-          //             userData.name,
-          //             currentPrice,
-          //             campaignData.rows[0].uid,
-          //             uiData.headline,
-          //             uiData.body,
-          //             uiData.cta,
-          //             uiData.page_url
-          //         );
-          //     }
-          // }
         }
       }
       return res.status(StatusCodes.OK).json("successfully updated!");
@@ -659,20 +608,11 @@ const updateCampaignDetail: RequestHandler = async (
                 uiData.body,
                 uiData.cta,
                 uiData.page_url,
-                url
+                url,
+                uiData.conversion,
+                uiData.conversion_detail,
               );
             }
-            // else {
-            //     if (admin?.assigned_users?.includes(userData.id)) {
-            //         await mailer.sendAdminNotificationEmail(admin.email, admin.name,
-            //             campaignName,
-            //             userData.company,
-            //             userData.name,
-            //             currentPrice,
-            //             campaignData.rows[0].uid,
-            //         );
-            //     }
-            // }
           }
         }
       } else {
@@ -719,14 +659,14 @@ const addCampaignUI: RequestHandler = async (req: Request, res: Response) => {
         .json({ message: "No image provided!" });
     const image = (req.files as any)["image"][0].location;
     let additionalFiles = (req.files as any)["additional_file"];
-    const { email, headLine, body, cta, pageUrl, noNeedCheck } = req.body;
+    const { email, headLine, body, cta, pageUrl, noNeedCheck, conversion, conversionDetail } = req.body;
     additionalFiles = additionalFiles
       ? additionalFiles.map((item: any) => item.location).join(",")
       : "";
 
     const result = await db.query(
-      "insert into campaign_ui (email, headline, body, cta, image, page_url, no_need_check, additional_files) values ($1, $2, $3, $4, $5, $6, $7, $8) returning *",
-      [email, headLine, body, cta, image, pageUrl, noNeedCheck, additionalFiles]
+      "insert into campaign_ui (email, headline, body, cta, image, page_url, no_need_check, additional_files, conversion, conversion_detail) values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) returning *",
+      [email, headLine, body, cta, image, pageUrl, noNeedCheck, additionalFiles, conversion, conversionDetail]
     );
 
     const data = result.rows[0];
@@ -748,7 +688,7 @@ const updateCampaignUI: RequestHandler = async (
     const image = (req.files as any)["image"]
       ? (req.files as any)["image"][0].location
       : "";
-    const { id, headLine, body, cta, pageUrl, noNeedCheck } = req.body;
+    const { id, headLine, body, cta, pageUrl, noNeedCheck, conversion, conversionDetail } = req.body;
     let additionalFiles = (req.files as any)["additional_file"];
     additionalFiles = additionalFiles
       ? additionalFiles.map((item: any) => item.location).join(",")
@@ -756,13 +696,13 @@ const updateCampaignUI: RequestHandler = async (
     let result: any = undefined;
     if (image.length > 2) {
       result = await db.query(
-        "update campaign_ui set headline = $1, body = $2, cta = $3, page_url = $4, image = $5, additional_files = $6 where id = $7 returning *",
-        [headLine, body, cta, pageUrl, image, additionalFiles, id]
+        "update campaign_ui set headline = $1, body = $2, cta = $3, page_url = $4, image = $5, additional_files = $6, conversion = $7, conversion_detail = $8 where id = $9 returning *",
+        [headLine, body, cta, pageUrl, image, additionalFiles, conversion, conversionDetail, id]
       );
     } else {
       result = await db.query(
-        "update campaign_ui set headline = $1, body = $2, cta = $3, page_url = $4, additional_files = $5 where id = $6 returning *",
-        [headLine, body, cta, pageUrl, additionalFiles, id]
+        "update campaign_ui set headline = $1, body = $2, cta = $3, page_url = $4, additional_files = $5, conversion = $6, conversion_detail = $7 where id = $8 returning *",
+        [headLine, body, cta, pageUrl, additionalFiles, conversion, conversionDetail, id]
       );
     }
 
