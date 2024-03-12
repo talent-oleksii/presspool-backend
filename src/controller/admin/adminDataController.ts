@@ -145,11 +145,11 @@ const getDashboardClient: RequestHandler = async (req: Request, res: Response) =
     if (req.headers.role === 'account_manager') {
       const assignedUsers = (await db.query('SELECT assigned_users FROM admin_user WHERE id = $1', [req.headers.id])).rows[0].assigned_users;
       const ids = assignedUsers ? assignedUsers.split(',').map((item: string) => Number(item)) : [];
-      const users = await db.query('select user_list.email, user_list.company, user_list.state, user_list.id, COALESCE(SUM(spent), 0) as spent,COALESCE(SUM(billed), 0) as billed, user_list.create_time, count(campaign.id) as campaign_count, user_list.name, user_list.email, user_list.avatar from user_list left join campaign on user_list.email = campaign.email where user_list.name like $1 and user_list.id = ANY($2) group by user_list.id', [`%${searchStr}%`, ids]);
+      const users = await db.query('select user_list.email, user_list.company, user_list.state, user_list.id, COALESCE(SUM(price), 0) as price, COALESCE(SUM(billed), 0) as billed, user_list.create_time, count(campaign.id) as campaign_count, count(campaign.id) FILTER (WHERE campaign.state = $1) as active_count, user_list.name, user_list.email, user_list.avatar from user_list left join campaign on user_list.email = campaign.email where user_list.name like $2 and user_list.id = ANY($3) group by user_list.id', ['active', `%${searchStr}%`, ids]);
 
       return res.status(StatusCodes.OK).json(users.rows);
     }
-    const users = await db.query('select user_list.email, user_list.company, user_list.state, user_list.id, COALESCE(SUM(spent), 0) as spent, COALESCE(SUM(billed), 0) as billed, user_list.create_time, count(campaign.id) as campaign_count, user_list.name, user_list.email, user_list.avatar from user_list left join campaign on user_list.email = campaign.email where user_list.name like $1 group by user_list.id', [`%${searchStr}%`]);
+    const users = await db.query('select user_list.email, user_list.company, user_list.state, user_list.id, COALESCE(SUM(price), 0) as price, COALESCE(SUM(billed), 0) as billed, user_list.create_time, count(campaign.id) as campaign_count, count(campaign.id) FILTER (WHERE campaign.state = $1) as active_count, user_list.name, user_list.email, user_list.avatar from user_list left join campaign on user_list.email = campaign.email where user_list.name like $2 group by user_list.id', ['active', `%${searchStr}%`]);
 
     return res.status(StatusCodes.OK).json(users.rows);
   } catch (error: any) {
