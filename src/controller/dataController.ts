@@ -775,9 +775,10 @@ const updateProfile: RequestHandler = async (req: Request, res: Response) => {
 };
 
 const getCPC = (budget: number) => {
-  const beehiivBudget =
-    Math.round((budget / ((4 * (1 + 0.1)) / (1 - 0.6))) * 4) - 2;
-  return budget / (beehiivBudget / 4);
+  // const beehiivBudget =
+  //   Math.round((budget / ((4 * (1 + 0.1)) / (1 - 0.6))) * 4) - 2;
+  // return budget / (beehiivBudget / 4);
+  return 10;
 };
 
 const clicked: RequestHandler = async (req: Request, res: Response) => {

@@ -188,8 +188,9 @@ const runRealtimeReport = async (client: BetaAnalyticsDataClient, propertyId: st
 };
 
 const getCPC = (budget: number) => {
-  const beehiivBudget = Math.round((budget / ((4 * (1 + 0.10)) / (1 - 0.60))) * 4) - 2;
-  return budget / (beehiivBudget / 4);
+  // const beehiivBudget = Math.round((budget / ((4 * (1 + 0.10)) / (1 - 0.60))) * 4) - 2;
+  // return budget / (beehiivBudget / 4);
+  return 10;
 };
 
 const scrapeFunction = async () => {
