@@ -136,9 +136,21 @@ const addBillingMethod: RequestHandler = async (req: Request, res: Response) => 
   }
 };
 
+const accountUpdated = async (req: Request, res: Response) => {
+  try {
+    const data = req.body.data;
+    console.log('data:', data);
+
+
+  } catch (error: any) {
+    return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json(error.message);
+  }
+};
+
 const stripeFunction = {
   purchaseCampaign,
   addBillingMethod,
+  accountUpdated,
 
   preparePayment,
   getCard,

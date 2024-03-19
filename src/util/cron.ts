@@ -38,6 +38,7 @@ async function initializeClient() {
 const billingFunction = async () => { // Here we notify users about billing
   try {
     console.log('billined called');
+    // pay unpaid campaigns
     const activeCampaigns = await db.query('SELECT campaign.id, campaign.name, campaign.price, campaign.email, campaign.billed, campaign.spent, campaign.card_id from campaign LEFT JOIN card_info ON campaign.card_id = card_info.card_id  where state = $1', ['active']);
     for (const campaign of activeCampaigns.rows) {
       // decide how much to bill
@@ -85,6 +86,70 @@ const billingFunction = async () => { // Here we notify users about billing
       // update billed information on database
       const newBilled = Number(campaign.billed) + billAmount / 100;
       await db.query('UPDATE campaign set billed = $1 where id = $2', [newBilled, campaign.id]);
+    }
+
+    // pay to account managers
+    const amVpaid: Array<{ email: string, amount: number }> = [];
+    const balance = await stripe.balance.retrieve();
+    console.log('show bal:', balance);
+    const campaigns = (await db.query('SELECT * from campaign WHERE billed > $1', [0])).rows;
+    for (const campaign of campaigns) {
+
+      // get client id in the database
+      const id = (await db.query('SELECT id FROM user_list WHERE email = $1', [campaign.email])).rows[0];
+      const accountManager = (await db.query(
+        "SELECT paid, email from admin_user WHERE ',' || assigned_users || ',' LIKE $1",
+        [`%,${id.id},%`]
+      )).rows[0];
+
+      if (!accountManager) continue;
+
+      console.log(`${accountManager.email} get paid ${accountManager.paid}, the billable amount is ${campaign.billed / 10}`);
+
+      if (Number(accountManager.paid) >= Number(campaign.billed / 10)) continue;
+      const billAmount = Number(campaign.billed) / 10;
+
+      const index = amVpaid.findIndex(item => item.email === accountManager.email);
+      if (index > -1) {
+        amVpaid[index].amount += billAmount;
+      } else {
+        amVpaid.push({
+          email: accountManager.email,
+          amount: billAmount,
+        });
+      }
+    }
+
+    const accountManagers = (await db.query('SELECT paid, email from admin_user')).rows;
+    for (const am of accountManagers) {
+      const index = amVpaid.findIndex(item => item.email === am.email);
+      if (index > -1) {
+        amVpaid[index].amount -= Number(am.paid);
+      }
+    }
+
+    console.log('account manager list:', amVpaid);
+    const accounts = await stripe.accounts.list();
+    for (const am of amVpaid) {
+      for (const account of accounts.data) {
+        if (account.email === am.email) {
+          // if (account.email === 'gabe@gopresspool.ai') {
+          try {
+            await stripe.transfers.create({
+              amount: am.amount * 100,
+              // amount: 500,
+              currency: 'usd',
+              destination: account.id,
+            });
+
+            console.log(`transfer success to ${am.email}`);
+            await db.query('UPDATE admin_user SET paid = $1 WHERE email = $2', [am.amount / 100, am.email]);
+          } catch (error: any) {
+            console.log(`transfer error to account manager ${am.email} `, error);
+            continue;
+          }
+        }
+      }
     }
   } catch (error) {
     log.error(`weekly billing error: ${error}`);
