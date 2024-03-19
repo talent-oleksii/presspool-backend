@@ -2,41 +2,49 @@ import { RequestHandler, Request, Response } from "express";
 import { verify, sign, JwtPayload } from "jsonwebtoken";
 import { StatusCodes } from "http-status-codes/build/cjs/status-codes";
 
-import moment from 'moment';
+import moment from "moment";
 import db from "../../util/db";
 import mailer from "../../util/mailer";
 
 const secretKey = "presspool-admin-ai";
 const generateToken = (payload: any) => {
-  const token = sign(payload, secretKey, { expiresIn: '1d' });
+  const token = sign(payload, secretKey, { expiresIn: "1d" });
   return token;
 };
 
 const authCheck: RequestHandler = async (req: Request, res: Response) => {
-  console.log('admin auth check called');
+  console.log("admin auth check called");
 
   try {
     const tokenHeader = req.headers.authorization;
-    const token = tokenHeader && tokenHeader.split(' ')[1];
+    const token = tokenHeader && tokenHeader.split(" ")[1];
 
     const result: JwtPayload = verify(token as string, secretKey) as JwtPayload;
 
     if (!result || !result.exp || !result.iat) {
-      return res.status(StatusCodes.BAD_REQUEST).json({ error: 'JWT error' });
+      return res.status(StatusCodes.BAD_REQUEST).json({ error: "JWT error" });
     }
 
     if (result.exp < result.iat) {
-      return res.status(StatusCodes.BAD_REQUEST).json({ error: 'Token expired!' });
+      return res
+        .status(StatusCodes.BAD_REQUEST)
+        .json({ error: "Token expired!" });
     } else {
-      const user = await db.query('select * from admin_user where email = $1', [result.email]);
+      const user = await db.query("select * from admin_user where email = $1", [
+        result.email,
+      ]);
       if (user.rows.length <= 0) {
-        return res.status(StatusCodes.BAD_REQUEST).json({ message: 'User not exist!' });
+        return res
+          .status(StatusCodes.BAD_REQUEST)
+          .json({ message: "User not exist!" });
       }
       return res.status(StatusCodes.OK).json({ ...user.rows[0], token });
     }
   } catch (error: any) {
     console.log(`admin auth check fail: ${error}`);
-    return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ error: error.message });
+    return res
+      .status(StatusCodes.INTERNAL_SERVER_ERROR)
+      .json({ error: error.message });
   }
 };
 
@@ -45,30 +53,49 @@ const signIn: RequestHandler = async (req: Request, res: Response) => {
   try {
     const { email, password } = req.body;
 
-    const user = await db.query('select * from admin_user where email = $1 and password = $2', [email, password]);
+    const user = await db.query(
+      "select * from admin_user where email = $1 and password = $2",
+      [email, password]
+    );
     if (user.rows.length <= 0) {
-      return res.status(StatusCodes.BAD_REQUEST).json({ message: 'Log In Information Incorrect!' });
+      return res
+        .status(StatusCodes.BAD_REQUEST)
+        .json({ message: "Log In Information Incorrect!" });
     }
 
     const token = generateToken({ email });
 
     return res.status(StatusCodes.OK).json({
       ...user.rows[0],
-      token
+      token,
     });
   } catch (error: any) {
-    console.log('admin sign in error: ', error.message);
-    return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ message: error.message });
+    console.log("admin sign in error: ", error.message);
+    return res
+      .status(StatusCodes.INTERNAL_SERVER_ERROR)
+      .json({ message: error.message });
   }
 };
 
 const signUp: RequestHandler = async (req: Request, res: Response) => {
-  console.log('admkin sign up api called');
+  console.log("admkin sign up api called");
   try {
-    const { email, fullName, password, link } = req.body;
+    const { email, fullName, password } = req.body;
     const now = moment().valueOf();
 
-    const data = await db.query('INSERT INTO admin_user (email, name, password, create_time, role, link) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *', [email, fullName, password, now, 'account_manager', link]);
+    const { rows } = await db.query(
+      `SELECT COUNT(*) as count FROM public.admin_user WHERE user_name ~ '^${fullName
+        .replaceAll(" ", "")
+        .toLowerCase()}([0-9]*)?$'`
+    );
+    const username = `${fullName.replaceAll(" ", "").toLowerCase()}${
+      rows[0].count > 0 ? rows[0].count : ""
+    }`;
+    const link = `https://go.presspool.ai/client-sign-up?sourceId=${username}`;
+    const data = await db.query(
+      "INSERT INTO admin_user (email, name, password, create_time, role, link, user_name) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *",
+      [email, fullName, password, now, "account_manager", link, username]
+    );
     const token = generateToken({ email });
 
     return res.status(StatusCodes.OK).json({
@@ -76,8 +103,10 @@ const signUp: RequestHandler = async (req: Request, res: Response) => {
       token,
     });
   } catch (error: any) {
-    console.log('admin sign up error:', error.message);
-    return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ message: error.message });
+    console.log("admin sign up error:", error.message);
+    return res
+      .status(StatusCodes.INTERNAL_SERVER_ERROR)
+      .json({ message: error.message });
   }
 };
 
@@ -88,55 +117,85 @@ const generateRandomNumbers = (count: number) => {
     randomNumbers.push(randomNumber);
   }
 
-  return randomNumbers.join('');
+  return randomNumbers.join("");
 };
 
-const sendPasswordEmail: RequestHandler = async (req: Request, res: Response) => {
+const sendPasswordEmail: RequestHandler = async (
+  req: Request,
+  res: Response
+) => {
   try {
     const { email } = req.body;
 
-    const isExist = await db.query('select * from admin_user where email = $1', [email]);
+    const isExist = await db.query(
+      "select * from admin_user where email = $1",
+      [email]
+    );
 
     if (isExist.rows.length <= 0) {
-      return res.status(StatusCodes.BAD_REQUEST).json({ message: 'The email does not exist. Please Sign Up first' });
+      return res
+        .status(StatusCodes.BAD_REQUEST)
+        .json({ message: "The email does not exist. Please Sign Up first" });
     }
 
     const random = generateRandomNumbers(5);
-    await db.query('UPDATE admin_user SET password_reset = $1 WHERE email = $2', [random, email]);
+    await db.query(
+      "UPDATE admin_user SET password_reset = $1 WHERE email = $2",
+      [random, email]
+    );
     mailer.sendForgotPasswordEmail(email, random, isExist.rows[0].name);
-    return res.status(StatusCodes.OK).json({ message: 'Password Reset email sent to admin user!' });
+    return res
+      .status(StatusCodes.OK)
+      .json({ message: "Password Reset email sent to admin user!" });
   } catch (error: any) {
-    console.log('error:', error);
-    return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ message: error.message });
+    console.log("error:", error);
+    return res
+      .status(StatusCodes.INTERNAL_SERVER_ERROR)
+      .json({ message: error.message });
   }
 };
 
-const verifyPasswordEmail: RequestHandler = async (req: Request, res: Response) => {
+const verifyPasswordEmail: RequestHandler = async (
+  req: Request,
+  res: Response
+) => {
   try {
     const { email, code } = req.body;
 
-    const isSame = await db.query('SELECT * from admin_user WHERE email = $1 AND password_reset = $2 ', [email, code]);
+    const isSame = await db.query(
+      "SELECT * from admin_user WHERE email = $1 AND password_reset = $2 ",
+      [email, code]
+    );
     if (isSame.rows.length <= 0) {
-      return res.status(StatusCodes.BAD_REQUEST).json({ message: 'Code is not valid' });
+      return res
+        .status(StatusCodes.BAD_REQUEST)
+        .json({ message: "Code is not valid" });
     }
-    return res.status(StatusCodes.OK).json('ok');
+    return res.status(StatusCodes.OK).json("ok");
   } catch (error: any) {
-    console.log('error:', error);
-    return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ message: error.message });
+    console.log("error:", error);
+    return res
+      .status(StatusCodes.INTERNAL_SERVER_ERROR)
+      .json({ message: error.message });
   }
 };
 
 const changePassword: RequestHandler = async (req: Request, res: Response) => {
-  console.log('password reset called');
+  console.log("password reset called");
   try {
     const { email, password } = req.body;
 
-    await db.query('UPDATE admin_user SET password = $1 WHERE email = $2', [password, email]);
+    await db.query("UPDATE admin_user SET password = $1 WHERE email = $2", [
+      password,
+      email,
+    ]);
 
-    return res.status(StatusCodes.OK).json('ok');
+    return res.status(StatusCodes.OK).json("ok");
   } catch (error: any) {
-    console.log('error:', error);
-    return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ message: error.message });
+    console.log("error:", error);
+    return res
+      .status(StatusCodes.INTERNAL_SERVER_ERROR)
+      .json({ message: error.message });
   }
 };
 
