@@ -52,7 +52,10 @@ app.get('/', (_req, res) => {
 app.listen(PORT, async () => {
     log.info(`Server is running on PORT:${PORT}`);
     await db.testConnection();
+
+    // cronFunction.dailyAnalyticsUpdate()
 });
+
 
 // This is to charge bill to clients by every friday
 cron.schedule('0 0 * * 5', async () => { // minute, hour, day, month, day_of_week
@@ -73,15 +76,3 @@ cron.schedule('1 0 * * *', async () => {
 cron.schedule('0 0 * * *', async () => {
     await cronFunction.dailyAnalyticsUpdate();
 });
-
-// mailer.sendPurchaseEmail('conrad@synthesia.io', 'Conrad Riparbelli', [{
-//     name: 'Generic #1 - CTA free AI video',
-//     totalClick: 2513,
-//     upTotalClick: 0,
-//     uniqueClick: 2436,
-//     upUniqueClick: 0,
-//     totalSpent: 5000,
-//     upTotalSpent: 0,
-//     avgCPC: 2,
-//     upAvgCPC: 0,
-// }]);

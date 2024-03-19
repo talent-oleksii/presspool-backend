@@ -7,6 +7,7 @@ import { BetaAnalyticsDataClient } from '@google-analytics/data';
 import mailer from './mailer';
 import axios from 'axios';
 import moment from 'moment';
+import cheerio from 'cheerio';
 
 dotenv.config({ path: './.env' });
 
@@ -198,7 +199,7 @@ async function runReport(client: BetaAnalyticsDataClient, propertyId: any, start
     const [response] = await client.runReport({
       property: `properties/${propertyId}`,
       dateRanges: [{ startDate: startDate, endDate: endDate }],
-      dimensions: [{ name: 'fullPageUrl' }, { name: 'country' }, { name: 'deviceCategory' }, { name: 'date' }, { name: 'firstUserMedium' }],
+      dimensions: [{ name: 'fullPageUrl' }, { name: 'country' }, { name: 'deviceCategory' }, { name: 'date' }, { name: 'firstUserMedium' }, { name: 'firstUserSource' }],
       metrics: [{
         name: 'newUsers'
       }, {
@@ -318,7 +319,26 @@ const scrapeFunction = async () => {
   }
 };
 
-async function dailyAnalyticsUpdate() {
+const getPageTitle = async (url: string) => {
+  try {
+    // Fetch homepage HTML
+    const response = await axios.get(url);
+    const html = response.data;
+
+    // Load HTML into Cheerio
+    const $ = cheerio.load(html);
+
+    // Extract page title
+    const title = $('title').text(); // Assuming the page title is within a <title> tag
+
+    return title;
+  } catch (error) {
+    console.error('Error fetching page title:', error);
+    return '';
+  }
+}
+
+const dailyAnalyticsUpdate = async () => {
   console.log('Running daily analytics update...');
 
   // Calculate yesterday's date for the report
@@ -355,12 +375,17 @@ async function dailyAnalyticsUpdate() {
         const device = item.dimensionValues?.[2]?.value ? item.dimensionValues[2].value : '';
         const time = item.dimensionValues?.[3]?.value ? item.dimensionValues[3].value : '';
         const firstUserMedium = item.dimensionValues?.[4]?.value ? item.dimensionValues[4].value : '';
+        const firstUserManualContent = item.dimensionValues?.[5]?.value ? item.dimensionValues[5].value : '';
         const totalUsers = item.metricValues?.[0]?.value ? Number(item.metricValues[0].value) : 0;
         const screenPageViews = item.metricValues?.[1]?.value ? Number(item.metricValues[1].value) : 0;
         const userEngagementDuration = item.metricValues?.[2]?.value ? Number(item.metricValues[2].value) : 0;
 
         const timeOf = moment(time, 'YYYYMMDD').valueOf();
-        await db.query('INSERT INTO clicked_history (create_time, ip, campaign_id, device, count, unique_click, duration, user_medium) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)', [
+        let title = '';
+        if (firstUserManualContent.indexOf('.com') > -1) {
+          title = await getPageTitle(`https://${firstUserManualContent}`);
+        }
+        await db.query('INSERT INTO clicked_history (create_time, ip, campaign_id, device, count, unique_click, duration, user_medium, full_url, newsletter_id) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)', [
           timeOf,
           country,
           campaign.id,
@@ -368,13 +393,16 @@ async function dailyAnalyticsUpdate() {
           screenPageViews,
           totalUsers,
           userEngagementDuration,
-          firstUserMedium
+          firstUserMedium,
+          item.dimensionValues?.[0]?.value,
+          title,
         ]);
 
         uniqueClicks += Number(totalUsers);
         totalClicks += Number(screenPageViews);
       }
       await db.query('UPDATE campaign set click_count = $1, spent = $2, unique_clicks = $3 WHERE id = $4', [totalClicks, Math.ceil(uniqueClicks * getCPC(5000)), uniqueClicks, campaign.id]);
+      console.log('update finished');
     }
 
   } catch (error) {
