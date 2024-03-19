@@ -62,11 +62,11 @@ const sendWelcomeEmail = async (
       subject: `Welcome Aboard, ${firstName}! Let's Dive In 🚀`,
       // text: content,
       html: `
-      <p>Hey ${firstName}</p>
+      <p>Hey ${firstName}!</p>
       <p>We are thrilled to have you at PressPool! Ready to get started? Your personalized campaign management platform awaits.</p>
-      <p>Click here to activate your account: <a href='https://go.presspool.ai/verify/${payload.token}' style="color: #6c63ff; text-decoration:underline;" target="_blank">Access your Dashboard link</a>.</p>
-      <p>If you need any support or have questions, join our <a href='https://join.slack.com/t/presspoolsupport/shared_invite/zt-1ytywzzld-974gUfTB8zCYlP4~f5XT1Q'>slack support here</a>.</p>
-      <p style="margin:0px">Warmly,<p>
+      <p> <a href='https://go.presspool.ai/verify/${payload.token}' style="color: #6c63ff; text-decoration:underline;" target="_blank">Click here</a> to activate your account: .</p>
+      <p>If you need any support or have questions, join our <a href='https://join.slack.com/t/presspoolsupport/shared_invite/zt-1ytywzzld-974gUfTB8zCYlP4~f5XT1Q' style="color: #6c63ff; text-decoration:underline;" target="_blank">slack support here</a>.</p>
+      <p style="margin:0px">Cheers!<p>
       <p style="margin:0px">Rica</p>
       `,
       // attachments: fileAttachments,
@@ -325,25 +325,46 @@ const sendPurchaseEmail = async (
               <p>Hope you've had a productive week! Here's a quick look at how your campaign(s) performed over the last seven days. </p> 
               <p>You can also view live analytics in your <a  href="https://go.presspool.ai" target="_blank">dashboard</a> for the most up-to-date metrics.</p>
             </div>
-            ${data.map(item => {
-        return `
-                        <div key=${item.name} style="border-bottom: 1px solid rgba(0,0,0,0.12); padding: 20px 0px;">
-                          <p style="font-weight: 700; letter-spacing: -0.42px; font-size: 14px; margin-top: 0px;">${item.name}</p>
+            ${data
+              .map((item) => {
+                return `
+                        <div key=${
+                          item.name
+                        } style="border-bottom: 1px solid rgba(0,0,0,0.12); padding: 20px 0px;">
+                          <p style="font-weight: 700; letter-spacing: -0.42px; font-size: 14px; margin-top: 0px;">${
+                            item.name
+                          }</p>
                           <div style="display: flex;">
                             <div style="padding: 15px; border-radius: 8px; border: 1px solid #7ffbae; min-width: 200px;">
                               <p style="font-size: 16px; letter-spacing: -0.48px; font-weight: 500; color: #172935; margin: 0px;">Total Clicks</p>
-                              <p style="font-size: 25px; letter-spacing: -0.75px; font-weight: 600; color: #7ffbae; margin: 0px;">${item.totalClick}</p>
+                              <p style="font-size: 25px; letter-spacing: -0.75px; font-weight: 600; color: #7ffbae; margin: 0px;">${
+                                item.totalClick
+                              }</p>
                               <div style="display: flex; margin-top: 10px; align-items: center; font-size: 13px;">
-                                ${item.upTotalClick >= 0 ? '<span style="border-radius: 50px; background: #7ffbae; padding: 0px; text-align: center; width: 20px; height: 20px; color: white; margin-right: 2px;">+</span>Up' : '<span style="border-radius: 50px; background: #FF4D42; padding: 0px; text-align: center; width: 20px; height: 20px; color: white; margin-right: 2px;">-</span>Down'}
-                                <span style="color: #172935; font-size: 13px; letter-spacing: -0.3px; font-weight: 500; margin-left: 3px;">${Math.abs(item.upTotalClick)}% from last week</span>
+                                ${
+                                  item.upTotalClick >= 0
+                                    ? '<span style="border-radius: 50px; background: #7ffbae; padding: 0px; text-align: center; width: 20px; height: 20px; color: white; margin-right: 2px;">+</span>Up'
+                                    : '<span style="border-radius: 50px; background: #FF4D42; padding: 0px; text-align: center; width: 20px; height: 20px; color: white; margin-right: 2px;">-</span>Down'
+                                }
+                                <span style="color: #172935; font-size: 13px; letter-spacing: -0.3px; font-weight: 500; margin-left: 3px;">${Math.abs(
+                                  item.upTotalClick
+                                )}% from last week</span>
                               </div>
                             </div>
                             <div style="padding: 15px; margin-left: 30px; border-radius: 8px; border: 1px solid #7ffbae; min-width: 200px;">
                               <p style="font-size: 16px; letter-spacing: -0.48px; font-weight: 500; color: #172935; margin: 0px;">Unique Clicks</p>
-                              <p style="font-size: 25px; letter-spacing: -0.75px; font-weight: 600; color: #7ffbae; margin: 0px;">${item.uniqueClick}</p>
+                              <p style="font-size: 25px; letter-spacing: -0.75px; font-weight: 600; color: #7ffbae; margin: 0px;">${
+                                item.uniqueClick
+                              }</p>
                               <div style="display: flex; margin-top: 10px; align-items: center; font-size: 13px;">
-                                ${item.upUniqueClick >= 0 ? '<span style="border-radius: 50px; background: #7ffbae; padding: 0px; text-align: center; width: 20px; height: 20px; color: white; margin-right: 2px;">+</span>Up' : '<span style="border-radius: 50px; background: #FF4D42;  padding: 0px; text-align: center; width: 20px; height: 20px; color: white; margin-right: 2px;">-</span>Down'}
-                                <span style="color: #172935; font-size: 13px; letter-spacing: -0.3px; font-weight: 500; margin-left: 3px;">${Math.abs(item.upUniqueClick)}% from last week</span>
+                                ${
+                                  item.upUniqueClick >= 0
+                                    ? '<span style="border-radius: 50px; background: #7ffbae; padding: 0px; text-align: center; width: 20px; height: 20px; color: white; margin-right: 2px;">+</span>Up'
+                                    : '<span style="border-radius: 50px; background: #FF4D42;  padding: 0px; text-align: center; width: 20px; height: 20px; color: white; margin-right: 2px;">-</span>Down'
+                                }
+                                <span style="color: #172935; font-size: 13px; letter-spacing: -0.3px; font-weight: 500; margin-left: 3px;">${Math.abs(
+                                  item.upUniqueClick
+                                )}% from last week</span>
                               </div>
                             </div>
                           </div>
@@ -352,23 +373,37 @@ const sendPurchaseEmail = async (
                               <p style="font-size: 16px; letter-spacing: -0.48px; font-weight: 500; color: #172935; margin: 0px;">Total Spend</p>
                               <p style="font-size: 25px; letter-spacing: -0.75px; font-weight: 600; color: #7ffbae; margin: 0px;">${`$${item.totalSpent}`}</p>
                               <div style="display: flex; margin-top: 10px; align-items: center; font-size: 13px;">
-                                ${item.upTotalSpent >= 0 ? '<span style="border-radius: 50px; background: #7ffbae; padding: 0px; text-align: center; width: 20px; height: 20px; color: white; margin-right: 2px;">+</span>Up' : '<span style="border-radius: 50px; background: #FF4D42; padding: 0px; text-align: center; width: 20px; height: 20px; color: white; margin-right: 2px;">-</span>Down'}
-                                <span style="color: #172935; font-size: 13px; letter-spacing: -0.3px; font-weight: 500; margin-left: 3px;">${Math.abs(item.upTotalSpent)}% from last week</span>
+                                ${
+                                  item.upTotalSpent >= 0
+                                    ? '<span style="border-radius: 50px; background: #7ffbae; padding: 0px; text-align: center; width: 20px; height: 20px; color: white; margin-right: 2px;">+</span>Up'
+                                    : '<span style="border-radius: 50px; background: #FF4D42; padding: 0px; text-align: center; width: 20px; height: 20px; color: white; margin-right: 2px;">-</span>Down'
+                                }
+                                <span style="color: #172935; font-size: 13px; letter-spacing: -0.3px; font-weight: 500; margin-left: 3px;">${Math.abs(
+                                  item.upTotalSpent
+                                )}% from last week</span>
                               </div>
                             </div>
                             <div style="padding: 15px; margin-left: 30px; border-radius: 8px; border: 1px solid #7ffbae; min-width: 200px;">
                               <p style="font-size: 16px; letter-spacing: -0.48px; font-weight: 500; color: #172935; margin: 0px;">AVG CPC</p>
-                              <p style="font-size: 25px; letter-spacing: -0.75px; font-weight: 600; color: #7ffbae; margin: 0px;">${item.avgCPC}</p>
+                              <p style="font-size: 25px; letter-spacing: -0.75px; font-weight: 600; color: #7ffbae; margin: 0px;">${
+                                item.avgCPC
+                              }</p>
                               <div style="display: flex; margin-top: 10px; align-items: center; font-size: 13px;">
-                                ${item.upAvgCPC >= 0 ? '<span style="border-radius: 50px; background: #7ffbae; padding: 0px; text-align: center; width: 20px; height: 20px; color: white; margin-right: 2px;">+</span>Up ' : '<span style="border-radius: 50px; background: #FF4D42; padding: 0px; text-align: center; width: 20px; height: 20px; color: white; margin-right: 2px;">-</span>Down '}
-                                <span style="color: #172935; font-size: 13px; letter-spacing: -0.3px; font-weight: 500; margin-left: 3px;">${Math.abs(item.upAvgCPC)}% from last week</span>
+                                ${
+                                  item.upAvgCPC >= 0
+                                    ? '<span style="border-radius: 50px; background: #7ffbae; padding: 0px; text-align: center; width: 20px; height: 20px; color: white; margin-right: 2px;">+</span>Up '
+                                    : '<span style="border-radius: 50px; background: #FF4D42; padding: 0px; text-align: center; width: 20px; height: 20px; color: white; margin-right: 2px;">-</span>Down '
+                                }
+                                <span style="color: #172935; font-size: 13px; letter-spacing: -0.3px; font-weight: 500; margin-left: 3px;">${Math.abs(
+                                  item.upAvgCPC
+                                )}% from last week</span>
                               </div>
                             </div>
                           </div>
                         </div>
                       `;
-      }).join('')
-        }
+              })
+              .join("")}
             <div style="border-bottom: 1px solid rgba(0,0,0,0.12); padding: 20px 0px;">
               <p style="margin-top: 0px;">We'll continue tracking and reporting your campaign's performance.</p>
               <p>Expect more insights next week!</p>
@@ -411,10 +446,11 @@ const sendAddTemmateEmail = async (
   try {
     const secretKey = "presspool-ai";
     const token = sign({ companyName, email }, secretKey, { expiresIn: "1d" });
-    const url = `${isUserExist
-      ? `https://go.presspool.ai/login?token=${token}`
-      : `https://go.presspool.ai/client-sign-up?token=${token}`
-      }`;
+    const url = `${
+      isUserExist
+        ? `https://go.presspool.ai/login?token=${token}`
+        : `https://go.presspool.ai/client-sign-up?token=${token}`
+    }`;
     const mailComposer = new MailComposer({
       from: "Rica Mae-PressPool Support Team<rica@presspool.ai>",
       to: email,
@@ -463,15 +499,16 @@ const sendSuperAdminNotificationEmail = async (
   pageUrl: string,
   url: string,
   conversion: string,
-  conversionDetail: string,
+  conversionDetail: string
 ) => {
   console.log("send super admin notification emails");
   try {
     let additionalFiles = "";
     for (const fileName of additional) {
       const parts = fileName.split("/");
-      additionalFiles += `<p><a href="${fileName}" download="${parts[parts.length - 1]
-        }">${parts[parts.length - 1]}</a></p>`;
+      additionalFiles += `<p><a href="${fileName}" download="${
+        parts[parts.length - 1]
+      }">${parts[parts.length - 1]}</a></p>`;
     }
     const mailComposer = new MailComposer({
       from: "Rica Mae-PressPool Support Team<rica@presspool.ai>",
@@ -485,8 +522,8 @@ const sendSuperAdminNotificationEmail = async (
       <p style="font-weight:700">DO NOT CLICK THIS LINK OR IT WILL CHARGE THE CLIENT</p>
       <p>Our Tracking url: https://track.presspool.ai/${uid} </p>
       <p>Beehiiv Budget: ${(
-          Math.round((Number(price) / ((4 * (1 + 0.1)) / (1 - 0.6))) * 4) - 2
-        ).toString()}</p>
+        Math.round((Number(price) / ((4 * (1 + 0.1)) / (1 - 0.6))) * 4) - 2
+      ).toString()}</p>
       <div style="margin-left: 20px">
         <p>Website URL:</p>
         <p>${url}</p>
@@ -583,6 +620,10 @@ const sendInviteEmail = async (
 ) => {
   console.log("send invite emails");
   try {
+    const secretKey = "presspool-ai";
+    const token = sign({ companyName: "", email }, secretKey, {
+      expiresIn: "1d",
+    });
     const mailComposer = new MailComposer({
       from: "Rica Mae-PressPool Support Team<rica@presspool.ai>",
       to: email,
@@ -591,7 +632,7 @@ const sendInviteEmail = async (
       html: `
       <p style="margin-top: 15px;">${adminName} has invited you to PressPool, where AI meets precision marketing. </p>
       <p>Join us for targeted audience reach and campaign success.</p>
-      <p>Click <a href='${link}' target='_blank'>here</a> to get started!</p>
+      <p>Click <a href='${link}&token=${token}' target='_blank'>here</a> to get started!</p>
       <p>Cheers</p>
       <p>Rica</p>
       `,
