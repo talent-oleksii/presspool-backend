@@ -131,9 +131,9 @@ const billingFunction = async () => { // Here we notify users about billing
     console.log('account manager list:', amVpaid);
     const accounts = await stripe.accounts.list();
     for (const am of amVpaid) {
+      if (am.amount <= 0) continue;
       for (const account of accounts.data) {
         if (account.email === am.email) {
-          // if (account.email === 'gabe@gopresspool.ai') {
           try {
             await stripe.transfers.create({
               amount: am.amount * 100,
@@ -143,7 +143,7 @@ const billingFunction = async () => { // Here we notify users about billing
             });
 
             console.log(`transfer success to ${am.email}`);
-            await db.query('UPDATE admin_user SET paid = $1 WHERE email = $2', [am.amount / 100, am.email]);
+            await db.query('UPDATE admin_user SET paid = $1 WHERE email = $2', [am.amount, am.email]);
           } catch (error: any) {
             console.log(`transfer error to account manager ${am.email} `, error);
             continue;
