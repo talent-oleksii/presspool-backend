@@ -25,10 +25,9 @@ const getNewsletter: RequestHandler = async (req: Request, res: Response) => {
   try {
     const { email, from, to, campaignIds } = req.query;
     let params = [email];
-    let query = `SELECT his.id,his.name, SUM(ch.count) AS total_clicks, SUM(ch.unique_click) unique_clicks, SUM(camp.spent) total_spent FROM public.clicked_history ch 
-                  INNER JOIN public.newsletter his on ch.newsletter_id = his.id
-                  INNER JOIN public.campaign camp on ch.campaign_id = camp.id
-                  WHERE camp.email = $1`;
+    let query = `SELECT ch.newsletter_id name,camp.id, SUM(ch.count) AS total_clicks, SUM(ch.unique_click) unique_clicks, (camp.billed/camp.unique_clicks)* SUM(ch.unique_click) total_spent FROM public.clicked_history ch
+    INNER JOIN public.campaign camp on ch.campaign_id = camp.id
+    WHERE ch.newsletter_id != '' and ch.newsletter_id is not null and camp.email = $1`;
 
     if (from && to) {
       query += " and ch.create_time > $2 and ch.create_time < $3";
@@ -40,7 +39,7 @@ const getNewsletter: RequestHandler = async (req: Request, res: Response) => {
         .map((id) => "'" + id + "'")
         .join(",")})`;
     }
-    query += " GROUP BY his.name, his.id";
+    query += " GROUP BY ch.newsletter_id, camp.id";
     const newsletter = await db.query(query, params);
     return res.status(StatusCodes.OK).json(newsletter.rows);
   } catch (error: any) {
