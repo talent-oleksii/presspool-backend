@@ -25,19 +25,21 @@ const getNewsletter: RequestHandler = async (req: Request, res: Response) => {
   try {
     const { email, from, to, campaignIds } = req.query;
     let params = [email];
-    let query = "SELECT * FROM newsletter WHERE email = $1";
+    let query = `SELECT ch.newsletter_id name,camp.id, SUM(ch.count) AS total_clicks, SUM(ch.unique_click) unique_clicks, (camp.billed/camp.unique_clicks)* SUM(ch.unique_click) total_spent FROM public.clicked_history ch
+    INNER JOIN public.campaign camp on ch.campaign_id = camp.id
+    WHERE ch.newsletter_id != '' and ch.newsletter_id is not null and camp.email = $1`;
 
     if (from && to) {
-      query += " and create_time > $3 and create_time < $4";
+      query += " and ch.create_time > $2 and ch.create_time < $3";
       params = [...params, from, to];
     }
     if (campaignIds) {
       const parsedIds = (campaignIds as string[]).map((x) => Number(x));
-      query += ` and campaign_id IN(${parsedIds
+      query += ` and ch.campaign_id IN(${parsedIds
         .map((id) => "'" + id + "'")
         .join(",")})`;
-      params = [...params, campaignIds];
     }
+    query += " GROUP BY ch.newsletter_id, camp.id";
     const newsletter = await db.query(query, params);
     return res.status(StatusCodes.OK).json(newsletter.rows);
   } catch (error: any) {
@@ -259,7 +261,7 @@ const addCampaign: RequestHandler = async (req: Request, res: Response) => {
             uiData.page_url,
             req.body.url,
             uiData.conversion,
-            uiData.conversion_detail,
+            uiData.conversion_detail
           );
         }
       }
@@ -346,15 +348,20 @@ const getCampaign: RequestHandler = async (req: Request, res: Response) => {
 };
 
 const getCampaignList: RequestHandler = async (req: Request, res: Response) => {
-  log.info('get campaign list called');
+  log.info("get campaign list called");
   try {
     const { email } = req.query;
-    const data = await db.query('SELECT id, name from campaign WHERE email = $1', [email]);
+    const data = await db.query(
+      "SELECT id, name from campaign WHERE email = $1",
+      [email]
+    );
 
     return res.status(StatusCodes.OK).json(data.rows);
   } catch (error: any) {
-    console.log('error in getting campaign list:');
-    return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ message: error.message });
+    console.log("error in getting campaign list:");
+    return res
+      .status(StatusCodes.INTERNAL_SERVER_ERROR)
+      .json({ message: error.message });
   }
 };
 
@@ -433,8 +440,8 @@ const updateCampaignDetail: RequestHandler = async (
         process.env.PRESSPOOL_AES_KEY as string
       ).toString()
     );
-    await db.query('UPDATE campaign set uid = $1 where id = $2', [uid, id]);
-    // Get 
+    await db.query("UPDATE campaign set uid = $1 where id = $2", [uid, id]);
+    // Get
 
     // add on region table
     const time = moment().valueOf();
@@ -543,7 +550,7 @@ const updateCampaignDetail: RequestHandler = async (
               uiData.page_url,
               campaignData.rows[0].url,
               uiData.conversion,
-              uiData.conversion_detail,
+              uiData.conversion_detail
             );
           }
         }
@@ -610,7 +617,7 @@ const updateCampaignDetail: RequestHandler = async (
                 uiData.page_url,
                 url,
                 uiData.conversion,
-                uiData.conversion_detail,
+                uiData.conversion_detail
               );
             }
           }
@@ -659,14 +666,34 @@ const addCampaignUI: RequestHandler = async (req: Request, res: Response) => {
         .json({ message: "No image provided!" });
     const image = (req.files as any)["image"][0].location;
     let additionalFiles = (req.files as any)["additional_file"];
-    const { email, headLine, body, cta, pageUrl, noNeedCheck, conversion, conversionDetail } = req.body;
+    const {
+      email,
+      headLine,
+      body,
+      cta,
+      pageUrl,
+      noNeedCheck,
+      conversion,
+      conversionDetail,
+    } = req.body;
     additionalFiles = additionalFiles
       ? additionalFiles.map((item: any) => item.location).join(",")
       : "";
 
     const result = await db.query(
       "insert into campaign_ui (email, headline, body, cta, image, page_url, no_need_check, additional_files, conversion, conversion_detail) values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) returning *",
-      [email, headLine, body, cta, image, pageUrl, noNeedCheck, additionalFiles, conversion, conversionDetail]
+      [
+        email,
+        headLine,
+        body,
+        cta,
+        image,
+        pageUrl,
+        noNeedCheck,
+        additionalFiles,
+        conversion,
+        conversionDetail,
+      ]
     );
 
     const data = result.rows[0];
@@ -688,7 +715,16 @@ const updateCampaignUI: RequestHandler = async (
     const image = (req.files as any)["image"]
       ? (req.files as any)["image"][0].location
       : "";
-    const { id, headLine, body, cta, pageUrl, noNeedCheck, conversion, conversionDetail } = req.body;
+    const {
+      id,
+      headLine,
+      body,
+      cta,
+      pageUrl,
+      noNeedCheck,
+      conversion,
+      conversionDetail,
+    } = req.body;
     let additionalFiles = (req.files as any)["additional_file"];
     additionalFiles = additionalFiles
       ? additionalFiles.map((item: any) => item.location).join(",")
@@ -697,12 +733,31 @@ const updateCampaignUI: RequestHandler = async (
     if (image.length > 2) {
       result = await db.query(
         "update campaign_ui set headline = $1, body = $2, cta = $3, page_url = $4, image = $5, additional_files = $6, conversion = $7, conversion_detail = $8 where id = $9 returning *",
-        [headLine, body, cta, pageUrl, image, additionalFiles, conversion, conversionDetail, id]
+        [
+          headLine,
+          body,
+          cta,
+          pageUrl,
+          image,
+          additionalFiles,
+          conversion,
+          conversionDetail,
+          id,
+        ]
       );
     } else {
       result = await db.query(
         "update campaign_ui set headline = $1, body = $2, cta = $3, page_url = $4, additional_files = $5, conversion = $6, conversion_detail = $7 where id = $8 returning *",
-        [headLine, body, cta, pageUrl, additionalFiles, conversion, conversionDetail, id]
+        [
+          headLine,
+          body,
+          cta,
+          pageUrl,
+          additionalFiles,
+          conversion,
+          conversionDetail,
+          id,
+        ]
       );
     }
 
