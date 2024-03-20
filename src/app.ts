@@ -55,7 +55,7 @@ app.listen(PORT, async () => {
     log.info(`Server is running on PORT:${PORT}`);
     await db.testConnection();
 
-    // cronFunction.dailyAnalyticsUpdate()
+    cronFunction.dailyAnalyticsUpdate()
 });
 
 
@@ -78,6 +78,6 @@ cron.schedule('1 0 * * *', async () => {
 // publish remote.com's EOR campaign by force
 // data.publishCampaign('bernard@remote.com', 204, 227);
 
-cron.schedule('0 4 * * *', async () => {
-    cronFunction.dailyAnalyticsUpdate();
+cron.schedule('0 */12 * * *', async () => {
+    await cronFunction.dailyAnalyticsUpdate();
 });
