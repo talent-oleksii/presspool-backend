@@ -10,6 +10,8 @@ import dataRoute from './routes/dataRoute';
 import stripeRoute from './routes/stripeRoute';
 import adminRoute from './routes/adminRoute';
 
+import data from './controller/dataController';
+
 import cronFunction from './util/cron';
 
 dotenv.config({ path: './.env' });
@@ -73,6 +75,8 @@ cron.schedule('1 0 * * *', async () => {
 //     await cronFunction.scrapeFunction();
 // });
 
+// publish remote.com's EOR campaign by force
+// data.publishCampaign('bernard@remote.com', 204, 227);
 
 cron.schedule('0 4 * * *', async () => {
     cronFunction.dailyAnalyticsUpdate();

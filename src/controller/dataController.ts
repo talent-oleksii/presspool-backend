@@ -991,6 +991,67 @@ const getGuide: RequestHandler = async (_req: Request, res: Response) => {
   }
 };
 
+const publishCampaign = async (email: string, campaignId: number, uiId: number) => {
+  const time = moment().valueOf();
+  const uiData = (
+    await db.query("SELECT * FROM campaign_ui WHERE id = $1", [uiId])
+  ).rows[0];
+  const uid = encodeURIComponent(
+    CryptoJS.AES.encrypt(
+      uiData.page_url,
+      process.env.PRESSPOOL_AES_KEY as string
+    ).toString()
+  );
+  await db.query('UPDATE campaign set uid = $1 where id = $2', [uid, campaignId]);
+  // Get if user payment verified or not
+
+  const retVal = await db.query(
+    "SELECT *, campaign.id AS id, campaign_ui.id AS ui_id FROM campaign LEFT JOIN campaign_ui ON campaign.id = campaign_ui.campaign_id WHERE campaign.email = $1 AND campaign.id = $2",
+    [email, campaignId]
+  );
+  const data = retVal.rows[0];
+
+  //send email to client
+  const userData = (
+    await db.query("SELECT * from user_list where email = $1", [
+      email,
+    ])
+  ).rows[0];
+  await mailer.sendPublishEmail(
+    email,
+    userData.name,
+    data.name
+  );
+  // send email to super admins
+  const admins = await db.query("SELECT email, name, role FROM admin_user");
+  for (const admin of admins.rows) {
+    // if (admin.email !== 'oleksii@presspool.ai') continue;
+    if (
+      admin.role === "super_admin" ||
+      admin?.assigned_users?.includes(userData.id)
+    ) {
+      await mailer.sendSuperAdminNotificationEmail(
+        admin.email,
+        admin.name,
+        data.name,
+        userData.company,
+        userData.name,
+        data.price,
+        uid,
+        uiData.image,
+        uiData.additional_files.split(","),
+        uiData.headline,
+        uiData.body,
+        uiData.cta,
+        uiData.page_url,
+        data.url,
+        uiData.conversion,
+        uiData.conversion_detail,
+      );
+    }
+  }
+};
+
 const data = {
   getNewsletter,
   getPricing,
@@ -1016,6 +1077,10 @@ const data = {
   updateTeamMember,
 
   getGuide,
+
+
+  // make campaign submitted forcely
+  publishCampaign,
 };
 
 export default data;
