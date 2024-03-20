@@ -73,11 +73,7 @@ cron.schedule('1 0 * * *', async () => {
 //     await cronFunction.scrapeFunction();
 // });
 
-// for test purpose to check if cronjob is running in the render service
-cron.schedule('*/30 * * * * *', async () => {
-    console.log('cron job is running every 30 seconds');
-});
 
-cron.schedule('0 0 * * *', () => {
+cron.schedule('0 4 * * *', async () => {
     cronFunction.dailyAnalyticsUpdate();
 });
