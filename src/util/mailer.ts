@@ -528,6 +528,7 @@ const sendSuperAdminNotificationEmail = async (
             color: rgb(255, 255, 255);
             border-radius: 4px;
             margin-right: 5px;
+            margin-top : 5px;
           "
         >
           ${audience[index]}
@@ -544,6 +545,7 @@ const sendSuperAdminNotificationEmail = async (
             color: rgb(255, 255, 255);
             border-radius: 4px;
             margin-right: 5px;
+            margin-top : 5px;
           "
         >
           ${position[index]}
@@ -560,6 +562,7 @@ const sendSuperAdminNotificationEmail = async (
             color: rgb(255, 255, 255);
             border-radius: 4px;
             margin-right: 5px;
+            margin-top : 5px;
           "
         >
           ${region[index]}
