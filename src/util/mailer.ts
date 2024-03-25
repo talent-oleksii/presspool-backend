@@ -326,39 +326,45 @@ const sendPurchaseEmail = async (
               <p>You can also view live analytics in your <a  href="https://go.presspool.ai" target="_blank">dashboard</a> for the most up-to-date metrics.</p>
             </div>
             ${data
-          .map((item) => {
-            return `
-                        <div key=${item.name
-              } style="border-bottom: 1px solid rgba(0,0,0,0.12); padding: 20px 0px;">
-                          <p style="font-weight: 700; letter-spacing: -0.42px; font-size: 14px; margin-top: 0px;">${item.name
-              }</p>
+              .map((item) => {
+                return `
+                        <div key=${
+                          item.name
+                        } style="border-bottom: 1px solid rgba(0,0,0,0.12); padding: 20px 0px;">
+                          <p style="font-weight: 700; letter-spacing: -0.42px; font-size: 14px; margin-top: 0px;">${
+                            item.name
+                          }</p>
                           <div style="display: flex;">
                             <div style="padding: 15px; border-radius: 8px; border: 1px solid #7ffbae; min-width: 200px;">
                               <p style="font-size: 16px; letter-spacing: -0.48px; font-weight: 500; color: #172935; margin: 0px;">Total Clicks</p>
-                              <p style="font-size: 25px; letter-spacing: -0.75px; font-weight: 600; color: #7ffbae; margin: 0px;">${item.totalClick
-              }</p>
+                              <p style="font-size: 25px; letter-spacing: -0.75px; font-weight: 600; color: #7ffbae; margin: 0px;">${
+                                item.totalClick
+                              }</p>
                               <div style="display: flex; margin-top: 10px; align-items: center; font-size: 13px;">
-                                ${item.upTotalClick >= 0
-                ? '<span style="border-radius: 50px; background: #7ffbae; padding: 0px; text-align: center; width: 20px; height: 20px; color: white; margin-right: 2px;">+</span>Up'
-                : '<span style="border-radius: 50px; background: #FF4D42; padding: 0px; text-align: center; width: 20px; height: 20px; color: white; margin-right: 2px;">-</span>Down'
-              }
+                                ${
+                                  item.upTotalClick >= 0
+                                    ? '<span style="border-radius: 50px; background: #7ffbae; padding: 0px; text-align: center; width: 20px; height: 20px; color: white; margin-right: 2px;">+</span>Up'
+                                    : '<span style="border-radius: 50px; background: #FF4D42; padding: 0px; text-align: center; width: 20px; height: 20px; color: white; margin-right: 2px;">-</span>Down'
+                                }
                                 <span style="color: #172935; font-size: 13px; letter-spacing: -0.3px; font-weight: 500; margin-left: 3px;">${Math.abs(
-                item.upTotalClick
-              )}% from last week</span>
+                                  item.upTotalClick
+                                )}% from last week</span>
                               </div>
                             </div>
                             <div style="padding: 15px; margin-left: 30px; border-radius: 8px; border: 1px solid #7ffbae; min-width: 200px;">
                               <p style="font-size: 16px; letter-spacing: -0.48px; font-weight: 500; color: #172935; margin: 0px;">Unique Clicks</p>
-                              <p style="font-size: 25px; letter-spacing: -0.75px; font-weight: 600; color: #7ffbae; margin: 0px;">${item.uniqueClick
-              }</p>
+                              <p style="font-size: 25px; letter-spacing: -0.75px; font-weight: 600; color: #7ffbae; margin: 0px;">${
+                                item.uniqueClick
+                              }</p>
                               <div style="display: flex; margin-top: 10px; align-items: center; font-size: 13px;">
-                                ${item.upUniqueClick >= 0
-                ? '<span style="border-radius: 50px; background: #7ffbae; padding: 0px; text-align: center; width: 20px; height: 20px; color: white; margin-right: 2px;">+</span>Up'
-                : '<span style="border-radius: 50px; background: #FF4D42;  padding: 0px; text-align: center; width: 20px; height: 20px; color: white; margin-right: 2px;">-</span>Down'
-              }
+                                ${
+                                  item.upUniqueClick >= 0
+                                    ? '<span style="border-radius: 50px; background: #7ffbae; padding: 0px; text-align: center; width: 20px; height: 20px; color: white; margin-right: 2px;">+</span>Up'
+                                    : '<span style="border-radius: 50px; background: #FF4D42;  padding: 0px; text-align: center; width: 20px; height: 20px; color: white; margin-right: 2px;">-</span>Down'
+                                }
                                 <span style="color: #172935; font-size: 13px; letter-spacing: -0.3px; font-weight: 500; margin-left: 3px;">${Math.abs(
-                item.upUniqueClick
-              )}% from last week</span>
+                                  item.upUniqueClick
+                                )}% from last week</span>
                               </div>
                             </div>
                           </div>
@@ -367,34 +373,37 @@ const sendPurchaseEmail = async (
                               <p style="font-size: 16px; letter-spacing: -0.48px; font-weight: 500; color: #172935; margin: 0px;">Total Spend</p>
                               <p style="font-size: 25px; letter-spacing: -0.75px; font-weight: 600; color: #7ffbae; margin: 0px;">${`$${item.totalSpent}`}</p>
                               <div style="display: flex; margin-top: 10px; align-items: center; font-size: 13px;">
-                                ${item.upTotalSpent >= 0
-                ? '<span style="border-radius: 50px; background: #7ffbae; padding: 0px; text-align: center; width: 20px; height: 20px; color: white; margin-right: 2px;">+</span>Up'
-                : '<span style="border-radius: 50px; background: #FF4D42; padding: 0px; text-align: center; width: 20px; height: 20px; color: white; margin-right: 2px;">-</span>Down'
-              }
+                                ${
+                                  item.upTotalSpent >= 0
+                                    ? '<span style="border-radius: 50px; background: #7ffbae; padding: 0px; text-align: center; width: 20px; height: 20px; color: white; margin-right: 2px;">+</span>Up'
+                                    : '<span style="border-radius: 50px; background: #FF4D42; padding: 0px; text-align: center; width: 20px; height: 20px; color: white; margin-right: 2px;">-</span>Down'
+                                }
                                 <span style="color: #172935; font-size: 13px; letter-spacing: -0.3px; font-weight: 500; margin-left: 3px;">${Math.abs(
-                item.upTotalSpent
-              )}% from last week</span>
+                                  item.upTotalSpent
+                                )}% from last week</span>
                               </div>
                             </div>
                             <div style="padding: 15px; margin-left: 30px; border-radius: 8px; border: 1px solid #7ffbae; min-width: 200px;">
                               <p style="font-size: 16px; letter-spacing: -0.48px; font-weight: 500; color: #172935; margin: 0px;">AVG CPC</p>
-                              <p style="font-size: 25px; letter-spacing: -0.75px; font-weight: 600; color: #7ffbae; margin: 0px;">${item.avgCPC
-              }</p>
+                              <p style="font-size: 25px; letter-spacing: -0.75px; font-weight: 600; color: #7ffbae; margin: 0px;">${
+                                item.avgCPC
+                              }</p>
                               <div style="display: flex; margin-top: 10px; align-items: center; font-size: 13px;">
-                                ${item.upAvgCPC >= 0
-                ? '<span style="border-radius: 50px; background: #7ffbae; padding: 0px; text-align: center; width: 20px; height: 20px; color: white; margin-right: 2px;">+</span>Up '
-                : '<span style="border-radius: 50px; background: #FF4D42; padding: 0px; text-align: center; width: 20px; height: 20px; color: white; margin-right: 2px;">-</span>Down '
-              }
+                                ${
+                                  item.upAvgCPC >= 0
+                                    ? '<span style="border-radius: 50px; background: #7ffbae; padding: 0px; text-align: center; width: 20px; height: 20px; color: white; margin-right: 2px;">+</span>Up '
+                                    : '<span style="border-radius: 50px; background: #FF4D42; padding: 0px; text-align: center; width: 20px; height: 20px; color: white; margin-right: 2px;">-</span>Down '
+                                }
                                 <span style="color: #172935; font-size: 13px; letter-spacing: -0.3px; font-weight: 500; margin-left: 3px;">${Math.abs(
-                item.upAvgCPC
-              )}% from last week</span>
+                                  item.upAvgCPC
+                                )}% from last week</span>
                               </div>
                             </div>
                           </div>
                         </div>
                       `;
-          })
-          .join("")}
+              })
+              .join("")}
             <div style="border-bottom: 1px solid rgba(0,0,0,0.12); padding: 20px 0px;">
               <p style="margin-top: 0px;">We'll continue tracking and reporting your campaign's performance.</p>
               <p>Expect more insights next week!</p>
@@ -437,10 +446,11 @@ const sendAddTemmateEmail = async (
   try {
     const secretKey = "presspool-ai";
     const token = sign({ companyName, email }, secretKey, { expiresIn: "1d" });
-    const url = `${isUserExist
+    const url = `${
+      isUserExist
         ? `https://go.presspool.ai/login?token=${token}`
         : `https://go.presspool.ai/client-sign-up?token=${token}`
-      }`;
+    }`;
     const mailComposer = new MailComposer({
       from: "Rica Mae-PressPool Support Team<rica@presspool.ai>",
       to: email,
@@ -489,55 +499,221 @@ const sendSuperAdminNotificationEmail = async (
   pageUrl: string,
   url: string,
   conversion: string,
-  conversionDetail: string
+  conversionDetail: string,
+  demographic: string,
+  region: string,
+  audience: string,
+  position: string,
+  teamAvatar: string,
+  companyEmail: string
 ) => {
   console.log("send super admin notification emails");
+
   try {
     let additionalFiles = "";
     for (const fileName of additional) {
       const parts = fileName.split("/");
-      additionalFiles += `<p><a href="${fileName}" download="${parts[parts.length - 1]
-        }">${parts[parts.length - 1]}</a></p>`;
+      additionalFiles += `<p><a href="${fileName}" download="${
+        parts[parts.length - 1]
+      }"><img style="width: 135px; height: 74px; border-radius: 10px" src="fileName" alt="${
+        parts[parts.length - 1]
+      }" /></a></p>`;
     }
+
+    let industries = ``;
+    if (audience.length) {
+      for (let index = 0; index < audience.length; index++) {
+        industries += `<button
+          style="
+            background-color: #000;
+            color: rgb(255, 255, 255);
+            border-radius: 4px;
+            margin-right: 5px;
+            margin-top : 5px;
+          "
+        >
+          ${audience[index]}
+        </button>`;
+      }
+    }
+
+    let demographics = ``;
+    if (audience.length) {
+      for (let index = 0; index < position.length; index++) {
+        demographics += `<button
+          style="
+            background-color: #000;
+            color: rgb(255, 255, 255);
+            border-radius: 4px;
+            margin-right: 5px;
+            margin-top : 5px;
+          "
+        >
+          ${position[index]}
+        </button>`;
+      }
+    }
+
+    let regions = ``;
+    if (region.length) {
+      for (let index = 0; index < region.length; index++) {
+        regions += `<button
+          style="
+            background-color: #000;
+            color: rgb(255, 255, 255);
+            border-radius: 4px;
+            margin-right: 5px;
+            margin-top : 5px;
+          "
+        >
+          ${region[index]}
+        </button>`;
+      }
+    }
+
+    const html = `<div>
+              <div style="text-align: center">
+                <img style="width: 115px; height: 40px" src="https://presspool-upload-images.s3.amazonaws.com/logo1+1.png" alt="logo"/>
+              </div>
+            </div>
+              <hr />
+              <div style="margin: 20px">
+                <span>Hey ${adminName},</span><br /><br />
+                <span>${company} has submitted a new campaign. Please review below.</span>
+              </div>
+              <hr />
+              <div style="margin: 20px; display: inline-flex">
+                <div>
+                  ${
+                    teamAvatar
+                      ? `<img style="width: 77px; height: 77px; border-radius: 50%" src="${teamAvatar}" alt="" />`
+                      : `<div
+                      style="
+                        width: 77px;
+                        height: 77px;
+                        border-radius: 50%;
+                        background: #7ffbae;
+                        text-align: center;
+                      "
+                    >
+                  ${getPlaceHolder(company)}
+                    </div>`
+                  } 
+                </div>
+                <div style="margin: 0 20px">
+                  <span style="font-weight: bolder; font-size: 28px">${company}</span><br />
+                  <span>${companyEmail}</span>
+                </div>
+              </div>
+              <div style="margin: 20px">
+                <span style="font-weight: bolder">Campaign Title</span><br />
+                <span>${campaignName}</span>
+              </div>
+              <div style="margin: 20px">
+                <span style="font-weight: bolder"> Headline</span><br />
+                <span>${headline}</span>
+              </div>
+              <div style="margin: 20px">
+                <span style="font-weight: bolder">CTA Link</span><br />
+                <a href="${pageUrl}" style="color: blue">${pageUrl}</a>
+              </div>
+              <div style="margin: 20px">
+                <span style="font-weight: bolder">Target Audience</span><br />
+                <button
+                  style="
+                    background-color: #000;
+                    color: rgb(255, 255, 255);
+                    border-radius: 4px;
+                  "
+                >
+                  ${demographic}
+                </button>
+              </div>
+              <div style="margin: 20px">
+                <span style="font-weight: bolder">Target Industrie(s)</span><br />
+                <div style="margin-right: 5px;">
+                ${industries}
+                </div>
+              </div>
+              <div style="margin: 20px">
+                <span style="font-weight: bolder">Target Demographic(s)</span><br />
+                <div style="margin-right: 5px;">
+                ${demographics}
+                </div>
+              </div>
+              <div style="margin: 20px">
+                <span style="font-weight: bolder">Target Region(s)</span><br />
+                <div style="margin-right: 5px;">
+                ${regions}
+                </div>
+              </div>
+              <div style="margin: 20px">
+                <span style="font-weight: bolder">Conversion Goal</span><br />
+                <span>${conversion ?? "N/A"}</span>
+              </div>
+              <div style="margin: 20px">
+                <span style="font-weight: bolder">Conversion Details</span><br />
+                <span>${conversionDetail ?? "N/A"}</span>
+              </div>
+              <div style="margin: 20px">
+                <span style="font-weight: bolder">Campaign Budget</span><br />
+                <span>$${price}</span>
+              </div>
+              <div style="margin: 20px">
+                <span style="font-weight: bolder">Beehiiv Budget</span><br />
+                <span>$${(
+                  Math.round(
+                    (Number(price) / ((4 * (1 + 0.1)) / (1 - 0.6))) * 4
+                  ) - 2
+                ).toString()}</span>
+              </div>
+              <div style="margin: 20px">
+                <span style="font-weight: bolder">*CTA Tracking Link for Newsletter:</span
+                ><br />
+                <a href="https://track.presspool.ai/${uid}" style="color: blue">https://track.presspool.ai/${uid}</a>
+              </div>
+              <div style="margin: 20px">
+                <span style="font-weight: bolder">Hero Image:</span><br />
+                <a
+                  href="${heroImage}"
+                >
+                  <img
+                    style="width: 135px; height: 74px; border-radius: 10px"
+                    src="${heroImage}"
+                    alt=""
+                  />
+                </a>
+              </div>
+              <div style="margin: 20px">
+                <span style="font-weight: bolder">Additional Files</span><br />
+                ${additionalFiles}
+              </div>
+              <hr />
+              <div style="margin: 20px">
+                <span
+                  >Please review and fully understand the clients conversion goals before
+                  submitting to a Creator!</span
+                ><br /><br />
+                <span>Cheers,</span><br />
+                <span>Rica</span>
+              </div>
+              <hr />
+              <div>
+                <div style="text-align: center">
+                  <img style="width: 40px; height: 40px" src="https://presspool-upload-images.s3.amazonaws.com/Presspool+Black+Logo.png" alt="logo"/>
+                </div>
+                <div style="text-align: center">
+                  <span>@ 2024 Presspool</span>
+                </div>
+              </div>`;
+
     const mailComposer = new MailComposer({
       from: "Rica Mae-PressPool Support Team<rica@presspool.ai>",
       to: email,
-      subject: `Review Needed: ${userName}'s "${campaignName}" Submitted`,
+      subject: `NEW CLIENT CAMPAIGN | ${company} <> ${campaignName}`,
       // text: content,
-      html: `
-      <p style="margin-top: 15px;">Hi ${adminName}</p>
-      <p>${userName}'s "${campaignName}" has been submitted for review. Expected turnaround is 24-48 hours. Please be ready for any client queries or changes.</p>
-      <p>Company: ${company}</p>
-      <p style="font-weight:700">DO NOT CLICK THIS LINK OR IT WILL CHARGE THE CLIENT</p>
-      <p>Our Tracking url: https://track.presspool.ai/${uid} </p>
-      <p>Campaign Budget: ${price}</p>
-      <p>Beehiiv Budget: ${(
-          Math.round((Number(price) / ((4 * (1 + 0.1)) / (1 - 0.6))) * 4) - 2
-        ).toString()}</p>
-      <div style="margin-left: 20px">
-        <p>Website URL:</p>
-        <p>${url}</p>
-        <p>Headline:</p>
-        <p>${headline}</p>
-        <p>Body:</p>
-        <p>${body}</p>
-        <p>CTA:</p>
-        <p>${cta}</p>
-        <p>CTA Link:</p>
-        <p>${pageUrl}</p>
-        <p>Conversion Goal:</p>
-        <p>${conversion}</p>
-        <p>Conversion Detail:</p>
-        <p>${conversionDetail}</p>
-        <p>Hero Image:</p>
-        <p><a href="${heroImage}" download="hero-image.png">Hero Image</a></p>
-        <p>Additional Files:</p>
-        ${additionalFiles}
-      </div>
-      <p>Thanks,</p>
-      <p>Rica</p>
-      `,
       // attachments: fileAttachments,
+      html,
       textEncoding: "base64",
       headers: [
         {
@@ -678,6 +854,18 @@ const sendInviteAccountManagerEmail = async (email: string) => {
     await sendEmail(mailComposer);
   } catch (error) {
     log.error(`send invite email error: ${error}`);
+  }
+};
+
+const getPlaceHolder = (name: string) => {
+  if (!name) return "";
+  const names = name.split(" ");
+  if (names.length === 2) {
+    return `${names[0].at(0)}${names[1].at(0)}`;
+  } else if (names.length === 1) {
+    return `${names[0].at(0)}`;
+  } else {
+    return "";
   }
 };
 
