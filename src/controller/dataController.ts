@@ -261,7 +261,12 @@ const addCampaign: RequestHandler = async (req: Request, res: Response) => {
             uiData.page_url,
             req.body.url,
             uiData.conversion,
-            uiData.conversion_detail
+            uiData.conversion_detail,
+            data.demographic,
+            data.region,
+            data.audience,
+            data.position,
+            userData.team_avatar
           );
         }
       }
@@ -550,7 +555,12 @@ const updateCampaignDetail: RequestHandler = async (
               uiData.page_url,
               campaignData.rows[0].url,
               uiData.conversion,
-              uiData.conversion_detail
+              uiData.conversion_detail,
+              campaignData.rows[0].demographic,
+              campaignData.rows[0].region,
+              campaignData.rows[0].audience,
+              campaignData.rows[0].position,
+              userData.team_avatar
             );
           }
         }
@@ -617,7 +627,12 @@ const updateCampaignDetail: RequestHandler = async (
                 uiData.page_url,
                 url,
                 uiData.conversion,
-                uiData.conversion_detail
+                uiData.conversion_detail,
+                campaignData.rows[0].demographic,
+                campaignData.rows[0].region,
+                campaignData.rows[0].audience,
+                campaignData.rows[0].position,
+                userData.team_avatar
               );
             }
           }
@@ -1046,7 +1061,11 @@ const getGuide: RequestHandler = async (_req: Request, res: Response) => {
   }
 };
 
-const publishCampaign = async (email: string, campaignId: number, uiId: number) => {
+const publishCampaign = async (
+  email: string,
+  campaignId: number,
+  uiId: number
+) => {
   const time = moment().valueOf();
   const uiData = (
     await db.query("SELECT * FROM campaign_ui WHERE id = $1", [uiId])
@@ -1057,7 +1076,10 @@ const publishCampaign = async (email: string, campaignId: number, uiId: number) 
       process.env.PRESSPOOL_AES_KEY as string
     ).toString()
   );
-  await db.query('UPDATE campaign set uid = $1 where id = $2', [uid, campaignId]);
+  await db.query("UPDATE campaign set uid = $1 where id = $2", [
+    uid,
+    campaignId,
+  ]);
   // Get if user payment verified or not
 
   const retVal = await db.query(
@@ -1068,17 +1090,12 @@ const publishCampaign = async (email: string, campaignId: number, uiId: number) 
 
   //send email to client
   const userData = (
-    await db.query("SELECT * from user_list where email = $1", [
-      email,
-    ])
+    await db.query("SELECT * from user_list where email = $1", [email])
   ).rows[0];
-  await mailer.sendPublishEmail(
-    email,
-    userData.name,
-    data.name
-  );
+  await mailer.sendPublishEmail(email, userData.name, data.name);
   // send email to super admins
   const admins = await db.query("SELECT email, name, role FROM admin_user");
+  
   for (const admin of admins.rows) {
     // if (admin.email !== 'oleksii@presspool.ai') continue;
     if (
@@ -1102,6 +1119,11 @@ const publishCampaign = async (email: string, campaignId: number, uiId: number) 
         data.url,
         uiData.conversion,
         uiData.conversion_detail,
+        data.demographic,
+        data.region,
+        data.audience,
+        data.position,
+        userData.team_avatar
       );
     }
   }
@@ -1132,7 +1154,6 @@ const data = {
   updateTeamMember,
 
   getGuide,
-
 
   // make campaign submitted forcely
   publishCampaign,
