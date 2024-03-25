@@ -504,7 +504,8 @@ const sendSuperAdminNotificationEmail = async (
   region: string,
   audience: string,
   position: string,
-  teamAvatar: string
+  teamAvatar: string,
+  companyEmail: string
 ) => {
   console.log("send super admin notification emails");
 
@@ -572,7 +573,7 @@ const sendSuperAdminNotificationEmail = async (
 
     const html = `<div>
               <div style="text-align: center">
-                <span>Presspool</span>
+                <img style="width: 115px; height: 40px" src="https://presspool-upload-images.s3.amazonaws.com/logo1+1.png" alt="logo"/>
               </div>
             </div>
               <hr />
@@ -599,9 +600,9 @@ const sendSuperAdminNotificationEmail = async (
                     </div>`
                   } 
                 </div>
-                <div style="margin: 20px">
-                  <span style="font-weight: bolder">${company}</span><br />
-                  <span>${url}</span>
+                <div style="margin: 0 20px">
+                  <span style="font-weight: bolder; font-size: 28px">${company}</span><br />
+                  <span>${companyEmail}</span>
                 </div>
               </div>
               <div style="margin: 20px">
@@ -699,7 +700,7 @@ const sendSuperAdminNotificationEmail = async (
               <hr />
               <div>
                 <div style="text-align: center">
-                  
+                  <img style="width: 40px; height: 40px" src="https://presspool-upload-images.s3.amazonaws.com/Presspool+Black+Logo.png" alt="logo"/>
                 </div>
                 <div style="text-align: center">
                   <span>@ 2024 Presspool</span>

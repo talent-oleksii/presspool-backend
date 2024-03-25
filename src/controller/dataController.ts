@@ -266,7 +266,8 @@ const addCampaign: RequestHandler = async (req: Request, res: Response) => {
             data.region,
             data.audience,
             data.position,
-            userData.team_avatar
+            userData.team_avatar,
+            data.email,
           );
         }
       }
@@ -560,7 +561,8 @@ const updateCampaignDetail: RequestHandler = async (
               campaignData.rows[0].region,
               campaignData.rows[0].audience,
               campaignData.rows[0].position,
-              userData.team_avatar
+              userData.team_avatar,
+              campaignData.rows[0].email,
             );
           }
         }
@@ -632,7 +634,8 @@ const updateCampaignDetail: RequestHandler = async (
                 campaignData.rows[0].region,
                 campaignData.rows[0].audience,
                 campaignData.rows[0].position,
-                userData.team_avatar
+                userData.team_avatar,
+                campaignData.rows[0].email,
               );
             }
           }
@@ -1123,7 +1126,8 @@ const publishCampaign = async (
         data.region,
         data.audience,
         data.position,
-        userData.team_avatar
+        userData.team_avatar,
+        data.email
       );
     }
   }
