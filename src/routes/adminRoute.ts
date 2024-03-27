@@ -47,6 +47,7 @@ router.get('/users', adminUser.getNormalUsers);
 router.get('/dashboard/overview', adminData.getDashboardOverviewData);
 router.get('/dashboard/campaign/list', adminData.getDashboardCampaignList);
 router.get('/dashboard/campaign/detail', adminData.getDashboardCampaignDetail);
+router.get('/dashboard/newsletter', adminData.getNewsletter);
 
 router.get('/dashboard/client', adminData.getDashboardClient);
 router.put('/dashboard/client', adminData.updateDashboardClient);
