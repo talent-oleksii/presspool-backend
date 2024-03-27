@@ -391,7 +391,7 @@ const dailyAnalyticsUpdate = async () => {
 
         const timeOf = moment(time, 'YYYYMMDD').valueOf();
         let title = '';
-        if (firstUserManualContent.indexOf('.com') > -1) {
+        if (firstUserManualContent.length > 1) {
           title = await getPageTitle(`https://${firstUserManualContent}`);
         }
 
