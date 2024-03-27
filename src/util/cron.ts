@@ -8,6 +8,10 @@ import mailer from './mailer';
 import axios from 'axios';
 import moment from 'moment';
 import cheerio from 'cheerio';
+import puppeteer from 'puppeteer-extra';
+import Stealth from 'puppeteer-extra-plugin-stealth';
+
+puppeteer.use(Stealth());
 
 dotenv.config({ path: './.env' });
 
@@ -184,22 +188,11 @@ const mailingFunction = async () => {
 
 async function runReport(client: BetaAnalyticsDataClient, propertyId: any, startDate: any, endDate: any) {
   // Function implementation...
-
-  // const dimensions = [{ name: "date" }, { name: "eventName" }, { name: "pagePath" }];
-  // const metrics = [{ name: "eventCount" }, { name: 'totalUsers' }];
-
-  // const request = {
-  //   property: `properties/${propertyId}`,
-  //   dimensions: dimensions,
-  //   metrics: metrics,
-  //   dateRanges: [{ startDate: startDate, endDate: endDate }],
-  // };
-
   try {
     const [response] = await client.runReport({
       property: `properties/${propertyId}`,
       dateRanges: [{ startDate: startDate, endDate: endDate }],
-      dimensions: [{ name: 'fullPageUrl' }, { name: 'country' }, { name: 'deviceCategory' }, { name: 'date' }, { name: 'firstUserMedium' }, { name: 'firstUserSource' }],
+      dimensions: [{ name: 'fullPageUrl' }, { name: 'country' }, { name: 'deviceCategory' }, { name: 'date' }, { name: 'firstUserMedium' }, { name: 'firstUserSource' }, { name: 'region' }, { name: 'city' }],
       metrics: [{
         name: 'newUsers'
       }, {
@@ -264,7 +257,7 @@ const scrapeFunction = async () => {
   try {
     const client: BetaAnalyticsDataClient = await initializeClient() as BetaAnalyticsDataClient;
     const propertyId: string = process.env.GOOGLE_ANALYTIC_PROPERTY_ID as string;
-    // const response: any = await runReport(client, propertyId);
+
     const response: any = await runRealtimeReport(client, propertyId);
 
     if (!response) {
@@ -319,21 +312,36 @@ const scrapeFunction = async () => {
   }
 };
 
+const list: Array<any> = [];
+
 const getPageTitle = async (url: string) => {
   try {
-    // Fetch homepage HTML
-    const response = await axios.get(url);
-    const html = response.data;
+    // Launch a headless browser
+    const index = list.findIndex(item => item.url === url)
+    if (index > -1) return list[index].name;
 
-    // Load HTML into Cheerio
-    const $ = cheerio.load(html);
+    const browser = await puppeteer.launch();
 
-    // Extract page title
-    const title = $('title').text(); // Assuming the page title is within a <title> tag
+    // Open a new page
+    const page = await browser.newPage();
+
+    // Navigate to the specified URL
+    await page.goto(url);
+
+    // Get the page title
+    const title = await page.title();
+
+    // Close the browser
+    await browser.close();
+
+    list.push({
+      url,
+      name: title,
+    });
 
     return title;
   } catch (error) {
-    console.error('Error fetching page title:', error);
+    console.error('Error:', error);
     return '';
   }
 }
@@ -352,7 +360,6 @@ const dailyAnalyticsUpdate = async () => {
     const client = await initializeClient() as BetaAnalyticsDataClient;
     const propertyId = process.env.GOOGLE_ANALYTIC_PROPERTY_ID as string;
 
-    // const response = await runReport(client, propertyId, stD, enD);
     const response = await runReport(client, propertyId, '2024-02-18', enD);
     if (!response) {
       console.error('Failed to fetch report data');
@@ -376,6 +383,8 @@ const dailyAnalyticsUpdate = async () => {
         const time = item.dimensionValues?.[3]?.value ? item.dimensionValues[3].value : '';
         const firstUserMedium = item.dimensionValues?.[4]?.value ? item.dimensionValues[4].value : '';
         const firstUserManualContent = item.dimensionValues?.[5]?.value ? item.dimensionValues[5].value : '';
+        const region = item.dimensionValues?.[6]?.value ? item.dimensionValues[6].value : '';
+        const city = item.dimensionValues?.[7]?.value ? item.dimensionValues[7].value : '';
         const totalUsers = item.metricValues?.[0]?.value ? Number(item.metricValues[0].value) : 0;
         const screenPageViews = item.metricValues?.[1]?.value ? Number(item.metricValues[1].value) : 0;
         const userEngagementDuration = item.metricValues?.[2]?.value ? Number(item.metricValues[2].value) : 0;
@@ -385,7 +394,9 @@ const dailyAnalyticsUpdate = async () => {
         if (firstUserManualContent.indexOf('.com') > -1) {
           title = await getPageTitle(`https://${firstUserManualContent}`);
         }
-        await db.query('INSERT INTO clicked_history (create_time, ip, campaign_id, device, count, unique_click, duration, user_medium, full_url, newsletter_id) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)', [
+
+        console.log('values:', country, firstUserMedium, title, region, screenPageViews, totalUsers);
+        await db.query('INSERT INTO clicked_history (create_time, ip, campaign_id, device, count, unique_click, duration, user_medium, full_url, newsletter_id, region, city) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)', [
           timeOf,
           country,
           campaign.id,
@@ -396,6 +407,8 @@ const dailyAnalyticsUpdate = async () => {
           firstUserMedium,
           item.dimensionValues?.[0]?.value,
           title,
+          region,
+          city,
         ]);
 
         uniqueClicks += Number(totalUsers);
@@ -418,6 +431,8 @@ const cronFunction = {
   mailingFunction,
   scrapeFunction,
   dailyAnalyticsUpdate,
+
+  getPageTitle,
 };
 
 export default cronFunction;
