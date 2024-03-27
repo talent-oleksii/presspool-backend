@@ -4,6 +4,7 @@ import db from "../../util/db";
 import { StatusCodes } from "http-status-codes";
 import mailer from "../../util/mailer";
 import moment from "moment";
+import log from "../../util/logger";
 
 const getDashboardOverviewData: RequestHandler = async (
   req: Request,
@@ -130,6 +131,30 @@ const getDashboardOverviewData: RequestHandler = async (
   } catch (error: any) {
     console.log("get dashboard overview error:", error.message);
     return res.status(StatusCodes.OK).json({ message: error.message });
+  }
+};
+
+const getNewsletter: RequestHandler = async (req: Request, res: Response) => {
+  log.info("get newsletter called");
+  // showBaseList();
+
+  try {
+    const { campaignId, from, to } = req.query;
+    let params = [campaignId];
+    let query = `SELECT ch.newsletter_id name,camp.id, SUM(ch.count) AS total_clicks, SUM(ch.unique_click) unique_clicks, (camp.billed/camp.unique_clicks)* SUM(ch.unique_click) total_spent FROM public.clicked_history ch
+    INNER JOIN public.campaign camp on ch.campaign_id = camp.id
+    WHERE camp.id = $1`;
+
+    if (from && to) {
+      query += " and ch.create_time > $2 and ch.create_time < $3";
+      params = [...params, from, to];
+    }
+
+    query += " GROUP BY ch.newsletter_id, camp.id";
+    const newsletter = await db.query(query, params);
+    return res.status(StatusCodes.OK).json(newsletter.rows);
+  } catch (error: any) {
+    return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json(error.message);
   }
 };
 
@@ -466,6 +491,7 @@ const adminData = {
   addGuide,
   getGuide,
   deleteGuide,
+  getNewsletter
 };
 
 export default adminData;
