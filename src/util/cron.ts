@@ -393,7 +393,7 @@ const dailyAnalyticsUpdate = async () => {
 
         const timeOf = moment(time, 'YYYYMMDD').valueOf();
         let title = '';
-        if (firstUserManualContent.length > 1) {
+        if (firstUserManualContent.length > 1 && firstUserManualContent.indexOf('.') > -1) {
           title = await getPageTitle(`https://${firstUserManualContent}`);
         }
 
