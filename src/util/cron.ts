@@ -320,7 +320,7 @@ const getPageTitle = async (url: string) => {
     const index = list.findIndex(item => item.url === url)
     if (index > -1) return list[index].name;
 
-    const browser = await puppeteer.launch();
+    const browser = await puppeteer.launch({ headless: true });
 
     // Open a new page
     const page = await browser.newPage();
@@ -341,7 +341,7 @@ const getPageTitle = async (url: string) => {
 
     return title;
   } catch (error) {
-    console.error('Error:', error);
+    console.error('Error while get page title:', error);
     return '';
   }
 }
