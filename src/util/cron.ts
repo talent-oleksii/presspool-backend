@@ -333,6 +333,8 @@ const getPageTitle = async (url: string) => {
 
     // Close the browser
     await browser.close();
+    await page.close();
+    await browser.close();
 
     list.push({
       url,
