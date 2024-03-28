@@ -10,8 +10,6 @@ import dataRoute from './routes/dataRoute';
 import stripeRoute from './routes/stripeRoute';
 import adminRoute from './routes/adminRoute';
 
-import data from './controller/dataController';
-
 import cronFunction from './util/cron';
 
 dotenv.config({ path: './.env' });
