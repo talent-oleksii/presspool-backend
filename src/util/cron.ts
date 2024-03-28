@@ -330,11 +330,11 @@ const getPageTitle = async (url: string) => {
 
     // Get the page title
     const title = await page.title();
+    console.log('page title:', title);
 
     // Close the browser
     await browser.close();
-    await page.close();
-    await browser.close();
+    await browser.disconnect();
 
     list.push({
       url,
