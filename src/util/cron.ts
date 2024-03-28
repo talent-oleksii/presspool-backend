@@ -351,6 +351,11 @@ const dailyAnalyticsUpdate = async () => {
   const stD = startDate.toISOString().split('T')[0]; // Format as 'YYYY-MM-DD'
   const enD = endDate.toISOString().split('T')[0];
 
+  const browser = await puppeteer.launch({ headless: true });
+
+  // Open a new page
+  const page = await browser.newPage();
+
   try {
     const client = await initializeClient() as BetaAnalyticsDataClient;
     const propertyId = process.env.GOOGLE_ANALYTIC_PROPERTY_ID as string;
@@ -387,10 +392,6 @@ const dailyAnalyticsUpdate = async () => {
         const timeOf = moment(time, 'YYYYMMDD').valueOf();
         let title = '';
         if (firstUserManualContent.length > 1) {
-          const browser = await puppeteer.launch({ headless: true });
-
-          // Open a new page
-          const page = await browser.newPage();
           title = await getPageTitle(browser, page, `https://${firstUserManualContent}`);
         }
 
