@@ -314,11 +314,16 @@ const scrapeFunction = async () => {
 
 const list: Array<any> = [];
 
-const getPageTitle = async (browser: any, page: any, url: string) => {
+const getPageTitle = async (url: string) => {
   try {
     // Launch a headless browser
     const index = list.findIndex(item => item.url === url)
     if (index > -1) return list[index].name;
+
+    const browser = await puppeteer.launch({ headless: true });
+
+    // Open a new page
+    const page = await browser.newPage();
 
     // Navigate to the specified URL
     await page.goto(url);
@@ -350,11 +355,6 @@ const dailyAnalyticsUpdate = async () => {
   const endDate = new Date(today.getFullYear(), today.getMonth(), today.getDate() + 1);
   const stD = startDate.toISOString().split('T')[0]; // Format as 'YYYY-MM-DD'
   const enD = endDate.toISOString().split('T')[0];
-
-  const browser = await puppeteer.launch({ headless: true });
-
-  // Open a new page
-  const page = await browser.newPage();
 
   try {
     const client = await initializeClient() as BetaAnalyticsDataClient;
@@ -392,7 +392,7 @@ const dailyAnalyticsUpdate = async () => {
         const timeOf = moment(time, 'YYYYMMDD').valueOf();
         let title = '';
         if (firstUserManualContent.length > 1) {
-          title = await getPageTitle(browser, page, `https://${firstUserManualContent}`);
+          title = await getPageTitle(`https://${firstUserManualContent}`);
         }
 
         console.log('values:', country, firstUserMedium, title, region, screenPageViews, totalUsers);
