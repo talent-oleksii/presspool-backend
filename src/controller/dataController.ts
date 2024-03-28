@@ -21,18 +21,23 @@ const showBaseList = async () => {
 const getNewsletter: RequestHandler = async (req: Request, res: Response) => {
   log.info("get newsletter called");
   // showBaseList();
-
   try {
     const { email, from, to, campaignIds } = req.query;
+    const fromDateObject = moment.utc(from as string);
+    const toDateObject = moment.utc(to as string);
+    const formattedFromDate = fromDateObject.format("YYYY-MM-DD 00:00:00");
+    const formattedToDate = toDateObject.format("YYYY-MM-DD 00:00:00");
     let params = [email];
     let query = `SELECT ch.newsletter_id name,camp.id, SUM(ch.count) AS total_clicks, SUM(ch.unique_click) unique_clicks, (camp.billed/camp.unique_clicks)* SUM(ch.unique_click) total_spent FROM public.clicked_history ch
     INNER JOIN public.campaign camp on ch.campaign_id = camp.id
     WHERE camp.email = $1`;
 
     if (from && to) {
-      query += " and ch.create_time > $2 and ch.create_time < $3";
-      params = [...params, from, to];
+      query +=
+        " and TO_TIMESTAMP(CAST(ch.create_time AS bigint)/1000) BETWEEN $2 and $3";
+      params = [...params, formattedFromDate, formattedToDate];
     }
+
     if (campaignIds) {
       const parsedIds = (campaignIds as string[]).map((x) => Number(x));
       query += ` and ch.campaign_id IN(${parsedIds
@@ -267,7 +272,7 @@ const addCampaign: RequestHandler = async (req: Request, res: Response) => {
             data.audience,
             data.position,
             userData.team_avatar,
-            data.email,
+            data.email
           );
         }
       }
@@ -285,63 +290,44 @@ const getCampaign: RequestHandler = async (req: Request, res: Response) => {
 
   try {
     const { email, searchStr, from, to, campaignIds } = req.query;
-    log.info(JSON.stringify(campaignIds));
+    const fromDateObject = moment.utc(from as string);
+    const toDateObject = moment.utc(to as string);
+    const formattedFromDate = fromDateObject.format("YYYY-MM-DD 00:00:00");
+    const formattedToDate = toDateObject.format("YYYY-MM-DD 00:00:00");
     let result: any = undefined;
-
-    const ids: Array<Number> = [];
     let selectParams = [email];
-    let campaignGetQuery = "select id from campaign where email = $1";
+    let query = `SELECT *, campaign.id as id, campaign_ui.id as ui_id from campaign 
+      left join campaign_ui on campaign.id = campaign_ui.campaign_id
+      WHERE campaign.email IN (
+        SELECT owner
+          FROM public.team_list
+          WHERE manager = $1
+        UNION 
+        SELECT $1
+      )`;
+
     if (campaignIds) {
       const parsedIds = (campaignIds as string[]).map((x) => Number(x));
-      campaignGetQuery += ` AND id IN(${parsedIds
+      query += ` AND campaign.id IN(${parsedIds
         .map((id) => "'" + id + "'")
         .join(",")})`;
     }
-    log.info(campaignGetQuery);
-    const myCampaigns = await db.query(campaignGetQuery, selectParams);
-    myCampaigns.rows.forEach((item) => ids.push(Number(item.id)));
-    // check if this email is manager or admin
-    const teamList = await db.query(
-      "select owner, role, campaign_list from team_list where manager = $1",
-      [email]
-    );
-    for (const item of teamList.rows) {
-      // if (item.role === 'admin') {
-      const ownerCampaigns = await db.query(
-        "select id from campaign where email = $1",
-        [item.owner]
-      );
-      ownerCampaigns.rows.forEach((item) => ids.push(Number(item.id)));
-      // } else if (item.role === 'manager') {
-      //     item.campaign_list.split(',').map((item: string) => ids.push(Number(item)));
-      // }
-    }
-
-    let query =
-      "SELECT *, campaign.id as id, campaign_ui.id as ui_id from campaign left join campaign_ui on campaign.id = campaign_ui.campaign_id where campaign.id = ANY($1)";
-    let values: Array<any> = [ids];
     if (searchStr) {
       query += " and name like $2";
-      values = [...values, `%${searchStr}%`];
-
-      if (from && to) {
-        query += " and campaign.create_time > $3 and campaign.create_time < $4";
-        values = [...values, from, to];
-      }
-    } else {
-      if (from && to) {
-        query += " and campaign.create_time > $2 and campaign.create_time < $3";
-        values = [...values, from, to];
-      }
+      selectParams = [...selectParams, `%${searchStr}%`];
     }
+    result = await db.query(query, selectParams);
 
-    log.info(`query: ${query}, values; ${values}`);
-    result = await db.query(query, values);
-
-    const clickedData = await db.query(
-      "SELECT create_time, id, campaign_id, count, ip, unique_click, duration, user_medium FROM clicked_history WHERE campaign_id = ANY($1)",
-      [result.rows.map((item: any) => Number(item.id))]
-    );
+    let values = [result.rows.map((item: any) => Number(item.id))];
+    let clickedHistoryQuery =
+      "SELECT create_time, id, campaign_id, count, ip, unique_click, duration, user_medium FROM clicked_history WHERE campaign_id = ANY($1)";
+    if (from && to) {
+      clickedHistoryQuery +=
+        " and TO_TIMESTAMP(CAST(create_time AS bigint)/1000) BETWEEN $2 and $3";
+      values = [...values, formattedFromDate, formattedToDate];
+    }
+    log.info(`query: ${clickedHistoryQuery}, values; ${values}`);
+    const clickedData = await db.query(clickedHistoryQuery, values);
 
     return res.status(StatusCodes.OK).json({
       data: result.rows,
@@ -562,7 +548,7 @@ const updateCampaignDetail: RequestHandler = async (
               campaignData.rows[0].audience,
               campaignData.rows[0].position,
               userData.team_avatar,
-              campaignData.rows[0].email,
+              campaignData.rows[0].email
             );
           }
         }
@@ -635,7 +621,7 @@ const updateCampaignDetail: RequestHandler = async (
                 campaignData.rows[0].audience,
                 campaignData.rows[0].position,
                 userData.team_avatar,
-                campaignData.rows[0].email,
+                campaignData.rows[0].email
               );
             }
           }
@@ -1098,7 +1084,7 @@ const publishCampaign = async (
   await mailer.sendPublishEmail(email, userData.name, data.name);
   // send email to super admins
   const admins = await db.query("SELECT email, name, role FROM admin_user");
-  
+
   for (const admin of admins.rows) {
     // if (admin.email !== 'oleksii@presspool.ai') continue;
     if (
