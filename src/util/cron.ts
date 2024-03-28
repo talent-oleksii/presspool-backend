@@ -375,7 +375,7 @@ const dailyAnalyticsUpdate = async () => {
     const campaigns = await db.query('SELECT id, uid FROM campaign');
 
     for (const campaign of campaigns.rows) {
-      let uniqueClicks = 0, totalClicks = 0;
+      let uniqueClicks = 0, totalClicks = 0, verifiedClicks = 0;
       await db.query('DELETE FROM clicked_history WHERE campaign_id = $1', [campaign.id]);
       for (const item of response.rows) {
         const pageUrl = item.dimensionValues?.[0]?.value ? encodeURIComponent(item.dimensionValues[0].value) : '';
@@ -397,7 +397,6 @@ const dailyAnalyticsUpdate = async () => {
           title = await getPageTitle(`https://${firstUserManualContent}`);
         }
 
-        console.log('values:', country, firstUserMedium, title, region, screenPageViews, totalUsers);
         await db.query('INSERT INTO clicked_history (create_time, ip, campaign_id, device, count, unique_click, duration, user_medium, full_url, newsletter_id, region, city) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)', [
           timeOf,
           country,
@@ -415,8 +414,9 @@ const dailyAnalyticsUpdate = async () => {
 
         uniqueClicks += Number(totalUsers);
         totalClicks += Number(screenPageViews);
+        verifiedClicks += firstUserMedium === 'newsletter' || firstUserMedium === 'referral' ? Number(totalUsers) : 0;
       }
-      await db.query('UPDATE campaign set click_count = $1, spent = $2, unique_clicks = $3 WHERE id = $4', [totalClicks, Math.ceil(uniqueClicks * getCPC(5000)), uniqueClicks, campaign.id]);
+      await db.query('UPDATE campaign set click_count = $1, spent = $2, unique_clicks = $3 WHERE id = $4', [totalClicks, Math.ceil(verifiedClicks * getCPC(5000)), uniqueClicks, campaign.id]);
       console.log('update finished');
     }
 
