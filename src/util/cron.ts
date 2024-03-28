@@ -314,16 +314,11 @@ const scrapeFunction = async () => {
 
 const list: Array<any> = [];
 
-const getPageTitle = async (url: string) => {
+const getPageTitle = async (browser: any, page: any, url: string) => {
   try {
     // Launch a headless browser
     const index = list.findIndex(item => item.url === url)
     if (index > -1) return list[index].name;
-
-    const browser = await puppeteer.launch({ headless: true });
-
-    // Open a new page
-    const page = await browser.newPage();
 
     // Navigate to the specified URL
     await page.goto(url);
@@ -392,7 +387,11 @@ const dailyAnalyticsUpdate = async () => {
         const timeOf = moment(time, 'YYYYMMDD').valueOf();
         let title = '';
         if (firstUserManualContent.length > 1) {
-          title = await getPageTitle(`https://${firstUserManualContent}`);
+          const browser = await puppeteer.launch({ headless: true });
+
+          // Open a new page
+          const page = await browser.newPage();
+          title = await getPageTitle(browser, page, `https://${firstUserManualContent}`);
         }
 
         console.log('values:', country, firstUserMedium, title, region, screenPageViews, totalUsers);
