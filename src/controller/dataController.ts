@@ -201,6 +201,7 @@ const addCampaign: RequestHandler = async (req: Request, res: Response) => {
     }
     //add on position table
     const position = req.body.currentPosition;
+    let cpc = 10;
     if (position) {
       for (const item of position) {
         const count = await db.query("SELECT * FROM position WHERE name = $1", [
@@ -213,12 +214,18 @@ const addCampaign: RequestHandler = async (req: Request, res: Response) => {
               "INSERT INTO position (name, email, create_time) VALUES ($1, $2, $3) ON CONFLICT (name) DO NOTHING",
               [item, req.body.email, time]
             );
+            cpc = 15;
           } catch (error) {
             console.error("Error inserting into position:", error);
           }
         }
+        if (count.rows.length > 0 && count.rows[0].email !== 'sahilhgupta562@gmail.com') {
+          cpc = 15;
+        }
       }
     }
+
+    await db.query('UPDATE campaign SET cpc = $1 WHERE id = $2', [cpc, result.rows[0].id]);
 
     await db.query(
       "update campaign_ui set campaign_id = $1 where id = $2 RETURNING *",
@@ -474,6 +481,7 @@ const updateCampaignDetail: RequestHandler = async (
     }
 
     const position = currentPosition;
+    let cpc = 10;
     if (position) {
       for (const item of position) {
         const count = await db.query("SELECT * FROM position WHERE name = $1", [
@@ -486,12 +494,17 @@ const updateCampaignDetail: RequestHandler = async (
               "INSERT INTO position (name, email, create_time) VALUES ($1, $2, $3) ON CONFLICT (name) DO NOTHING",
               [item, email, time]
             );
+            cpc = 15;
           } catch (error) {
             console.error("Error inserting into position:", error);
           }
         }
+        if (count.rows.length > 0 && count.rows[0].email !== 'sahilhgupta562@gmail.com') {
+          cpc = 15;
+        }
       }
     }
+    await db.query('UPDATE campaign SET cpc = $1 WHERE id = $2', [cpc, id]);
 
     if (type === "state") {
       const campaign = await db.query(

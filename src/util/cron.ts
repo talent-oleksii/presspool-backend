@@ -372,7 +372,7 @@ const dailyAnalyticsUpdate = async () => {
       console.error('No data received from runReport');
       return;
     }
-    const campaigns = await db.query('SELECT id, uid FROM campaign');
+    const campaigns = await db.query('SELECT id, uid, cpc FROM campaign');
 
     for (const campaign of campaigns.rows) {
       let uniqueClicks = 0, totalClicks = 0, verifiedClicks = 0;
@@ -416,7 +416,7 @@ const dailyAnalyticsUpdate = async () => {
         totalClicks += Number(screenPageViews);
         verifiedClicks += firstUserMedium === 'newsletter' || firstUserMedium === 'referral' ? Number(totalUsers) : 0;
       }
-      await db.query('UPDATE campaign set click_count = $1, spent = $2, unique_clicks = $3 WHERE id = $4', [totalClicks, Math.ceil(verifiedClicks * getCPC(5000)), uniqueClicks, campaign.id]);
+      await db.query('UPDATE campaign set click_count = $1, spent = $2, unique_clicks = $3 WHERE id = $4', [totalClicks, Math.ceil(verifiedClicks * Number(campaign.cpc)), uniqueClicks, campaign.id]);
       console.log('update finished');
     }
 
