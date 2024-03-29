@@ -39,7 +39,10 @@ const getDashboardOverviewData: RequestHandler = async (
     const { accountManagerId, clientId, campaignId, from, to } = req.query;
 
     console.log("values:", accountManagerId, clientId, campaignId, from, to);
-
+    const fromDateObject = moment.utc(from as string);
+    const toDateObject = moment.utc(to as string);
+    const formattedFromDate = fromDateObject.format("YYYY-MM-DD 00:00:00");
+    const formattedToDate = toDateObject.format("YYYY-MM-DD 00:00:00");
     // const clientCount = await db.query('SELECT count(*) as total_count, count(*) FILTER (where email_verified = $1) as inactive_count from user_list', [0]);
     // const campaignCount = await db.query('SELECT count(*) FILTER (WHERE state = $1) as active_count, count(*) FILTER (WHERE state = $2) as draft_count, SUM(price) as total_revenue, SUM(spent) as total_spent, SUM(billed) as total_profit from campaign', ['active', 'draft']);
 
@@ -57,15 +60,13 @@ const getDashboardOverviewData: RequestHandler = async (
     //   clicked: clickedData.rows,
     // });
 
-    let clicked = [],
-      campaignData = [];
-
+    let campaignData = [];
+    let clickedHistoryQuery = "";
+    let values: any[] = [];
     if (Number(campaignId) !== 0) {
-      clicked = (
-        await db.query("SELECT * from clicked_history WHERE campaign_id = $1", [
-          campaignId,
-        ])
-      ).rows;
+      clickedHistoryQuery +=
+        "SELECT * from clicked_history WHERE campaign_id = $1";
+      values = [campaignId];
       campaignData = (
         await db.query("SELECT * from campaign WHERE id = $1", [campaignId])
       ).rows;
@@ -84,12 +85,9 @@ const getDashboardOverviewData: RequestHandler = async (
         campaignData,
         campaignData.map((item) => item.id)
       );
-      clicked = (
-        await db.query(
-          "SELECT * FROM clicked_history WHERE campaign_id = ANY($1)",
-          [campaignData.map((item) => Number(item.id))]
-        )
-      ).rows;
+      clickedHistoryQuery +=
+        "SELECT * FROM clicked_history WHERE campaign_id = ANY($1)";
+      values = [campaignData.map((item) => Number(item.id))];
     } else if (Number(accountManagerId) !== 0) {
       const assinged = (
         await db.query("SELECT assigned_users FROM admin_user WHERE id = $1", [
@@ -97,7 +95,6 @@ const getDashboardOverviewData: RequestHandler = async (
         ])
       ).rows;
       if (!assinged[0].assigned_users) {
-        clicked = [];
         campaignData = [];
       } else {
         const clients = (
@@ -112,20 +109,27 @@ const getDashboardOverviewData: RequestHandler = async (
             clients.map((item) => item.email),
           ])
         ).rows;
-        clicked = (
-          await db.query(
-            "SELECT * FROM clicked_history WHERE campaign_id = ANY($1)",
-            [campaignData.map((item) => Number(item.id))]
-          )
-        ).rows;
+        clickedHistoryQuery +=
+          "SELECT * FROM clicked_history WHERE campaign_id = ANY($1)";
+        values = [campaignData.map((item) => Number(item.id))];
       }
     } else {
       campaignData = (await db.query("SELECT * from campaign")).rows;
-      clicked = (await db.query("SELECT * from clicked_history")).rows;
+      clickedHistoryQuery +=
+        "SELECT * from clicked_history WHERE campaign_id is not null";
+    }
+
+    if (from && to && clickedHistoryQuery) {
+      clickedHistoryQuery += ` and TO_TIMESTAMP(CAST(create_time AS bigint)/1000) BETWEEN ${
+        values.length ? `$2 and $3` : `$1 and $2`
+      }`;
+      values = [...values, formattedFromDate, formattedToDate];
     }
 
     return res.status(StatusCodes.OK).json({
-      clicked: clicked,
+      clicked: clickedHistoryQuery
+        ? (await db.query(clickedHistoryQuery, values)).rows
+        : [],
       campaign: campaignData,
     });
   } catch (error: any) {
@@ -140,14 +144,19 @@ const getNewsletter: RequestHandler = async (req: Request, res: Response) => {
 
   try {
     const { campaignId, from, to } = req.query;
+    const fromDateObject = moment.utc(from as string);
+    const toDateObject = moment.utc(to as string);
+    const formattedFromDate = fromDateObject.format("YYYY-MM-DD 00:00:00");
+    const formattedToDate = toDateObject.format("YYYY-MM-DD 00:00:00");
     let params = [campaignId];
     let query = `SELECT ch.newsletter_id name,camp.id, SUM(ch.count) AS total_clicks, SUM(ch.unique_click) unique_clicks, (camp.billed/camp.unique_clicks)* SUM(ch.unique_click) total_spent FROM public.clicked_history ch
     INNER JOIN public.campaign camp on ch.campaign_id = camp.id
     WHERE camp.id = $1`;
 
     if (from && to) {
-      query += " and ch.create_time > $2 and ch.create_time < $3";
-      params = [...params, from, to];
+      query +=
+        " and TO_TIMESTAMP(CAST(ch.create_time AS bigint)/1000) BETWEEN $2 and $3";
+      params = [...params, formattedFromDate, formattedToDate];
     }
 
     query += " GROUP BY ch.newsletter_id, camp.id";
@@ -491,7 +500,7 @@ const adminData = {
   addGuide,
   getGuide,
   deleteGuide,
-  getNewsletter
+  getNewsletter,
 };
 
 export default adminData;
