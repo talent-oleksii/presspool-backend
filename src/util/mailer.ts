@@ -367,6 +367,22 @@ const sendPurchaseEmail = async (
                                 )}% from last week</span>
                               </div>
                             </div>
+                            <div style="padding: 15px; margin-left: 30px; border-radius: 8px; border: 1px solid #FDE006; min-width: 200px;">
+                              <p style="font-size: 16px; letter-spacing: -0.48px; font-weight: 500; color: #172935; margin: 0px;">Verified Clicks</p>
+                              <p style="font-size: 25px; letter-spacing: -0.75px; font-weight: 600; color: #7ffbae; margin: 0px;">${
+                                item.verifiedClick
+                              }</p>
+                              <div style="display: flex; margin-top: 10px; align-items: center; font-size: 13px;">
+                                ${
+                                  item.upVerifiedClick >= 0
+                                    ? '<span style="border-radius: 50px; background: #7ffbae; padding: 0px; text-align: center; width: 20px; height: 20px; color: white; margin-right: 2px;">+</span>Up'
+                                    : '<span style="border-radius: 50px; background: #FF4D42;  padding: 0px; text-align: center; width: 20px; height: 20px; color: white; margin-right: 2px;">-</span>Down'
+                                }
+                                <span style="color: #172935; font-size: 13px; letter-spacing: -0.3px; font-weight: 500; margin-left: 3px;">${Math.abs(
+                                  item.upVerifiedClick
+                                )}% from last week</span>
+                              </div>
+                            </div>
                           </div>
                           <div style="margin-top: 20px; display: flex;">
                             <div style="padding: 15px; border-radius: 8px; border: 1px solid #7ffbae; min-width: 200px;">
@@ -397,6 +413,36 @@ const sendPurchaseEmail = async (
                                 <span style="color: #172935; font-size: 13px; letter-spacing: -0.3px; font-weight: 500; margin-left: 3px;">${Math.abs(
                                   item.upAvgCPC
                                 )}% from last week</span>
+                              </div>
+                            </div>
+                          </div>
+                          <div style="margin-top: 20px; display: flex;">
+                            <div style="padding: 15px;border-radius: 8px;border: 1px solid #7ffbae;min-width: 46.5%;">
+                              <p style="font-size: 16px; letter-spacing: -0.48px; font-weight: 500; color: #172935; margin: 0px;">Engagement by Channel</p>
+                              <p style="font-size: 25px; letter-spacing: -0.75px; font-weight: 600; color: #7ffbae; margin: 0px;">${`${
+                                Number(item.sumEmail) + Number(item.sumBlog)
+                              }`}</p>
+                              <div style="display: flex;margin-top: 10px;justify-content: flex-end;font-size: 13px;width: 100%;">
+                                <div style="padding-left: 8px;border-color: #7ffbae;display: flex;flex-direction: column;height: 50px;border-left: 4px solid #7ffbae;">
+                                  <span> Newsletter </span>
+                                  <span> ${item.sumEmail} </span>
+                                </div>
+                                <div style=" padding-left: 8px; border-color: #6C63FF;display: flex;flex-direction: column;height: 50px;border-left: 4px solid #6C63FF;margin-left: 10px">
+                                  <span> Referral </span>
+                                  <span> ${item.sumBlog} </span>
+                                </div>
+                              </div>
+                            </div>
+                            <div style="padding: 15px;border-radius: 8px;border: 1px solid #7ffbae;min-width: 46.5%;">
+                              <p style="font-size: 16px; letter-spacing: -0.48px; font-weight: 500; color: #172935; margin: 0px;">Engagement by Country</p>
+                              <div style="display: flex;margin-top: 10px;justify-content: flex-start;font-size: 13px;width: 100%;gap:10px: flex-wrap: wrap;">
+                              ${item.groupedByCountry.map(
+                                (item1: any) =>
+                                  `<div style="padding-left: 8px;border-color: ${item1.color};display: flex;flex-direction: column;height: 50px;border-left: 4px solid ${item1.color};">
+                                  <span> ${item1.ip} </span>
+                                  <span> ${item1.percentage}% </span>
+                                </div>`
+                              )}
                               </div>
                             </div>
                           </div>
