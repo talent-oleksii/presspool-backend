@@ -182,7 +182,7 @@ const purchaseCampaign: RequestHandler = async (
           upVerifiedClick: 0,
           sumEmail,
           sumBlog,
-          groupedByCountry
+          groupedByCountry: groupedByCountry.slice(0, Math.min(groupedByCountry.length, 3))
         };
       });
 

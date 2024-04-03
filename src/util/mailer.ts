@@ -328,125 +328,321 @@ const sendPurchaseEmail = async (
             ${data
               .map((item) => {
                 return `
-                        <div key=${
+                        <div style="border-bottom: 1px solid rgba(0, 0, 0, 0.12);padding: 20px 0px;">
+                        <p style="font-weight: 700; letter-spacing: -0.42px; font-size: 14px; margin-top: 0px;">${
                           item.name
-                        } style="border-bottom: 1px solid rgba(0,0,0,0.12); padding: 20px 0px;">
-                          <p style="font-weight: 700; letter-spacing: -0.42px; font-size: 14px; margin-top: 0px;">${
-                            item.name
-                          }</p>
-                          <div style="display: flex;">
-                            <div style="padding: 15px; border-radius: 8px; border: 1px solid #7ffbae; min-width: 200px;">
-                              <p style="font-size: 16px; letter-spacing: -0.48px; font-weight: 500; color: #172935; margin: 0px;">Total Clicks</p>
-                              <p style="font-size: 25px; letter-spacing: -0.75px; font-weight: 600; color: #7ffbae; margin: 0px;">${
-                                item.totalClick
-                              }</p>
-                              <div style="display: flex; margin-top: 10px; align-items: center; font-size: 13px;">
-                                ${
-                                  item.upTotalClick >= 0
-                                    ? '<span style="border-radius: 50px; background: #7ffbae; padding: 0px; text-align: center; width: 20px; height: 20px; color: white; margin-right: 2px;">+</span>Up'
-                                    : '<span style="border-radius: 50px; background: #FF4D42; padding: 0px; text-align: center; width: 20px; height: 20px; color: white; margin-right: 2px;">-</span>Down'
-                                }
-                                <span style="color: #172935; font-size: 13px; letter-spacing: -0.3px; font-weight: 500; margin-left: 3px;">${Math.abs(
-                                  item.upTotalClick
-                                )}% from last week</span>
-                              </div>
-                            </div>
-                            <div style="padding: 15px; margin-left: 30px; border-radius: 8px; border: 1px solid #7ffbae; min-width: 200px;">
-                              <p style="font-size: 16px; letter-spacing: -0.48px; font-weight: 500; color: #172935; margin: 0px;">Unique Clicks</p>
-                              <p style="font-size: 25px; letter-spacing: -0.75px; font-weight: 600; color: #7ffbae; margin: 0px;">${
-                                item.uniqueClick
-                              }</p>
-                              <div style="display: flex; margin-top: 10px; align-items: center; font-size: 13px;">
-                                ${
-                                  item.upUniqueClick >= 0
-                                    ? '<span style="border-radius: 50px; background: #7ffbae; padding: 0px; text-align: center; width: 20px; height: 20px; color: white; margin-right: 2px;">+</span>Up'
-                                    : '<span style="border-radius: 50px; background: #FF4D42;  padding: 0px; text-align: center; width: 20px; height: 20px; color: white; margin-right: 2px;">-</span>Down'
-                                }
-                                <span style="color: #172935; font-size: 13px; letter-spacing: -0.3px; font-weight: 500; margin-left: 3px;">${Math.abs(
-                                  item.upUniqueClick
-                                )}% from last week</span>
-                              </div>
-                            </div>
-                            <div style="padding: 15px; margin-left: 30px; border-radius: 8px; border: 1px solid #FDE006; min-width: 200px;">
-                              <p style="font-size: 16px; letter-spacing: -0.48px; font-weight: 500; color: #172935; margin: 0px;">Verified Clicks</p>
-                              <p style="font-size: 25px; letter-spacing: -0.75px; font-weight: 600; color: #7ffbae; margin: 0px;">${
-                                item.verifiedClick
-                              }</p>
-                              <div style="display: flex; margin-top: 10px; align-items: center; font-size: 13px;">
-                                ${
-                                  item.upVerifiedClick >= 0
-                                    ? '<span style="border-radius: 50px; background: #7ffbae; padding: 0px; text-align: center; width: 20px; height: 20px; color: white; margin-right: 2px;">+</span>Up'
-                                    : '<span style="border-radius: 50px; background: #FF4D42;  padding: 0px; text-align: center; width: 20px; height: 20px; color: white; margin-right: 2px;">-</span>Down'
-                                }
-                                <span style="color: #172935; font-size: 13px; letter-spacing: -0.3px; font-weight: 500; margin-left: 3px;">${Math.abs(
-                                  item.upVerifiedClick
-                                )}% from last week</span>
-                              </div>
-                            </div>
-                          </div>
-                          <div style="margin-top: 20px; display: flex;">
-                            <div style="padding: 15px; border-radius: 8px; border: 1px solid #7ffbae; min-width: 200px;">
-                              <p style="font-size: 16px; letter-spacing: -0.48px; font-weight: 500; color: #172935; margin: 0px;">Total Spend</p>
-                              <p style="font-size: 25px; letter-spacing: -0.75px; font-weight: 600; color: #7ffbae; margin: 0px;">${`$${item.totalSpent}`}</p>
-                              <div style="display: flex; margin-top: 10px; align-items: center; font-size: 13px;">
-                                ${
-                                  item.upTotalSpent >= 0
-                                    ? '<span style="border-radius: 50px; background: #7ffbae; padding: 0px; text-align: center; width: 20px; height: 20px; color: white; margin-right: 2px;">+</span>Up'
-                                    : '<span style="border-radius: 50px; background: #FF4D42; padding: 0px; text-align: center; width: 20px; height: 20px; color: white; margin-right: 2px;">-</span>Down'
-                                }
-                                <span style="color: #172935; font-size: 13px; letter-spacing: -0.3px; font-weight: 500; margin-left: 3px;">${Math.abs(
-                                  item.upTotalSpent
-                                )}% from last week</span>
-                              </div>
-                            </div>
-                            <div style="padding: 15px; margin-left: 30px; border-radius: 8px; border: 1px solid #7ffbae; min-width: 200px;">
-                              <p style="font-size: 16px; letter-spacing: -0.48px; font-weight: 500; color: #172935; margin: 0px;">AVG CPC</p>
-                              <p style="font-size: 25px; letter-spacing: -0.75px; font-weight: 600; color: #7ffbae; margin: 0px;">${
-                                item.avgCPC
-                              }</p>
-                              <div style="display: flex; margin-top: 10px; align-items: center; font-size: 13px;">
-                                ${
-                                  item.upAvgCPC >= 0
-                                    ? '<span style="border-radius: 50px; background: #7ffbae; padding: 0px; text-align: center; width: 20px; height: 20px; color: white; margin-right: 2px;">+</span>Up '
-                                    : '<span style="border-radius: 50px; background: #FF4D42; padding: 0px; text-align: center; width: 20px; height: 20px; color: white; margin-right: 2px;">-</span>Down '
-                                }
-                                <span style="color: #172935; font-size: 13px; letter-spacing: -0.3px; font-weight: 500; margin-left: 3px;">${Math.abs(
-                                  item.upAvgCPC
-                                )}% from last week</span>
-                              </div>
-                            </div>
-                          </div>
-                          <div style="margin-top: 20px; display: flex;">
-                            <div style="padding: 15px;border-radius: 8px;border: 1px solid #7ffbae;min-width: 46.5%;">
-                              <p style="font-size: 16px; letter-spacing: -0.48px; font-weight: 500; color: #172935; margin: 0px;">Engagement by Channel</p>
-                              <p style="font-size: 25px; letter-spacing: -0.75px; font-weight: 600; color: #7ffbae; margin: 0px;">${`${
-                                Number(item.sumEmail) + Number(item.sumBlog)
-                              }`}</p>
-                              <div style="display: flex;margin-top: 10px;justify-content: flex-end;font-size: 13px;width: 100%;">
-                                <div style="padding-left: 8px;border-color: #7ffbae;display: flex;flex-direction: column;height: 50px;border-left: 4px solid #7ffbae;">
-                                  <span> Newsletter </span>
-                                  <span> ${item.sumEmail} </span>
-                                </div>
-                                <div style=" padding-left: 8px; border-color: #6C63FF;display: flex;flex-direction: column;height: 50px;border-left: 4px solid #6C63FF;margin-left: 10px">
-                                  <span> Referral </span>
-                                  <span> ${item.sumBlog} </span>
-                                </div>
-                              </div>
-                            </div>
-                            <div style="padding: 15px;border-radius: 8px;border: 1px solid #7ffbae;min-width: 46.5%;">
-                              <p style="font-size: 16px; letter-spacing: -0.48px; font-weight: 500; color: #172935; margin: 0px;">Engagement by Country</p>
-                              <div style="display: flex;margin-top: 10px;justify-content: flex-start;font-size: 13px;width: 100%;gap:10px: flex-wrap: wrap;">
-                              ${item.groupedByCountry.map(
-                                (item1: any) =>
-                                  `<div style="padding-left: 8px;border-color: ${item1.color};display: flex;flex-direction: column;height: 50px;border-left: 4px solid ${item1.color};">
-                                  <span> ${item1.ip} </span>
-                                  <span> ${item1.percentage}% </span>
-                                </div>`
-                              )}
-                              </div>
-                            </div>
-                          </div>
+                        }</p>
+                        <div>
+                          <table
+                            bgcolor="#ffffff"
+                            cellspacing="0"
+                            border="0"
+                            style="width: 100%; text-align: left; background-color: #ffffff"
+                          >
+                            <tr>
+                              <table cellpadding="10px">
+                                <td colspan="1" style="padding-left: 0;">
+                                  <div style="text-align: left">
+                                    <div
+                                      style="
+                                        padding: 15px;
+                                        border-radius: 8px;
+                                        border: 2px solid #ddad32;
+                                        min-width: 170px;
+                                        max-width: 170px;
+                                      "
+                                    >
+                                    <p style="font-size: 16px; letter-spacing: -0.48px; font-weight: 500; color: #172935; margin: 0px;">Verified Clicks</p>
+                                    <p style="font-size: 25px; letter-spacing: -0.75px; font-weight: 600; color: #7ffbae; margin: 0px;">${
+                                      item.verifiedClick
+                                    }</p>
+                                    <div style="display: flex; margin-top: 10px; align-items: center; font-size: 13px;">
+                                      ${
+                                        item.upVerifiedClick >= 0
+                                          ? '<span style="border-radius: 50px; background: #7ffbae; padding: 0px; text-align: center; width: 20px; height: 20px; color: white; margin-right: 2px;">+</span>Up'
+                                          : '<span style="border-radius: 50px; background: #FF4D42;  padding: 0px; text-align: center; width: 20px; height: 20px; color: white; margin-right: 2px;">-</span>Down'
+                                      }
+                                      <span style="color: #172935; font-size: 13px; letter-spacing: -0.3px; font-weight: 500; margin-left: 3px;">${Math.abs(
+                                        item.upVerifiedClick
+                                      )}% from last week</span>
+                                    </div>
+                                    </div>
+                                  </div>
+                                </td>
+                                <td colspan="1">
+                                  <div style="text-align: left">
+                                    <div
+                                      style="
+                                        padding: 15px;
+                                        border-radius: 8px;
+                                        border: 2px solid #7ffbae;
+                                        min-width: 170px;
+                                        max-width: 170px;
+                                      "
+                                    >
+                                    <p style="font-size: 16px; letter-spacing: -0.48px; font-weight: 500; color: #172935; margin: 0px;">Total Clicks</p>
+                                    <p style="font-size: 25px; letter-spacing: -0.75px; font-weight: 600; color: #7ffbae; margin: 0px;">${
+                                      item.totalClick
+                                    }</p>
+                                    <div style="display: flex; margin-top: 10px; align-items: center; font-size: 13px;">
+                                      ${
+                                        item.upTotalClick >= 0
+                                          ? '<span style="border-radius: 50px; background: #7ffbae; padding: 0px; text-align: center; width: 20px; height: 20px; color: white; margin-right: 2px;">+</span>Up'
+                                          : '<span style="border-radius: 50px; background: #FF4D42; padding: 0px; text-align: center; width: 20px; height: 20px; color: white; margin-right: 2px;">-</span>Down'
+                                      }
+                                      <span style="color: #172935; font-size: 13px; letter-spacing: -0.3px; font-weight: 500; margin-left: 3px;">${Math.abs(
+                                        item.upTotalClick
+                                      )}% from last week</span>
+                                    </div>
+                                    </div>
+                                  </div>
+                                </td>
+                                <td colspan="1">
+                                  <div style="text-align: left">
+                                    <div
+                                      style="
+                                        padding: 15px;
+                                        border-radius: 8px;
+                                        border: 2px solid #7ffbae;
+                                        min-width: 170px;
+                                        max-width: 170px;
+                                      "
+                                    >
+                                    <p style="font-size: 16px; letter-spacing: -0.48px; font-weight: 500; color: #172935; margin: 0px;">Unique Clicks</p>
+                                    <p style="font-size: 25px; letter-spacing: -0.75px; font-weight: 600; color: #7ffbae; margin: 0px;">${
+                                      item.uniqueClick
+                                    }</p>
+                                    <div style="display: flex; margin-top: 10px; align-items: center; font-size: 13px;">
+                                      ${
+                                        item.upUniqueClick >= 0
+                                          ? '<span style="border-radius: 50px; background: #7ffbae; padding: 0px; text-align: center; width: 20px; height: 20px; color: white; margin-right: 2px;">+</span>Up'
+                                          : '<span style="border-radius: 50px; background: #FF4D42;  padding: 0px; text-align: center; width: 20px; height: 20px; color: white; margin-right: 2px;">-</span>Down'
+                                      }
+                                      <span style="color: #172935; font-size: 13px; letter-spacing: -0.3px; font-weight: 500; margin-left: 3px;">${Math.abs(
+                                        item.upUniqueClick
+                                      )}% from last week</span>
+                                    </div>
+                                    </div>
+                                  </div>
+                                </td>
+                              </table>
+                            </tr>
+                            <tr>
+                              <table cellpadding="10px">
+                                <td colspan="1" style="padding-left: 0;">
+                                  <div style="text-align: left">
+                                    <div
+                                      style="
+                                        padding: 15px;
+                                        border-radius: 8px;
+                                        border: 2px solid #7ffbae;
+                                        min-width: 170px;
+                                        max-width: 170px;
+                                      "
+                                    >
+                                    <p style="font-size: 16px; letter-spacing: -0.48px; font-weight: 500; color: #172935; margin: 0px;">Total Spend</p>
+                                    <p style="font-size: 25px; letter-spacing: -0.75px; font-weight: 600; color: #7ffbae; margin: 0px;">${`$${item.totalSpent}`}</p>
+                                    <div style="display: flex; margin-top: 10px; align-items: center; font-size: 13px;">
+                                      ${
+                                        item.upTotalSpent >= 0
+                                          ? '<span style="border-radius: 50px; background: #7ffbae; padding: 0px; text-align: center; width: 20px; height: 20px; color: white; margin-right: 2px;">+</span>Up'
+                                          : '<span style="border-radius: 50px; background: #FF4D42; padding: 0px; text-align: center; width: 20px; height: 20px; color: white; margin-right: 2px;">-</span>Down'
+                                      }
+                                      <span style="color: #172935; font-size: 13px; letter-spacing: -0.3px; font-weight: 500; margin-left: 3px;">${Math.abs(
+                                        item.upTotalSpent
+                                      )}% from last week</span>
+                                    </div>
+                                    </div>
+                                  </div>
+                                </td>
+                                <td colspan="1">
+                                  <div style="text-align: left">
+                                    <div
+                                      style="
+                                        padding: 15px;
+                                        border-radius: 8px;
+                                        border: 2px solid #7ffbae;
+                                        min-width: 170px;
+                                        max-width: 170px;
+                                      "
+                                    >
+                                    <p style="font-size: 16px; letter-spacing: -0.48px; font-weight: 500; color: #172935; margin: 0px;">AVG CPC</p>
+                                    <p style="font-size: 25px; letter-spacing: -0.75px; font-weight: 600; color: #7ffbae; margin: 0px;">${
+                                      item.avgCPC
+                                    }</p>
+                                    <div style="display: flex; margin-top: 10px; align-items: center; font-size: 13px;">
+                                      ${
+                                        item.upAvgCPC >= 0
+                                          ? '<span style="border-radius: 50px; background: #7ffbae; padding: 0px; text-align: center; width: 20px; height: 20px; color: white; margin-right: 2px;">+</span>Up '
+                                          : '<span style="border-radius: 50px; background: #FF4D42; padding: 0px; text-align: center; width: 20px; height: 20px; color: white; margin-right: 2px;">-</span>Down '
+                                      }
+                                      <span style="color: #172935; font-size: 13px; letter-spacing: -0.3px; font-weight: 500; margin-left: 3px;">${Math.abs(
+                                        item.upAvgCPC
+                                      )}% from last week</span>
+                                    </div>
+                                    </div>
+                                  </div>
+                                </td>
+                                <td></td>
+                              </table>
+                            </tr>
+                            <tr>
+                              <table cellpadding="10px">
+                                <td colspan="1" style="padding-left: 0;">
+                                  <div style="text-align: left">
+                                    <div
+                                      style="
+                                        padding: 15px;
+                                        border-radius: 8px;
+                                        border: 2px solid #7ffbae;
+                                        min-width: 270px;
+                                        max-width: 270px;
+                                      "
+                                    >
+                                      <p
+                                        style="
+                                          font-size: 16px;
+                                          letter-spacing: -0.48px;
+                                          font-weight: 500;
+                                          color: #172935;
+                                          margin: 0px;
+                                        "
+                                      >
+                                        Engagement by Channel
+                                      </p>
+                                      <p
+                                        style="
+                                          font-size: 25px;
+                                          letter-spacing: -0.75px;
+                                          font-weight: 600;
+                                          color: #000;
+                                          margin: 0px;
+                                        "
+                                      >
+                                      ${`${
+                                        Number(item.sumEmail) + Number(item.sumBlog)
+                                      }`}
+                                      </p>
+                                      <div
+                                        style="
+                                          margin-top: 10px;
+                                          font-size: 13px;
+                                          width: 100%;
+                                          text-align: right;
+                                        "
+                                      >
+                                        <div
+                                          style="
+                                            padding-left: 8px;
+                                            border-color: #7ffbae;
+                                            height: 40px;
+                                            border-left: 4px solid #7ffbae;
+                                            display: inline-block;
+                                            text-align: left;
+                                          "
+                                        >
+                                          <span> Newsletter </span><br />
+                                          <span> ${item.sumEmail} </span>
+                                        </div>
+                                        <div
+                                          style="
+                                            padding-left: 8px;
+                                            border-color: #6c63ff;
+                                            height: 40px;
+                                            border-left: 4px solid #6c63ff;
+                                            margin-left: 10px;
+                                            display: inline-block;
+                                            text-align: left;
+                                          "
+                                        >
+                                          <span> Referral </span><br />
+                                          <span> ${item.sumBlog} </span>
+                                        </div>
+                                      </div>
+                                    </div>
+                                  </div>
+                                </td>
+                                <td colspan="1">
+                                  <div style="text-align: left">
+                                    <div
+                                      style="
+                                        padding: 15px;
+                                        border-radius: 8px;
+                                        border: 2px solid #7ffbae;
+                                        min-width: 270px;
+                                        max-width: 270px;
+                                      "
+                                    >
+                                      <p
+                                        style="
+                                          font-size: 16px;
+                                          letter-spacing: -0.48px;
+                                          font-weight: 500;
+                                          color: #172935;
+                                          margin: 0px;
+                                        "
+                                      >
+                                        Engagement by Country
+                                      </p>
+                                      <p style="min-height: 29px; margin: 0"></p>
+                                      <div
+                                        style="
+                                          margin-top: 10px;
+                                          font-size: 13px;
+                                          width: 100%;
+                                          text-align: left;
+                                        "
+                                      >
+                                      ${item.groupedByCountry.length === 1 ? `<div
+                                          style="
+                                            padding-left: 8px;
+                                            border-color: #7ffbae;
+                                            height: 40px;
+                                            border-left: 4px solid #7ffbae;
+                                            display: inline-block;
+                                            text-align: left;
+                                          "
+                                        >
+                                          <span> ${item.groupedByCountry[0].ip} </span><br />
+                                          <span> ${item.groupedByCountry[0].percentage}% </span>
+                                        </div>`:""}
+                                        ${item.groupedByCountry.length === 2 ? `<div
+                                          style="
+                                            padding-left: 8px;
+                                            border-color: #6c63ff;
+                                            height: 40px;
+                                            border-left: 4px solid #6c63ff;
+                                            margin-left: 10px;
+                                            display: inline-block;
+                                            text-align: left;
+                                          "
+                                        >
+                                        <span> ${item.groupedByCountry[1].ip} </span><br />
+                                        <span> ${item.groupedByCountry[1].percentage}% </span>
+                                        </div>`:""}
+                                        ${item.groupedByCountry.length === 3 ? `<div
+                                          style="
+                                            padding-left: 8px;
+                                            border-color: #e4d33b;
+                                            height: 40px;
+                                            border-left: 4px solid #e4d33b;
+                                            margin-left: 10px;
+                                            display: inline-block;
+                                            text-align: left;
+                                          "
+                                        >
+                                        <span> ${item.groupedByCountry[2].ip} </span><br />
+                                        <span> ${item.groupedByCountry[2].percentage}% </span>
+                                        </div>` : ""}
+                                      </div>
+                                    </div>
+                                  </div>
+                                </td>
+                              </table>
+                            </tr>
+                          </table>
                         </div>
+                      </div>
                       `;
               })
               .join("")}
