@@ -372,7 +372,7 @@ const dailyAnalyticsUpdate = async () => {
       console.error('No data received from runReport');
       return;
     }
-    const campaigns = await db.query('SELECT id, uid, cpc FROM campaign');
+    const campaigns = await db.query('SELECT id, uid, cpc, click_count, price, complete_date FROM campaign');
 
     for (const campaign of campaigns.rows) {
       let uniqueClicks = 0, totalClicks = 0, verifiedClicks = 0;
@@ -380,6 +380,7 @@ const dailyAnalyticsUpdate = async () => {
       for (const item of response.rows) {
         const pageUrl = item.dimensionValues?.[0]?.value ? encodeURIComponent(item.dimensionValues[0].value) : '';
         if (!pageUrl.includes(campaign.uid)) continue;
+
         const country = item.dimensionValues?.[1]?.value ? item.dimensionValues[1].value : '';
         const device = item.dimensionValues?.[2]?.value ? item.dimensionValues[2].value : '';
         const time = item.dimensionValues?.[3]?.value ? item.dimensionValues[3].value : '';
@@ -392,6 +393,7 @@ const dailyAnalyticsUpdate = async () => {
         const userEngagementDuration = item.metricValues?.[2]?.value ? Number(item.metricValues[2].value) : 0;
 
         const timeOf = moment(time, 'YYYYMMDD').valueOf();
+
         let title = '';
         if (firstUserManualContent.length > 1 && firstUserManualContent.indexOf('.') > -1) {
           title = await getPageTitle(`https://${firstUserManualContent}`);
@@ -415,6 +417,18 @@ const dailyAnalyticsUpdate = async () => {
         uniqueClicks += Number(totalUsers);
         totalClicks += Number(screenPageViews);
         verifiedClicks += firstUserMedium === 'newsletter' || firstUserMedium === 'referral' ? Number(totalUsers) : 0;
+      }
+
+      const oneDay = moment().add(-1, 'day').valueOf();
+      const now = moment().valueOf();
+      if (Number(campaign.click_count) === 0 && totalClicks > 0) {
+        await db.query('UPDATE campaign SET start_date = $1 WHERE id = $2', [oneDay, campaign.id]);
+      } else {
+        await db.query('UPDATE campaign SET start_date = create_time WHERE id = $1', [campaign.id]);
+      }
+
+      if (Math.ceil(verifiedClicks * Number(campaign.cpc)) >= Number(campaign.price) && !campaign.complete_date) {
+        await db.query('UPDATE campaign SET complete_date = $1 where id = $2', [now, campaign.id]);
       }
       await db.query('UPDATE campaign set click_count = $1, spent = $2, unique_clicks = $3 WHERE id = $4', [totalClicks, Math.ceil(verifiedClicks * Number(campaign.cpc)), uniqueClicks, campaign.id]);
       console.log('update finished');
