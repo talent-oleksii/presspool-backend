@@ -91,6 +91,10 @@ const billingFunction = async () => { // Here we notify users about billing
       // update billed information on database
       const newBilled = Number(campaign.billed) + billAmount / 100;
       await db.query('UPDATE campaign set billed = $1 where id = $2', [newBilled, campaign.id]);
+
+
+      // send stripe invoice to customer
+      //end
     }
 
     // pay to account managers
@@ -416,7 +420,7 @@ const dailyAnalyticsUpdate = async () => {
 
         uniqueClicks += Number(totalUsers);
         totalClicks += Number(screenPageViews);
-        verifiedClicks += firstUserMedium === 'newsletter' || firstUserMedium === 'referral' ? Number(totalUsers) : 0;
+        verifiedClicks += firstUserMedium === 'newsletter' && userEngagementDuration > screenPageViews * 1.2 ? Number(totalUsers) : 0;
       }
 
       const oneDay = moment().add(-1, 'day').valueOf();
