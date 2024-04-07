@@ -252,10 +252,7 @@ const addCampaign: RequestHandler = async (req: Request, res: Response) => {
       }
     }
 
-    await db.query("UPDATE campaign SET cpc = $1 WHERE id = $2", [
-      cpc,
-      result.rows[0].id,
-    ]);
+    // await db.query('UPDATE campaign SET cpc = $1 WHERE id = $2', [cpc, result.rows[0].id]);
 
     await db.query(
       "update campaign_ui set campaign_id = $1 where id = $2 RETURNING *",
@@ -556,7 +553,7 @@ const updateCampaignDetail: RequestHandler = async (
         }
       }
     }
-    await db.query("UPDATE campaign SET cpc = $1 WHERE id = $2", [cpc, id]);
+    // await db.query('UPDATE campaign SET cpc = $1 WHERE id = $2', [cpc, id]);
 
     if (type === "state") {
       const campaign = await db.query(

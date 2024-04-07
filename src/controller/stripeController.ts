@@ -137,8 +137,7 @@ const purchaseCampaign: RequestHandler = async (
             (prev, item) =>
               prev +
               Number(
-                item?.user_medium === "referral" ||
-                  item?.user_medium === "newsletter"
+                item?.user_medium === "newsletter" && item?.duration > item?.count * 1.2
                   ? item?.unique_click
                   : 0
               ),
@@ -149,8 +148,8 @@ const purchaseCampaign: RequestHandler = async (
           item.price === 0 || verifiedClick === 0
             ? 0
             : item.price / verifiedClick > 10
-            ? 10
-            : Number(item.price / verifiedClick);
+              ? 10
+              : Number(item.price / verifiedClick);
 
         let sumEmail = 0;
         let sumBlog = 0;
@@ -191,6 +190,7 @@ const purchaseCampaign: RequestHandler = async (
         user.rows[0].name,
         data
       );
+
       await db.query("update user_list set verified = 1 where email = $1", [
         object.receipt_email,
       ]);
