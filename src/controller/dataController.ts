@@ -9,6 +9,7 @@ import useAirTable from "../util/useAirTable";
 import log from "../util/logger";
 import moment from "moment";
 import mailer from "../util/mailer";
+import { calculateCampStats } from "../util/common";
 
 const showBaseList = async () => {
   const response = await axios.get("https://api.airtable.com/v0/meta/bases", {
@@ -16,6 +17,29 @@ const showBaseList = async () => {
   });
 
   console.log("base list:", response.data.bases);
+};
+
+const getCampStatsByCampId: RequestHandler = async (
+  req: Request,
+  res: Response
+) => {
+  const { campaignId } = req.query;
+  const { rows: campaignData } = await db.query(
+    "SELECT * FROM campaign WHERE id = $1",
+    [campaignId]
+  );
+  let clickedHistoryQuery =
+    "SELECT create_time, id, campaign_id, count, ip, unique_click, duration, user_medium FROM clicked_history WHERE campaign_id = $1";
+  const { rows: clickedData } = await db.query(clickedHistoryQuery, [
+    campaignId,
+  ]);
+
+  const data = calculateCampStats(campaignData, clickedData);
+  return res.status(StatusCodes.OK).json({
+    ...data,
+    completeDate: campaignData[0].complete_date,
+    state: campaignData[0].state,
+  });
 };
 
 const getNewsletter: RequestHandler = async (req: Request, res: Response) => {
@@ -28,7 +52,7 @@ const getNewsletter: RequestHandler = async (req: Request, res: Response) => {
     const formattedFromDate = fromDateObject.format("YYYY-MM-DD 00:00:00");
     const formattedToDate = toDateObject.format("YYYY-MM-DD 00:00:00");
     let params = [email];
-    let query = `SELECT ch.newsletter_id name,camp.id, SUM(ch.count) AS total_clicks, SUM(ch.unique_click) unique_clicks, SUM(CASE WHEN ch.user_medium = 'newsletter' OR ch.user_medium = 'referral' THEN ch.unique_click ELSE 0 END) verified_clicks FROM public.clicked_history ch
+    let query = `SELECT ch.newsletter_id name,camp.id, SUM(ch.count) AS total_clicks, SUM(ch.unique_click) unique_clicks, SUM(CASE WHEN ch.user_medium = 'newsletter' AND ch.duration > ch.count * 1.2 AND ch.duration > 0  THEN ch.unique_click ELSE 0 END) verified_clicks FROM public.clicked_history ch
     INNER JOIN public.campaign camp on ch.campaign_id = camp.id
     WHERE camp.email = $1`;
 
@@ -219,7 +243,10 @@ const addCampaign: RequestHandler = async (req: Request, res: Response) => {
             console.error("Error inserting into position:", error);
           }
         }
-        if (count.rows.length > 0 && count.rows[0].email !== 'sahilhgupta562@gmail.com') {
+        if (
+          count.rows.length > 0 &&
+          count.rows[0].email !== "sahilhgupta562@gmail.com"
+        ) {
           cpc = 15;
         }
       }
@@ -326,19 +353,38 @@ const getCampaign: RequestHandler = async (req: Request, res: Response) => {
     result = await db.query(query, selectParams);
 
     let values = [result.rows.map((item: any) => Number(item.id))];
+    let prevValues = [result.rows.map((item: any) => Number(item.id))];
     let clickedHistoryQuery =
       "SELECT create_time, id, campaign_id, count, ip, unique_click, duration, user_medium FROM clicked_history WHERE campaign_id = ANY($1)";
+    let prevRangeClickedHistoryQuery = null;
     if (from && to) {
+      const startDate = moment(formattedFromDate);
+      const endDate = moment(formattedToDate);
+      const differenceInDays = endDate.diff(startDate, "days");
+      const prevDate = startDate
+        .clone()
+        .subtract(differenceInDays, "day")
+        .format("YYYY-MM-DD 00:00:00");
+      console.log(`Difference in days: ${differenceInDays}`);
+      console.log(`Prev: ${prevDate}`);
+
       clickedHistoryQuery +=
         " and TO_TIMESTAMP(CAST(create_time AS bigint)/1000) BETWEEN $2 and $3";
       values = [...values, formattedFromDate, formattedToDate];
+      prevValues = [...prevValues, prevDate, formattedFromDate];
+      prevRangeClickedHistoryQuery =
+        "SELECT create_time, id, campaign_id, count, ip, unique_click, duration, user_medium FROM clicked_history WHERE campaign_id = ANY($1) and TO_TIMESTAMP(CAST(create_time AS bigint)/1000) BETWEEN $2 and $3";
     }
     log.info(`query: ${clickedHistoryQuery}, values; ${values}`);
     const clickedData = await db.query(clickedHistoryQuery, values);
-
+    const { rows: prevClickedData } = prevRangeClickedHistoryQuery
+      ? await db.query(prevRangeClickedHistoryQuery, [...prevValues])
+      : { rows: [] };
+    const data = calculateCampStats(result.rows, prevClickedData);
     return res.status(StatusCodes.OK).json({
       data: result.rows,
       clicked: clickedData.rows,
+      prevData: data,
     });
   } catch (error: any) {
     log.error(`get campaign error: ${error}`);
@@ -499,7 +545,10 @@ const updateCampaignDetail: RequestHandler = async (
             console.error("Error inserting into position:", error);
           }
         }
-        if (count.rows.length > 0 && count.rows[0].email !== 'sahilhgupta562@gmail.com') {
+        if (
+          count.rows.length > 0 &&
+          count.rows[0].email !== "sahilhgupta562@gmail.com"
+        ) {
           cpc = 15;
         }
       }
@@ -1132,6 +1181,7 @@ const publishCampaign = async (
   }
 };
 
+
 const data = {
   getNewsletter,
   getPricing,
@@ -1160,6 +1210,7 @@ const data = {
 
   // make campaign submitted forcely
   publishCampaign,
+  getCampStatsByCampId,
 };
 
 export default data;

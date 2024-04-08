@@ -5,6 +5,7 @@ import { StatusCodes } from "http-status-codes";
 import mailer from "../../util/mailer";
 import moment from "moment";
 import log from "../../util/logger";
+import { calculateCampStats } from "../../util/common";
 
 const getDashboardOverviewData: RequestHandler = async (
   req: Request,
@@ -63,10 +64,12 @@ const getDashboardOverviewData: RequestHandler = async (
     let campaignData = [];
     let clickedHistoryQuery = "";
     let values: any[] = [];
+    let prevQueryValues: any[] = [];
     if (Number(campaignId) !== 0) {
       clickedHistoryQuery +=
         "SELECT * from clicked_history WHERE campaign_id = $1";
       values = [campaignId];
+      prevQueryValues = [campaignId];
       campaignData = (
         await db.query("SELECT * from campaign WHERE id = $1", [campaignId])
       ).rows;
@@ -88,6 +91,7 @@ const getDashboardOverviewData: RequestHandler = async (
       clickedHistoryQuery +=
         "SELECT * FROM clicked_history WHERE campaign_id = ANY($1)";
       values = [campaignData.map((item) => Number(item.id))];
+      prevQueryValues = [campaignData.map((item) => Number(item.id))];
     } else if (Number(accountManagerId) !== 0) {
       const assinged = (
         await db.query("SELECT assigned_users FROM admin_user WHERE id = $1", [
@@ -112,6 +116,7 @@ const getDashboardOverviewData: RequestHandler = async (
         clickedHistoryQuery +=
           "SELECT * FROM clicked_history WHERE campaign_id = ANY($1)";
         values = [campaignData.map((item) => Number(item.id))];
+        prevQueryValues = [campaignData.map((item) => Number(item.id))];
       }
     } else {
       campaignData = (await db.query("SELECT * from campaign")).rows;
@@ -120,10 +125,21 @@ const getDashboardOverviewData: RequestHandler = async (
     }
 
     if (from && to && clickedHistoryQuery) {
+      const startDate = moment(formattedFromDate);
+      const endDate = moment(formattedToDate);
+      const differenceInDays = endDate.diff(startDate, "days");
+      const prevDate = startDate
+        .clone()
+        .subtract(differenceInDays, "day")
+        .format("YYYY-MM-DD 00:00:00");
+      console.log(`Difference in days: ${differenceInDays}`);
+      console.log(`Prev: ${prevDate}`);
+
       clickedHistoryQuery += ` and TO_TIMESTAMP(CAST(create_time AS bigint)/1000) BETWEEN ${
         values.length ? `$2 and $3` : `$1 and $2`
       }`;
       values = [...values, formattedFromDate, formattedToDate];
+      prevQueryValues = [...prevQueryValues, prevDate, formattedFromDate];
     }
 
     return res.status(StatusCodes.OK).json({
@@ -131,6 +147,12 @@ const getDashboardOverviewData: RequestHandler = async (
         ? (await db.query(clickedHistoryQuery, values)).rows
         : [],
       campaign: campaignData,
+      prevData: calculateCampStats(
+        campaignData,
+        clickedHistoryQuery
+          ? (await db.query(clickedHistoryQuery, prevQueryValues)).rows
+          : []
+      ),
     });
   } catch (error: any) {
     console.log("get dashboard overview error:", error.message);
@@ -149,7 +171,7 @@ const getNewsletter: RequestHandler = async (req: Request, res: Response) => {
     const formattedFromDate = fromDateObject.format("YYYY-MM-DD 00:00:00");
     const formattedToDate = toDateObject.format("YYYY-MM-DD 00:00:00");
     let params = [campaignId];
-    let query = `SELECT ch.newsletter_id name,camp.id, SUM(ch.count) AS total_clicks, SUM(ch.unique_click) unique_clicks, SUM(CASE WHEN ch.user_medium = 'newsletter' OR ch.user_medium = 'referral' THEN ch.unique_click ELSE 0 END) verified_clicks FROM public.clicked_history ch
+    let query = `SELECT ch.newsletter_id name,camp.id, SUM(ch.count) AS total_clicks, SUM(ch.unique_click) unique_clicks, SUM(CASE WHEN ch.user_medium = 'newsletter' AND ch.duration > ch.count * 1.2 AND ch.duration > 0  THEN ch.unique_click ELSE 0 END) verified_clicks FROM public.clicked_history ch
     INNER JOIN public.campaign camp on ch.campaign_id = camp.id
     WHERE camp.id = $1`;
 
