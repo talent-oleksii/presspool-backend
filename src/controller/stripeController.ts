@@ -137,7 +137,7 @@ const purchaseCampaign: RequestHandler = async (
             (prev, item) =>
               prev +
               Number(
-                item?.user_medium === "newsletter" && item?.duration > item?.count * 1.2
+                (item?.user_medium === "newsletter" || item?.user_medium === 'referral') && item?.duration > item?.count * 1.5
                   ? item?.unique_click
                   : 0
               ),
