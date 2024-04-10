@@ -5,9 +5,7 @@ import db from './db';
 import { BetaAnalyticsDataClient } from '@google-analytics/data';
 
 import mailer from './mailer';
-import axios from 'axios';
 import moment from 'moment';
-import cheerio from 'cheerio';
 import puppeteer from 'puppeteer-extra';
 import Stealth from 'puppeteer-extra-plugin-stealth';
 
@@ -97,10 +95,9 @@ const billingFunction = async () => { // Here we notify users about billing
       //end
     }
 
-    // pay to account managers
+    // // pay to account managers
     const amVpaid: Array<{ email: string, amount: number }> = [];
     const balance = await stripe.balance.retrieve();
-    console.log('show bal:', balance);
     const campaigns = (await db.query('SELECT * from campaign WHERE billed > $1', [0])).rows;
     for (const campaign of campaigns) {
 
@@ -142,17 +139,17 @@ const billingFunction = async () => { // Here we notify users about billing
     for (const am of amVpaid) {
       if (am.amount <= 0) continue;
       for (const account of accounts.data) {
-        if (account.email === am.email) {
+        if (account.metadata?.work_email === am.email) {
           try {
             await stripe.transfers.create({
               amount: am.amount * 100,
-              // amount: 500,
+              // amount: 100,
               currency: 'usd',
               destination: account.id,
             });
 
             console.log(`transfer success to ${am.email}`);
-            await db.query('UPDATE admin_user SET paid = $1 WHERE email = $2', [am.amount, am.email]);
+            await db.query('UPDATE admin_user SET paid = paid + $1 WHERE email = $2', [am.amount, am.email]);
           } catch (error: any) {
             console.log(`transfer error to account manager ${am.email} `, error);
             continue;

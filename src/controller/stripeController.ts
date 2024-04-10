@@ -238,10 +238,19 @@ const addBillingMethod: RequestHandler = async (
   }
 };
 
+
 const accountUpdated = async (req: Request, res: Response) => {
+  console.log('account updated called');
   try {
     const data = req.body.data;
-    console.log("data:", data);
+    const sig = req.headers['stripe-signature'] as string;
+
+    const endpointSecret = 'whsec_B3wELkfEcyIQeZ5wfh0hWUQp5IdKVqMs';
+
+    let event;
+    event = constant.stripe.webhooks.constructEvent(req.body, sig, endpointSecret);
+
+    console.log("event:", event);
   } catch (error: any) {
     return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json(error.message);
   }
