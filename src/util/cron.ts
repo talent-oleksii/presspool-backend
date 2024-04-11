@@ -96,7 +96,7 @@ const billingFunction = async () => { // Here we notify users about billing
     }
 
     // // pay to account managers
-    const amVpaid: Array<{ email: string, amount: number }> = [];
+    const amVpaid: Array<{ email: string, amount: number, paid: boolean }> = [];
     const balance = await stripe.balance.retrieve();
     const campaigns = (await db.query('SELECT * from campaign WHERE billed > $1', [0])).rows;
     for (const campaign of campaigns) {
@@ -112,7 +112,7 @@ const billingFunction = async () => { // Here we notify users about billing
 
       console.log(`${accountManager.email} get paid ${accountManager.paid}, the billable amount is ${campaign.billed / 10}`);
 
-      if (Number(accountManager.paid) >= Number(campaign.billed / 10)) continue;
+      // if (Number(accountManager.paid) >= Number(campaign.billed / 10)) continue;
       const billAmount = Number(campaign.billed) / 10;
 
       const index = amVpaid.findIndex(item => item.email === accountManager.email);
@@ -122,6 +122,7 @@ const billingFunction = async () => { // Here we notify users about billing
         amVpaid.push({
           email: accountManager.email,
           amount: billAmount,
+          paid: false,
         });
       }
     }
@@ -139,7 +140,8 @@ const billingFunction = async () => { // Here we notify users about billing
     for (const am of amVpaid) {
       if (am.amount <= 0) continue;
       for (const account of accounts.data) {
-        if (account.metadata?.work_email === am.email) {
+        console.log('accoutn: ', account.metadata?.work_email, account.id);
+        if (account.metadata?.work_email === am.email && am.paid === false) {
           try {
             await stripe.transfers.create({
               amount: am.amount * 100,
@@ -150,6 +152,7 @@ const billingFunction = async () => { // Here we notify users about billing
 
             console.log(`transfer success to ${am.email}`);
             await db.query('UPDATE admin_user SET paid = paid + $1 WHERE email = $2', [am.amount, am.email]);
+            am.paid = true;
           } catch (error: any) {
             console.log(`transfer error to account manager ${am.email} `, error);
             continue;
@@ -157,6 +160,7 @@ const billingFunction = async () => { // Here we notify users about billing
         }
       }
     }
+    console.log('after pay:', amVpaid);
   } catch (error) {
     log.error(`weekly billing error: ${error}`);
   }
