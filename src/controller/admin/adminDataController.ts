@@ -357,14 +357,23 @@ const getClientCampaign: RequestHandler = async (
 
     const data = await db.query(
       `
-      SELECT campaign.name, campaign.click_count, campaign.unique_clicks, campaign.billed, campaign.email, campaign.state, user_list.company, user_list.name as user_name, user_list.avatar
+      SELECT *, campaign.id as id, campaign_ui.id as ui_id, user_list.id as user_id, campaign.name as campaign_name, user_list.name as client_name
       FROM campaign LEFT JOIN user_list ON campaign.email = user_list.email
+      left join campaign_ui on campaign.id = campaign_ui.campaign_id
       WHERE campaign.id = $1
     `,
       [campaignId]
     );
 
-    return res.status(StatusCodes.OK).json(data.rows[0]);
+    const clickedData = await db.query(
+      `SELECT create_time, id, campaign_id, count, ip, unique_click, duration, user_medium FROM clicked_history WHERE campaign_id = $1`,
+      [campaignId]
+    );
+
+    return res.status(StatusCodes.OK).json({
+      data: data.rows[0],
+      clicked: clickedData.rows,
+    });
   } catch (error: any) {
     console.log("get client campaign detail error:", error.message);
     return res
