@@ -9,7 +9,7 @@ const getAccountManagers: RequestHandler = async (
 ) => {
   try {
     const assigners = await db.query(
-            `SELECT * FROM (SELECT 
+      `SELECT * FROM (SELECT 
           admin_user.id,
           admin_user.create_time, 
           admin_user.name, 
@@ -66,33 +66,56 @@ const assignAccountManager: RequestHandler = async (
   res: Response
 ) => {
   try {
-    const { userId, manager } = req.body;
+    const { userId, assignedIds, removedIds } = req.body;
+    const params = [userId, `${userId},%`, `%,${userId}`, `%,${userId},%`];
+    if (removedIds?.length > 0) {
+      const conditionParams = [`${userId},`, `,${userId}`, `,${userId},`];
+      const unassignQuery = `UPDATE admin_user AS au
+            SET assigned_users = (
+              SELECT 
+              CASE
+                WHEN sub.assigned_users = $1 THEN ''
+                WHEN sub.assigned_users LIKE $2 THEN REPLACE(sub.assigned_users, $5, '')
+                WHEN sub.assigned_users LIKE $3 THEN REPLACE(sub.assigned_users, $6, '')
+                WHEN sub.assigned_users LIKE $4 THEN REPLACE(sub.assigned_users, $7, ',')
+                ELSE sub.assigned_users 
+              END
+              FROM admin_user sub
+              WHERE sub.id = au.id
+            )
+            WHERE au.id IN (${(removedIds as string[])
+              .map((x) => Number(x))
+              .map((id) => "'" + id + "'")
+              .join(",")})`;
 
-    const origin = (
-      await db.query("SELECT assigned_users from admin_user where id = $1", [
-        manager,
-      ])
-    ).rows[0].assigned_users;
-    if (!origin || origin.length <= 0) {
-      const ret = await db.query(
-        "UPDATE admin_user SET assigned_users = $1 where id = $2 RETURNING *",
-        [`${userId}`, manager]
-      );
-      return res.status(StatusCodes.OK).json(ret.rows[0]);
-    } else {
-      const ids = origin.split(",");
-      if (ids.includes(userId.toString())) {
-        return res
-          .status(StatusCodes.BAD_REQUEST)
-          .json("That user is already assigned");
-      } else {
-        const ret = await db.query(
-          "UPDATE admin_user SET assigned_users = $1 where id = $2 RETURNING *",
-          [`${origin},${userId}`, manager]
-        );
-        return res.status(StatusCodes.OK).json(ret.rows[0]);
-      }
+      await db.query(unassignQuery, [...params, ...conditionParams]);
     }
+
+    if (assignedIds?.length > 0) {
+      const assignQuery = `UPDATE admin_user AS au
+            SET assigned_users = (
+              SELECT 
+              CASE
+                WHEN COALESCE(sub.assigned_users, '') = $1 
+                OR COALESCE(sub.assigned_users, '') LIKE $2 
+                OR COALESCE(sub.assigned_users, '') LIKE $3 
+                OR COALESCE(sub.assigned_users, '') LIKE $4 THEN sub.assigned_users
+                ELSE COALESCE(sub.assigned_users, '') || CASE WHEN COALESCE(sub.assigned_users, '') <> '' THEN ',' ELSE '' END || $1
+              END
+              FROM admin_user sub
+              WHERE sub.id = au.id
+            )
+            WHERE au.id IN (${(assignedIds as string[])
+              .map((x) => Number(x))
+              .map((id) => "'" + id + "'")
+              .join(",")})`;
+      await db.query(assignQuery, params);
+    }
+    const admins = await db.query(
+      "SELECT * from admin_user WHERE ',' || assigned_users || ',' LIKE $1",
+      [`%,${userId},%`]
+    );
+    return res.status(StatusCodes.OK).json(admins.rows);
   } catch (error: any) {
     return res
       .status(StatusCodes.INTERNAL_SERVER_ERROR)
@@ -121,7 +144,11 @@ const unassignAccountManager: RequestHandler = async (
       ids.join(","),
       manager,
     ]);
-    return res.status(StatusCodes.OK).json("unassigned");
+    const admins = await db.query(
+      "SELECT * from admin_user WHERE ',' || assigned_users || ',' LIKE $1",
+      [`%,${userId},%`]
+    );
+    return res.status(StatusCodes.OK).json(admins.rows);
   } catch (error: any) {
     return res
       .status(StatusCodes.INTERNAL_SERVER_ERROR)
