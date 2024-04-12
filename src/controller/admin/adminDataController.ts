@@ -354,10 +354,16 @@ const getClientDetail: RequestHandler = async (req: Request, res: Response) => {
       [user.rows[0].email]
     );
 
+    const teamData = await db.query(
+      "SELECT team_list.*, user_list.name, user_list.avatar, user_list.team_avatar FROM team_list LEFT JOIN user_list ON team_list.manager = user_list.email  WHERE owner = $1",
+      [user.rows[0].email]
+    );
+
     return res.status(StatusCodes.OK).json({
       userData: user.rows[0],
       campaignData: campaign.rows,
       assignedAdmins: admins.rows,
+      teamData: teamData.rows,
     });
   } catch (error: any) {
     console.log("get client detail error: ", error.message);
