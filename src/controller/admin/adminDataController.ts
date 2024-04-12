@@ -264,25 +264,25 @@ const getDashboardClient: RequestHandler = async (
 ) => {
   console.log("get dashboard client called");
   try {
-    const { searchStr } = req.query;
-    if (req.headers.role === "account_manager") {
+    const { searchStr, accountManagerId } = req.query;
+    if (req.headers.role === "account_manager" || accountManagerId) {
       const assignedUsers = (
         await db.query("SELECT assigned_users FROM admin_user WHERE id = $1", [
-          req.headers.id,
+          accountManagerId ? accountManagerId : req.headers.id,
         ])
       ).rows[0].assigned_users;
       const ids = assignedUsers
         ? assignedUsers.split(",").map((item: string) => Number(item))
         : [];
       const users = await db.query(
-        `select user_list.email, user_list.company, user_list.state, user_list.id, COALESCE(SUM(spent), 0) as spent, COALESCE(SUM(billed), 0) as billed, user_list.create_time, count(campaign.id) as campaign_count, user_list.name, user_list.email, user_list.avatar, SUM(CASE WHEN campaign.state = 'active' THEN 1 ELSE 0 END) AS active_count,SUM(CASE WHEN campaign.state = 'completed' THEN 1 ELSE 0 END) AS completed_count,SUM(CASE WHEN campaign.state = 'draft' THEN 1 ELSE 0 END) AS draft_count,SUM(CASE WHEN campaign.state IN ('active', 'completed') THEN campaign.price ELSE 0 END) AS total_budget from user_list left join campaign on user_list.email = campaign.email where user_list.name like $1 and user_list.id = ANY($2) group by user_list.id`,
+        `select user_list.email, user_list.company, user_list.state, user_list.id, COALESCE(SUM(spent), 0) as spent, COALESCE(SUM(billed), 0) as billed, user_list.create_time, count(campaign.id) as campaign_count, user_list.name, user_list.email, user_list.avatar, SUM(CASE WHEN campaign.state = 'active' AND campaign.complete_date is null THEN 1 ELSE 0 END) AS active_count,SUM(CASE WHEN campaign.state = 'active' AND campaign.complete_date is not null THEN 1 ELSE 0 END) AS completed_count,SUM(CASE WHEN campaign.state = 'draft' THEN 1 ELSE 0 END) AS draft_count,SUM(CASE WHEN campaign.state IN ('active', 'completed') THEN campaign.price ELSE 0 END) AS total_budget from user_list left join campaign on user_list.email = campaign.email where user_list.name like $1 and user_list.id = ANY($2) group by user_list.id`,
         [`%${searchStr}%`, ids]
       );
 
       return res.status(StatusCodes.OK).json(users.rows);
     }
     const users = await db.query(
-      `select user_list.email, user_list.company, user_list.state, user_list.id, COALESCE(SUM(spent), 0) as spent, COALESCE(SUM(billed), 0) as billed, user_list.create_time, count(campaign.id) as campaign_count, user_list.name, user_list.email, user_list.avatar, SUM(CASE WHEN campaign.state = 'active' THEN 1 ELSE 0 END) AS active_count,SUM(CASE WHEN campaign.state = 'completed' THEN 1 ELSE 0 END) AS completed_count,SUM(CASE WHEN campaign.state = 'draft' THEN 1 ELSE 0 END) AS draft_count,SUM(CASE WHEN campaign.state IN ('active', 'completed') THEN campaign.price ELSE 0 END) AS total_budget from user_list left join campaign on user_list.email = campaign.email where user_list.name like $1 group by user_list.id`,
+      `select user_list.email, user_list.company, user_list.state, user_list.id, COALESCE(SUM(spent), 0) as spent, COALESCE(SUM(billed), 0) as billed, user_list.create_time, count(campaign.id) as campaign_count, user_list.name, user_list.email, user_list.avatar, SUM(CASE WHEN campaign.state = 'active' AND campaign.complete_date is null THEN 1 ELSE 0 END) AS active_count,SUM(CASE WHEN campaign.state = 'active' AND campaign.complete_date is not null THEN 1 ELSE 0 END) AS completed_count,SUM(CASE WHEN campaign.state = 'draft' THEN 1 ELSE 0 END) AS draft_count,SUM(CASE WHEN campaign.state IN ('active', 'completed') THEN campaign.price ELSE 0 END) AS total_budget from user_list left join campaign on user_list.email = campaign.email where user_list.name like $1 group by user_list.id`,
       [`%${searchStr}%`]
     );
 
@@ -338,7 +338,7 @@ const getClientDetail: RequestHandler = async (req: Request, res: Response) => {
     return res.status(StatusCodes.OK).json({
       userData: user.rows[0],
       campaignData: campaign.rows,
-      assignedAdmins: admins.rows[0],
+      assignedAdmins: admins.rows,
     });
   } catch (error: any) {
     console.log("get client detail error: ", error.message);
