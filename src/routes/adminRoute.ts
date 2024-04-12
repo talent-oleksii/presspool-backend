@@ -38,6 +38,7 @@ router.post('/auth/verify-password-email', adminAuth.verifyPasswordEmail);
 router.put('/auth/password', adminAuth.changePassword);
 
 router.get('/user/account-manager', adminUser.getAccountManagers);
+router.get('/user/account-manager-detail', adminUser.getAccountManagerDetail);
 router.post('/user/account-manager', adminUser.assignAccountManager);
 router.put('/user/account-manager', adminUser.unassignAccountManager);
 
@@ -51,6 +52,7 @@ router.get('/dashboard/newsletter', adminData.getNewsletter);
 
 router.get('/dashboard/client', adminData.getDashboardClient);
 router.put('/dashboard/client', adminData.updateDashboardClient);
+router.post('/dashboard/client', adminData.assignDashboardClient);
 
 router.get('/client', adminData.getClientDetail);
 router.put('/client', adminData.updateClientDetail);

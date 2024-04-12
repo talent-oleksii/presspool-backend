@@ -3,6 +3,23 @@ import { RequestHandler, Request, Response } from "express";
 import db from "../../util/db";
 import { StatusCodes } from "http-status-codes";
 
+const getAccountManagerDetail: RequestHandler = async (
+  req: Request,
+  res: Response
+) => {
+  try {
+    const { id } = req.query;
+    const { rows } = await db.query("select * from admin_user where id = $1", [
+      id,
+    ]);
+    return res.status(StatusCodes.OK).json(rows[0]);
+  } catch (error: any) {
+    return res
+      .status(StatusCodes.INTERNAL_SERVER_ERROR)
+      .json({ message: error.message });
+  }
+};
+
 const getAccountManagers: RequestHandler = async (
   _req: Request,
   res: Response
@@ -215,6 +232,7 @@ const adminUser = {
   unassignAccountManager,
   getNormalUsers,
   updateAssigners,
+  getAccountManagerDetail,
 };
 
 export default adminUser;

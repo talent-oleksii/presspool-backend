@@ -315,6 +315,25 @@ const updateDashboardClient: RequestHandler = async (
   }
 };
 
+const assignDashboardClient: RequestHandler = async (
+  req: Request,
+  res: Response
+) => {
+  try {
+    const { userId, assignedIds } = req.body;
+    await db.query("UPDATE admin_user SET assigned_users = $1 where id = $2", [
+      assignedIds.join(","),
+      userId,
+    ]);
+    return res.status(StatusCodes.OK).json("updated");
+  } catch (error: any) {
+    console.log("update dashboard client error:", error);
+    return res
+      .status(StatusCodes.INTERNAL_SERVER_ERROR)
+      .json({ message: error.message });
+  }
+};
+
 const getClientDetail: RequestHandler = async (req: Request, res: Response) => {
   try {
     const { id } = req.query;
@@ -524,7 +543,7 @@ const adminData = {
   updateClientDetail,
   updateDashboardClient,
   getCampaignsByClient,
-
+  assignDashboardClient,
   inviteClient,
   inviteAccountManager,
 
