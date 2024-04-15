@@ -41,9 +41,13 @@ async function initializeClient() {
 const billingFunction = async () => { // Here we notify users about billing
   try {
     console.log('billined called');
+    const current = moment().hour(0).minute(0).second(0);
     // pay unpaid campaigns
-    const activeCampaigns = await db.query('SELECT campaign.id, campaign.name, campaign.price, campaign.email, campaign.billed, campaign.spent, campaign.card_id from campaign LEFT JOIN card_info ON campaign.card_id = card_info.card_id  where state = $1', ['active']);
+    const activeCampaigns = await db.query('SELECT campaign.start_date, campaign.id, campaign.name, campaign.price, campaign.email, campaign.billed, campaign.spent, campaign.card_id from campaign LEFT JOIN card_info ON campaign.card_id = card_info.card_id  where state = $1', ['active']);
     for (const campaign of activeCampaigns.rows) {
+      const startDate = moment(Number(campaign.start_date)).hour(0).minute(0).second(0);
+      const daysPassed = current.diff(startDate, 'days');
+      if (daysPassed % 14 !== 0) continue;
       // decide how much to bill
       let billAmount = 0;
       if (Number(campaign.spent) - Number(campaign.billed) > (Number(campaign.price) - Number(campaign.billed))) billAmount = (Number(campaign.price) - Number(campaign.billed)) * 100;
@@ -89,13 +93,16 @@ const billingFunction = async () => { // Here we notify users about billing
       // update billed information on database
       const newBilled = Number(campaign.billed) + billAmount / 100;
       await db.query('UPDATE campaign set billed = $1 where id = $2', [newBilled, campaign.id]);
-
-
-      // send stripe invoice to customer
-      //end
     }
+  } catch (error) {
+    log.error(`weekly billing error: ${error}`);
+  }
+};
 
-    // // pay to account managers
+const payToAccountManagers = async () => {
+  console.log('pay to account amangers called');
+  try {
+    // pay to account managers
     const amVpaid: Array<{ email: string, amount: number, paid: boolean }> = [];
     const balance = await stripe.balance.retrieve();
     const campaigns = (await db.query('SELECT * from campaign WHERE billed > $1', [0])).rows;
@@ -110,9 +117,6 @@ const billingFunction = async () => { // Here we notify users about billing
 
       if (!accountManager) continue;
 
-      console.log(`${accountManager.email} get paid ${accountManager.paid}, the billable amount is ${campaign.billed / 10}`);
-
-      // if (Number(accountManager.paid) >= Number(campaign.billed / 10)) continue;
       const billAmount = Number(campaign.billed) / 10;
 
       const index = amVpaid.findIndex(item => item.email === accountManager.email);
@@ -135,12 +139,10 @@ const billingFunction = async () => { // Here we notify users about billing
       }
     }
 
-    console.log('account manager list:', amVpaid);
     const accounts = await stripe.accounts.list();
     for (const am of amVpaid) {
       if (am.amount <= 0) continue;
       for (const account of accounts.data) {
-        console.log('accoutn: ', account.metadata?.work_email, account.id);
         if (account.metadata?.work_email === am.email && am.paid === false) {
           try {
             await stripe.transfers.create({
@@ -162,7 +164,7 @@ const billingFunction = async () => { // Here we notify users about billing
     }
     console.log('after pay:', amVpaid);
   } catch (error) {
-    log.error(`weekly billing error: ${error}`);
+    log.error(`pay to account manager error: ${error}`);
   }
 };
 
@@ -452,6 +454,7 @@ const cronFunction = {
   mailingFunction,
   scrapeFunction,
   dailyAnalyticsUpdate,
+  payToAccountManagers,
 
   getPageTitle,
 };

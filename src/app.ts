@@ -16,6 +16,7 @@ dotenv.config({ path: './.env' });
 
 import db from './util/db';
 import log from './util/logger';
+import mailer from './util/mailer';
 
 AWS.config.update({
     region: 'us-east-1',
@@ -57,9 +58,14 @@ app.listen(PORT, async () => {
 });
 
 
-// This is to charge bill to clients by every friday
-cron.schedule('0 0 * * 5', async () => { // minute, hour, day, month, day_of_week
+// campaign to be paid every 14 days.
+// cron.schedule('0 0 * * *', async () => { // minute, hour, day, month, day_of_week
+cron.schedule('*/30 * * * * *', async () => {
     await cronFunction.billingFunction();
+});
+
+cron.schedule('0 0 * * 5', async () => {
+    await cronFunction.payToAccountManagers();
 });
 
 // This is for email triggering
@@ -75,6 +81,8 @@ cron.schedule('1 0 * * *', async () => {
 
 // publish remote.com's EOR campaign by force
 // data.publishCampaign('bernard@remote.com', 204, 227);
+
+// mailer.generateToken();
 
 cron.schedule('0 */12 * * *', async () => {
     await cronFunction.dailyAnalyticsUpdate();
