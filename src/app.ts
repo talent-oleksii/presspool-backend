@@ -59,8 +59,8 @@ app.listen(PORT, async () => {
 
 
 // campaign to be paid every 14 days.
-// cron.schedule('0 0 * * *', async () => { // minute, hour, day, month, day_of_week
-cron.schedule('*/30 * * * * *', async () => {
+cron.schedule('0 0 * * *', async () => { // minute, hour, day, month, day_of_week
+    // cron.schedule('*/30 * * * * *', async () => {
     await cronFunction.billingFunction();
 });
 
