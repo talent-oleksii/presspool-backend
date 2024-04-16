@@ -9,6 +9,7 @@ import authRoute from './routes/authRoute';
 import dataRoute from './routes/dataRoute';
 import stripeRoute from './routes/stripeRoute';
 import adminRoute from './routes/adminRoute';
+import creatorRoute from './routes/creatorRoute';
 
 import cronFunction from './util/cron';
 
@@ -45,6 +46,7 @@ app.use('/stripe', stripeRoute);
 app.use('/auth', authRoute);
 app.use('/data', dataRoute);
 app.use('/admin', adminRoute);
+app.use('/creator', creatorRoute);
 
 app.get('/', (_req, res) => {
     return res.status(StatusCodes.OK).send('API is running');
