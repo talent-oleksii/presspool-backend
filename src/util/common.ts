@@ -1,3 +1,5 @@
+import { sign } from "jsonwebtoken";
+
 export const calculateCampStats = (campaignData: any, clickedData: any) => {
   const totalClicks = clickedData.reduce(
     (prev: number, item: { count: any }) => prev + Number(item?.count ?? 0),
@@ -26,7 +28,8 @@ export const calculateCampStats = (campaignData: any, clickedData: any) => {
     ) =>
       prev +
       Number(
-        (item?.user_medium === "newsletter" || item?.user_medium === 'referral') &&
+        (item?.user_medium === "newsletter" ||
+          item?.user_medium === "referral") &&
           item.duration > item.count * 1.5 &&
           item.duration > 0
           ? item?.unique_click
@@ -39,8 +42,8 @@ export const calculateCampStats = (campaignData: any, clickedData: any) => {
     totalBudget === 0 || verifiedClicks === 0
       ? 0
       : totalBudget / verifiedClicks > 10
-        ? 10
-        : totalBudget / verifiedClicks;
+      ? 10
+      : totalBudget / verifiedClicks;
 
   const totalSpend = avgCPC * verifiedClicks;
   return {
@@ -51,4 +54,10 @@ export const calculateCampStats = (campaignData: any, clickedData: any) => {
     uniqueClicks,
     totalClicks,
   };
+};
+
+const secretKey = "presspool-ai";
+export const generateToken = (payload: any) => {
+  const token = sign(payload, secretKey, { expiresIn: "1d" });
+  return token;
 };
