@@ -5,6 +5,7 @@ import { StatusCodes } from "http-status-codes/build/cjs/status-codes";
 import db from "../../util/db";
 import { generateToken } from "../../util/common";
 import moment from "moment";
+import mailer from "../../util/mailer";
 
 const login: RequestHandler = async (req: Request, res: Response) => {
   console.log("creator login api called");
@@ -60,12 +61,16 @@ const signup: RequestHandler = async (req: Request, res: Response) => {
     } else {
       const hash = bcrypt.hashSync(password.toString(), 10);
       const time = moment().valueOf();
-      const newUser = await db.query(
+      const { rows } = await db.query(
         "insert into creator_list (create_time, name, email, password, newsletter, verified, user_type, email_verified) values ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *",
         [time, fullName, email, hash, newsletter, 0, "creator", 0]
       );
+      await mailer.sendCreatorWelcomeEmail(email, fullName, {
+        creatorId: rows[0].id,
+        token: generateToken({ email }),
+      });
       return res.status(StatusCodes.OK).json({
-        ...newUser.rows[0],
+        ...rows[0],
         verified: 0,
         email_verified: 0,
         token: generateToken({ email }),
