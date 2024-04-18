@@ -56,25 +56,25 @@ app.listen(PORT, async () => {
     log.info(`Server is running on PORT:${PORT}`);
     await db.testConnection();
 
-    // await cronFunction.dailyAnalyticsUpdate();
+    await cronFunction.dailyAnalyticsUpdate();
 });
 
 
 // campaign to be paid every 14 days.
-// cron.schedule('0 0 * * *', async () => { // minute, hour, day, month, day_of_week
-//     // cron.schedule('*/30 * * * * *', async () => {
-//     await cronFunction.billingFunction();
-// });
+cron.schedule('0 0 * * *', async () => { // minute, hour, day, month, day_of_week
+    // cron.schedule('*/30 * * * * *', async () => {
+    await cronFunction.billingFunction();
+});
 
-// cron.schedule('0 0 * * 5', async () => {
-//     await cronFunction.payToAccountManagers();
-// });
+cron.schedule('0 0 * * 5', async () => {
+    await cronFunction.payToAccountManagers();
+});
 
 // This is for email triggering
-// cron.schedule('1 0 * * *', async () => {
-//     // console.log('mailing called');
-//     await cronFunction.mailingFunction();
-// });
+cron.schedule('1 0 * * *', async () => {
+    // console.log('mailing called');
+    await cronFunction.mailingFunction();
+});
 
 //This should be opened before deploy
 // cron.schedule('*/3 * * * *', async () => {
