@@ -30,7 +30,7 @@ export const calculateCampStats = (campaignData: any, clickedData: any) => {
       Number(
         (item?.user_medium === "newsletter" ||
           item?.user_medium === "referral") &&
-          item.duration > item.count * 1.1 &&
+          item.duration > item.count * 1.2 &&
           item.duration > 0
           ? item?.unique_click
           : 0

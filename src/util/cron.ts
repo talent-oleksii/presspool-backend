@@ -448,7 +448,7 @@ const dailyAnalyticsUpdate = async () => {
         await db.query('UPDATE campaign SET complete_date = $1 where id = $2', [now, campaign.id]);
       }
       await db.query('UPDATE campaign set click_count = $1, spent = $2, unique_clicks = $3 WHERE id = $4', [totalClicks, Math.ceil(verifiedClicks * Number(campaign.cpc)), uniqueClicks, campaign.id]);
-      console.log('update finished');
+      console.log(`update finished for campaign:${campaign.id}`);
     }
 
   } catch (error) {
