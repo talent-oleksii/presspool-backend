@@ -408,13 +408,12 @@ const dailyAnalyticsUpdate = async () => {
         // console.log('content', screenPageViews, firstUserManualContent);
 
         let title = '';
-        if (firstUserManualContent.length > 3 && firstUserManualContent.indexOf('.') > -1) {
-          title = await getPageTitle(`https://${firstUserManualContent}`);
-        } else if (firstUserManualContent.length > 3 && firstUserManualContent.indexOf('.') === -1) {
-          title = firstUserManualContent;
-        }
-
-        if (title === '' && firstUserMedium === 'newsletter') console.log('url:', firstUserManualContent);
+        // if (firstUserManualContent.length > 3 && firstUserManualContent.indexOf('.') > -1) {
+        //   title = await getPageTitle(`https://${firstUserManualContent}`);
+        // } else if (firstUserManualContent.length > 3 && firstUserManualContent.indexOf('.') === -1) {
+        //   title = firstUserManualContent;
+        // }
+        title = firstUserManualContent;
 
         await db.query('INSERT INTO clicked_history (create_time, ip, campaign_id, device, count, unique_click, duration, user_medium, full_url, newsletter_id, region, city) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)', [
           timeOf,
