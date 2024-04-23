@@ -199,7 +199,8 @@ async function runReport(client: BetaAnalyticsDataClient, propertyId: any, start
     const [response] = await client.runReport({
       property: `properties/${propertyId}`,
       dateRanges: [{ startDate: startDate, endDate: endDate }],
-      dimensions: [{ name: 'fullPageUrl' }, { name: 'country' }, { name: 'deviceCategory' }, { name: 'date' }, { name: 'firstUserMedium' }, { name: 'firstUserSource' }, { name: 'region' }, { name: 'city' }],
+      dimensions: [{ name: 'fullPageUrl' }, { name: 'country' }, { name: 'deviceCategory' }, { name: 'date' }, { name: 'firstUserMedium' },
+      { name: 'firstUserSource' }, { name: 'region' }, { name: 'city' }],
       metrics: [{
         name: 'newUsers'
       }, {
@@ -380,7 +381,7 @@ const dailyAnalyticsUpdate = async () => {
     }
 
     if (!response || !response.rows) {
-      console.error('No data received from runReport');
+      console.error('No data received from report-function');
       return;
     }
     const campaigns = await db.query('SELECT id, uid, cpc, click_count, price, complete_date FROM campaign');
@@ -397,6 +398,7 @@ const dailyAnalyticsUpdate = async () => {
         const time = item.dimensionValues?.[3]?.value ? item.dimensionValues[3].value : '';
         const firstUserMedium = item.dimensionValues?.[4]?.value ? item.dimensionValues[4].value : '';
         const firstUserManualContent = item.dimensionValues?.[5]?.value ? item.dimensionValues[5].value : '';
+        const firstUserSourceMedium = item.dimensionValues?.[8]?.value ? item.dimensionValues[8].value : '';
         const region = item.dimensionValues?.[6]?.value ? item.dimensionValues[6].value : '';
         const city = item.dimensionValues?.[7]?.value ? item.dimensionValues[7].value : '';
         const totalUsers = item.metricValues?.[0]?.value ? Number(item.metricValues[0].value) : 0;
@@ -408,12 +410,12 @@ const dailyAnalyticsUpdate = async () => {
         // console.log('content', screenPageViews, firstUserManualContent);
 
         let title = '';
-        // if (firstUserManualContent.length > 3 && firstUserManualContent.indexOf('.') > -1) {
-        //   title = await getPageTitle(`https://${firstUserManualContent}`);
-        // } else if (firstUserManualContent.length > 3 && firstUserManualContent.indexOf('.') === -1) {
-        //   title = firstUserManualContent;
-        // }
-        title = firstUserManualContent;
+        if (firstUserManualContent.length > 3 && firstUserManualContent.indexOf('.') > -1) {
+          title = await getPageTitle(`https://${firstUserManualContent}`);
+        } else if (firstUserManualContent.length > 3 && firstUserManualContent.indexOf('.') === -1) {
+          title = firstUserManualContent;
+        }
+        // title = firstUserManualContent;
 
         await db.query('INSERT INTO clicked_history (create_time, ip, campaign_id, device, count, unique_click, duration, user_medium, full_url, newsletter_id, region, city) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)', [
           timeOf,
