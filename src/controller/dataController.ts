@@ -52,7 +52,7 @@ const getNewsletter: RequestHandler = async (req: Request, res: Response) => {
     const formattedFromDate = fromDateObject.format("YYYY-MM-DD 00:00:00");
     const formattedToDate = toDateObject.format("YYYY-MM-DD 00:00:00");
     let params = [email];
-    let query = `SELECT ch.newsletter_id name,camp.id, SUM(ch.count) AS total_clicks, SUM(ch.unique_click) unique_clicks, SUM(CASE WHEN (ch.user_medium = 'newsletter' OR ch.user_medium = 'referral') AND ch.duration > ch.count * 1.2 AND ch.duration > 0  THEN ch.unique_click ELSE 0 END) verified_clicks FROM public.clicked_history ch
+    let query = `SELECT ch.create_time, ch.newsletter_id name,camp.id, SUM(ch.count) AS total_clicks, SUM(ch.unique_click) unique_clicks, SUM(CASE WHEN (ch.user_medium = 'newsletter' OR ch.user_medium = 'referral') AND ch.duration > ch.count * 1.2 AND ch.duration > 0  THEN ch.unique_click ELSE 0 END) verified_clicks FROM public.clicked_history ch
     INNER JOIN public.campaign camp on ch.campaign_id = camp.id
     WHERE camp.email = $1`;
 
@@ -68,10 +68,11 @@ const getNewsletter: RequestHandler = async (req: Request, res: Response) => {
         .map((id) => "'" + id + "'")
         .join(",")})`;
     }
-    query += " GROUP BY ch.newsletter_id, camp.id";
+    query += " GROUP BY ch.newsletter_id, camp.id, ch.create_time";
     const newsletter = await db.query(query, params);
     return res.status(StatusCodes.OK).json(newsletter.rows);
   } catch (error: any) {
+    console.log('error:', error);
     return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json(error.message);
   }
 };
