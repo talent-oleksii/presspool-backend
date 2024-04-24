@@ -2,6 +2,9 @@ import { RequestHandler, Request, Response } from "express";
 import { StatusCodes } from "http-status-codes/build/cjs/status-codes";
 
 import db from "../../util/db";
+import { calculateCampStats } from "../../util/common";
+import log from "../../util/logger";
+import moment from "moment";
 
 const updateCreatorPreferences: RequestHandler = async (
   req: Request,
@@ -42,8 +45,140 @@ const updateCreatorPreferences: RequestHandler = async (
   }
 };
 
+const getCampaign: RequestHandler = async (req: Request, res: Response) => {
+  log.info("get campaign called");
+
+  try {
+    const { creatorId, searchStr, from, to, campaignIds } = req.query;
+    const fromDateObject = moment.utc(from as string);
+    const toDateObject = moment.utc(to as string);
+    const formattedFromDate = fromDateObject.format("YYYY-MM-DD 00:00:00");
+    const formattedToDate = toDateObject.format("YYYY-MM-DD 00:00:00");
+    let result: any = undefined;
+    let selectParams = [creatorId];
+    let query = `SELECT *, campaign.id as id, campaign_ui.id as ui_id from campaign 
+    left join campaign_ui on campaign.id = campaign_ui.campaign_id
+    inner join campaign_creator on campaign.id = campaign_creator.campaign_id
+    where campaign_creator.creator_id = $1`;
+
+    if (campaignIds) {
+      const parsedIds = (campaignIds as string[]).map((x) => Number(x));
+      query += ` AND campaign.id IN(${parsedIds
+        .map((id) => "'" + id + "'")
+        .join(",")})`;
+    }
+    if (searchStr) {
+      query += " and name like $2";
+      selectParams = [...selectParams, `%${searchStr}%`];
+    }
+    result = await db.query(query, selectParams);
+
+    let values = [creatorId, result.rows.map((item: any) => Number(item.id))];
+    let prevValues = [
+      creatorId,
+      result.rows.map((item: any) => Number(item.id)),
+    ];
+    let clickedHistoryQuery = `SELECT ch.create_time, ch.id, ch.campaign_id, ch.count, ch.ip, ch.unique_click, ch.duration, ch.user_medium FROM clicked_history ch
+      inner join creator_list cl on cl.newsletter = ch.newsletter_id
+      WHERE cl.id = $1 and campaign_id = ANY($2)`;
+    let prevRangeClickedHistoryQuery = null;
+    if (from && to) {
+      const startDate = moment(formattedFromDate);
+      const endDate = moment(formattedToDate);
+      const differenceInDays = endDate.diff(startDate, "days");
+      const prevDate = startDate
+        .clone()
+        .subtract(differenceInDays, "day")
+        .format("YYYY-MM-DD 00:00:00");
+      console.log(`Difference in days: ${differenceInDays}`);
+      console.log(`Prev: ${prevDate}`);
+
+      clickedHistoryQuery +=
+        " and TO_TIMESTAMP(CAST(create_time AS bigint)/1000) BETWEEN $3 and $4";
+      values = [...values, formattedFromDate, formattedToDate];
+      prevValues = [...prevValues, prevDate, formattedFromDate];
+      prevRangeClickedHistoryQuery = `SELECT ch.create_time, ch.id, ch.campaign_id, ch.count, ch.ip, ch.unique_click, ch.duration, ch.user_medium FROM clicked_history ch
+        inner join creator_list cl on cl.newsletter = ch.newsletter_id
+        WHERE cl.id = $1 and campaign_id = ANY($2) and TO_TIMESTAMP(CAST(create_time AS bigint)/1000) BETWEEN $3 and $4`;
+    }
+    log.info(`query: ${clickedHistoryQuery}, values; ${values}`);
+    const clickedData = await db.query(clickedHistoryQuery, values);
+    const { rows: prevClickedData } = prevRangeClickedHistoryQuery
+      ? await db.query(prevRangeClickedHistoryQuery, [...prevValues])
+      : { rows: [] };
+    const data = calculateCampStats(result.rows, prevClickedData);
+    return res.status(StatusCodes.OK).json({
+      data: result.rows,
+      clicked: clickedData.rows,
+      prevData: data,
+    });
+  } catch (error: any) {
+    log.error(`get campaign error: ${error}`);
+    return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json(error.message);
+  }
+};
+
+const getNewsletter: RequestHandler = async (req: Request, res: Response) => {
+  log.info("get newsletter called");
+  // showBaseList();
+  try {
+    const { creatorId, from, to, campaignIds } = req.query;
+    const fromDateObject = moment.utc(from as string);
+    const toDateObject = moment.utc(to as string);
+    const formattedFromDate = fromDateObject.format("YYYY-MM-DD 00:00:00");
+    const formattedToDate = toDateObject.format("YYYY-MM-DD 00:00:00");
+    let params = [creatorId];
+    let query = `SELECT ch.newsletter_id name,camp.id, SUM(ch.count) AS total_clicks, SUM(ch.unique_click) unique_clicks, SUM(CASE WHEN (ch.user_medium = 'newsletter' OR ch.user_medium = 'referral') AND ch.duration > ch.count * 1.2 AND ch.duration > 0  THEN ch.unique_click ELSE 0 END) verified_clicks FROM public.clicked_history ch
+    INNER JOIN public.campaign camp on ch.campaign_id = camp.id
+    inner join campaign_creator on camp.id = campaign_creator.campaign_id
+    inner join creator_list cl on cl.newsletter = ch.newsletter_id 
+    where campaign_creator.creator_id = $1`;
+
+    if (from && to) {
+      query +=
+        " and TO_TIMESTAMP(CAST(ch.create_time AS bigint)/1000) BETWEEN $2 and $3";
+      params = [...params, formattedFromDate, formattedToDate];
+    }
+
+    if (campaignIds) {
+      const parsedIds = (campaignIds as string[]).map((x) => Number(x));
+      query += ` and ch.campaign_id IN(${parsedIds
+        .map((id) => "'" + id + "'")
+        .join(",")})`;
+    }
+    query += " GROUP BY ch.newsletter_id, camp.id";
+    const newsletter = await db.query(query, params);
+    return res.status(StatusCodes.OK).json(newsletter.rows);
+  } catch (error: any) {
+    return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json(error.message);
+  }
+};
+
+const getCampaignList: RequestHandler = async (req: Request, res: Response) => {
+  log.info("get campaign list called");
+  try {
+    const { creatorId } = req.query;
+    const data = await db.query(
+      `SELECT camp.id, name from campaign camp
+      inner join campaign_creator on camp.id = campaign_creator.campaign_id
+      WHERE campaign_creator.creator_id = $1`,
+      [creatorId]
+    );
+
+    return res.status(StatusCodes.OK).json(data.rows);
+  } catch (error: any) {
+    console.log("error in getting campaign list:");
+    return res
+      .status(StatusCodes.INTERNAL_SERVER_ERROR)
+      .json({ message: error.message });
+  }
+};
+
 const authController = {
   updateCreatorPreferences,
+  getCampaign,
+  getNewsletter,
+  getCampaignList,
 };
 
 export default authController;
