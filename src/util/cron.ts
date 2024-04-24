@@ -139,7 +139,7 @@ const payToAccountManagers = async () => {
       }
     }
 
-    const accounts = await stripe.accounts.list();
+    const accounts = await stripe.accounts.list({ limit: 1000 });
     for (const am of amVpaid) {
       if (am.amount <= 0) continue;
       for (const account of accounts.data) {
