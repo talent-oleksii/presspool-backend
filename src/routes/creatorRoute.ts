@@ -11,5 +11,6 @@ router.post("/updatePreferences", data.updateCreatorPreferences);
 router.get("/getCampaign", data.getCampaign);
 router.get("/getNewsletter", data.getNewsletter);
 router.get("/getCampaignList", data.getCampaignList);
+router.get("/getCreatorDetail", auth.getCreatorDetail);
 
 export default router;

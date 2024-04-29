@@ -84,9 +84,40 @@ const signup: RequestHandler = async (req: Request, res: Response) => {
   }
 };
 
+const getCreatorDetail: RequestHandler = async (
+  req: Request,
+  res: Response
+) => {
+  console.log("creator login api called");
+  try {
+    const { creatorId } = req.query;
+    const { rows } = await db.query(
+      "SELECT * FROM creator_list WHERE id = $1",
+      [creatorId]
+    );
+    if (rows.length > 0) {
+      const [user] = rows;
+      const { password: existingPassword, ...rest } = user;
+      return res.status(StatusCodes.OK).json({
+        ...rest,
+      });
+    } else {
+      return res
+        .status(StatusCodes.NOT_FOUND)
+        .json({ message: `Creator detail not exists` });
+    }
+  } catch (error: any) {
+    console.log("creator login error: ", error.message);
+    return res
+      .status(StatusCodes.INTERNAL_SERVER_ERROR)
+      .json({ message: error.message });
+  }
+};
+
 const authController = {
   login,
   signup,
+  getCreatorDetail
 };
 
 export default authController;
