@@ -151,6 +151,36 @@ const getPricing: RequestHandler = async (_req: Request, res: Response) => {
     });
 };
 
+const checkIfAraryIs = (a: Array<any>, b: Array<any>) => {
+  console.log('check in:', a, b);
+  for (const item of a) {
+    if (b.includes(item)) return true;
+  }
+  return false;
+};
+
+const sendEmailToCreators = async (id: string) => { // campaign id
+  log.info(`send email to creators called`);
+
+  const campaignData = (await db.query('SELECT * FROM campaign WHERE id = $1', [id])).rows[0];
+
+  const creators = await db.query(`SELECT email, name, audience, industry, position, geography, cpc, average_unique_click 
+    FROM creator_list WHERE state = $1 ORDER BY cpc ASC, average_unique_click`, ['active']
+  );
+
+  for (const creator of creators.rows) {
+    if (!creator.industry || !creator.geography) continue;
+
+    if (checkIfAraryIs(creator.industry, campaignData.audience) && checkIfAraryIs(creator.geography, campaignData.region)) {
+      console.log('this creator is possible:', creator.email)
+
+      mailer.sendCampaignRequestToCreator(creator.email, creator.name, campaignData.name);
+      // mark on creator_history table - 
+
+    }
+  }
+};
+
 const addCampaign: RequestHandler = async (req: Request, res: Response) => {
   log.info("add campaign called");
   try {
@@ -181,7 +211,7 @@ const addCampaign: RequestHandler = async (req: Request, res: Response) => {
         uid,
         req.body.currentCard,
         campaignState,
-        // nameParts[nameParts.length - 1],
+        // nameParts[nameParts.length - 1], 
         "",
         JSON.stringify(req.body.currentRegion),
         JSON.stringify(req.body.currentPosition),
@@ -311,6 +341,8 @@ const addCampaign: RequestHandler = async (req: Request, res: Response) => {
           );
         }
       }
+
+      sendEmailToCreators(result.rows[0].id);
     }
 
     return res.status(StatusCodes.OK).json(data);
@@ -1208,6 +1240,9 @@ const data = {
   updateTeamMember,
 
   getGuide,
+
+  // send email to creators when campaign is publisehd.
+  sendEmailToCreators,
 
   // make campaign submitted forcely
   publishCampaign,
