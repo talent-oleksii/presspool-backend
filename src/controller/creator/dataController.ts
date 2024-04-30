@@ -23,7 +23,7 @@ const updateCreatorPreferences: RequestHandler = async (
       creatorId,
     } = req.body;
     const { rows } = await db.query(
-      "update creator_list set audience_size = $2,audience= $3,industry= $4,position=$5,geography=$6,average_unique_click=$7,cpc=$8 where id = $1 RETURNING *",
+      "update creator_list set audience_size = $2,audience= $3,industry= $4,position=$5,geography=$6,average_unique_click=$7,cpc=$8, email_verified= $9 where id = $1 RETURNING *",
       [
         creatorId,
         audienceSize,
@@ -33,6 +33,7 @@ const updateCreatorPreferences: RequestHandler = async (
         JSON.stringify(geography),
         averageUniqueClick,
         cpc,
+        1
       ]
     );
     return res.status(StatusCodes.OK).json({
@@ -174,11 +175,74 @@ const getCampaignList: RequestHandler = async (req: Request, res: Response) => {
   }
 };
 
+const getReadyToPublish: RequestHandler = async (req: Request, res: Response) => {
+  log.info("get campaign list called");
+  try {
+    const { creatorId } = req.query;
+    const data = await db.query(
+      `SELECT camp.id, name from campaign camp
+      inner join campaign_creator on camp.id = campaign_creator.campaign_id
+      WHERE campaign_creator.creator_id = $1 and camp.start_date is null`,
+      [creatorId]
+    );
+
+    return res.status(StatusCodes.OK).json(data.rows);
+  } catch (error: any) {
+    console.log("error in getting campaign list:");
+    return res
+      .status(StatusCodes.INTERNAL_SERVER_ERROR)
+      .json({ message: error.message });
+  }
+};
+
+const getActiveCampaigns: RequestHandler = async (req: Request, res: Response) => {
+  log.info("get campaign list called");
+  try {
+    const { creatorId } = req.query;
+    const data = await db.query(
+      `SELECT camp.id, name from campaign camp
+      inner join campaign_creator on camp.id = campaign_creator.campaign_id
+      WHERE campaign_creator.creator_id = $1 and camp.state = 'active' and camp.complete_date is null`,
+      [creatorId]
+    );
+
+    return res.status(StatusCodes.OK).json(data.rows);
+  } catch (error: any) {
+    console.log("error in getting campaign list:");
+    return res
+      .status(StatusCodes.INTERNAL_SERVER_ERROR)
+      .json({ message: error.message });
+  }
+};
+
+const getCompletedCampaigns: RequestHandler = async (req: Request, res: Response) => {
+  log.info("get campaign list called");
+  try {
+    const { creatorId } = req.query;
+    const data = await db.query(
+      `SELECT camp.id, name from campaign camp
+      inner join campaign_creator on camp.id = campaign_creator.campaign_id
+      WHERE campaign_creator.creator_id = $1 and camp.state = 'active' and camp.complete_date is not null`,
+      [creatorId]
+    );
+
+    return res.status(StatusCodes.OK).json(data.rows);
+  } catch (error: any) {
+    console.log("error in getting campaign list:");
+    return res
+      .status(StatusCodes.INTERNAL_SERVER_ERROR)
+      .json({ message: error.message });
+  }
+};
+
 const authController = {
   updateCreatorPreferences,
   getCampaign,
   getNewsletter,
   getCampaignList,
+  getReadyToPublish,
+  getActiveCampaigns,
+  getCompletedCampaigns
 };
 
 export default authController;
