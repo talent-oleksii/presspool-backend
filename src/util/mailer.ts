@@ -1153,12 +1153,29 @@ const sendCreatorWelcomeEmail = async (
       to: emailAddress,
       subject: `Welcome - ${firstName}`,
       // text: content,
-      html: `
-      <p>Hi ${firstName}!</p>
-      <p>Click this url to continue your signup: <a href='https://go.presspool.ai/creator/${payload.creatorId}/onboarding?token=${payload.token}' style="color: #6c63ff; text-decoration:underline;" target="_blank">Click here</a>.</p>
-      <p style="margin:0px">Best<p>
-      <p style="margin:0px">Zoe</p>
-      `,
+      html: `<div>
+      <div style="text-align: center">
+        <img style="width: 115px; height: 40px" src="https://presspool-upload-images.s3.amazonaws.com/logo1+1.png" alt="logo"/>
+      </div>
+    </div>
+      <hr />
+      <div style="margin: 20px">
+        <span>Hello ${firstName},</span><br /><br />
+        <span>We are inviting you to join PressPool, where AI meets precision marketing.</span><br /><br />
+        <span>Join us for targeted audience reach and campaign success.</span><br /><br />
+        <p>Click <a href='https://go.presspool.ai/creator/${payload.creatorId}/onboarding?token=${payload.token}' style="color: #6c63ff; text-decoration:underline;" target="_blank">here</a> to get started!.</p><br /><br />
+        <span>Cheers,</span><br />
+        <span>Zoe</span>
+      </div>
+      <hr />
+      <div>
+        <div style="text-align: center">
+          <img style="width: 40px; height: 40px" src="https://presspool-upload-images.s3.amazonaws.com/Presspool+Black+Logo.png" alt="logo"/>
+        </div>
+        <div style="text-align: center">
+          <span>@ 2024 Presspool</span>
+        </div>
+      </div>`,
       textEncoding: "base64",
       headers: [
         {
