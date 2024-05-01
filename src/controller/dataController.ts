@@ -164,7 +164,7 @@ const sendEmailToCreators = async (id: string) => { // campaign id
 
   const campaignData = (await db.query('SELECT * FROM campaign WHERE id = $1', [id])).rows[0];
 
-  const creators = await db.query(`SELECT email, name, audience, industry, position, geography, cpc, average_unique_click 
+  const creators = await db.query(`SELECT id, email, name, audience, industry, position, geography, cpc, average_unique_click 
     FROM creator_list WHERE state = $1 ORDER BY cpc ASC, average_unique_click`, ['active']
   );
 
@@ -175,8 +175,10 @@ const sendEmailToCreators = async (id: string) => { // campaign id
       console.log('this creator is possible:', creator.email)
 
       mailer.sendCampaignRequestToCreator(creator.email, creator.name, campaignData.name);
-      // mark on creator_history table - 
 
+      // mark on creator_history table - 
+      const now = moment().valueOf();
+      await db.query('INSERT INTO creator_history (create_time, campaign_id, creator_id, state) values ($1, $2, $3, $4)', [now, id, creator.id, 'PENDING']);
     }
   }
 };
