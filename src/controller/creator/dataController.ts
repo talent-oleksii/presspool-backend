@@ -180,9 +180,26 @@ const getReadyToPublish: RequestHandler = async (req: Request, res: Response) =>
   try {
     const { creatorId } = req.query;
     const data = await db.query(
-      `SELECT camp.id, name from campaign camp
-      inner join campaign_creator on camp.id = campaign_creator.campaign_id
-      WHERE campaign_creator.creator_id = $1 and camp.start_date is null`,
+      `SELECT campaign.id as id, campaign_ui.id as ui_id, creator_list.cpc, creator_list.average_unique_click,
+      campaign.email, campaign.name,campaign_ui.headline,campaign_ui.body,campaign_ui.cta,campaign_ui.image,
+      campaign_ui.page_url,campaign.demographic,campaign.audience,campaign.position,campaign.region,
+      campaign.create_time,
+      campaign.start_date,
+      campaign.complete_date,
+      campaign.state,
+      user_list.company,
+      user_list.team_avatar,
+      SUM(clicked_history.count) AS total_clicks, 
+      SUM(clicked_history.unique_click) unique_clicks, 
+      SUM(CASE WHEN (clicked_history.user_medium = 'newsletter' OR clicked_history.user_medium = 'referral') AND clicked_history.duration > clicked_history.count * 1.2 AND clicked_history.duration > 0  THEN clicked_history.unique_click ELSE 0 END) verified_clicks
+      from campaign 
+      left join campaign_ui on campaign.id = campaign_ui.campaign_id
+      left join clicked_history on clicked_history.campaign_id = campaign.id
+      inner join campaign_creator on campaign.id = campaign_creator.campaign_id
+      inner join creator_list on creator_list.id = campaign_creator.creator_id
+      inner join user_list on campaign.email = user_list.email
+      where creator_list.id = $1 and campaign.start_date is null
+      group by campaign.id, campaign_ui.id, creator_list.cpc,creator_list.average_unique_click,user_list.company, user_list.team_avatar`,
       [creatorId]
     );
 
@@ -200,9 +217,26 @@ const getActiveCampaigns: RequestHandler = async (req: Request, res: Response) =
   try {
     const { creatorId } = req.query;
     const data = await db.query(
-      `SELECT camp.id, name from campaign camp
-      inner join campaign_creator on camp.id = campaign_creator.campaign_id
-      WHERE campaign_creator.creator_id = $1 and camp.state = 'active' and camp.complete_date is null`,
+      `SELECT campaign.id as id, campaign_ui.id as ui_id, creator_list.cpc, creator_list.average_unique_click,
+      campaign.email, campaign.name,campaign_ui.headline,campaign_ui.body,campaign_ui.cta,campaign_ui.image,
+      campaign_ui.page_url,campaign.demographic,campaign.audience,campaign.position,campaign.region,
+      campaign.create_time,
+      campaign.start_date,
+      campaign.complete_date,
+      campaign.state,
+      user_list.company,
+      user_list.team_avatar,
+      SUM(clicked_history.count) AS total_clicks, 
+      SUM(clicked_history.unique_click) unique_clicks, 
+      SUM(CASE WHEN (clicked_history.user_medium = 'newsletter' OR clicked_history.user_medium = 'referral') AND clicked_history.duration > clicked_history.count * 1.2 AND clicked_history.duration > 0  THEN clicked_history.unique_click ELSE 0 END) verified_clicks
+      from campaign 
+      left join campaign_ui on campaign.id = campaign_ui.campaign_id
+      left join clicked_history on clicked_history.campaign_id = campaign.id
+      inner join campaign_creator on campaign.id = campaign_creator.campaign_id
+      inner join creator_list on creator_list.id = campaign_creator.creator_id
+      inner join user_list on campaign.email = user_list.email
+      where creator_list.id = $1 and campaign.state = 'active' and campaign.complete_date is null
+      group by campaign.id, campaign_ui.id, creator_list.cpc,creator_list.average_unique_click,user_list.company, user_list.team_avatar`,
       [creatorId]
     );
 
@@ -220,9 +254,26 @@ const getCompletedCampaigns: RequestHandler = async (req: Request, res: Response
   try {
     const { creatorId } = req.query;
     const data = await db.query(
-      `SELECT camp.id, name from campaign camp
-      inner join campaign_creator on camp.id = campaign_creator.campaign_id
-      WHERE campaign_creator.creator_id = $1 and camp.state = 'active' and camp.complete_date is not null`,
+      `SELECT campaign.id as id, campaign_ui.id as ui_id, creator_list.cpc, creator_list.average_unique_click,
+      campaign.email, campaign.name,campaign_ui.headline,campaign_ui.body,campaign_ui.cta,campaign_ui.image,
+      campaign_ui.page_url,campaign.demographic,campaign.audience,campaign.position,campaign.region,
+      campaign.create_time,
+      campaign.start_date,
+      campaign.complete_date,
+      campaign.state,
+      user_list.company,
+      user_list.team_avatar,
+      SUM(clicked_history.count) AS total_clicks, 
+      SUM(clicked_history.unique_click) unique_clicks, 
+      SUM(CASE WHEN (clicked_history.user_medium = 'newsletter' OR clicked_history.user_medium = 'referral') AND clicked_history.duration > clicked_history.count * 1.2 AND clicked_history.duration > 0  THEN clicked_history.unique_click ELSE 0 END) verified_clicks
+      from campaign 
+      left join campaign_ui on campaign.id = campaign_ui.campaign_id
+      left join clicked_history on clicked_history.campaign_id = campaign.id
+      inner join campaign_creator on campaign.id = campaign_creator.campaign_id
+      inner join creator_list on creator_list.id = campaign_creator.creator_id
+      inner join user_list on campaign.email = user_list.email
+      where creator_list.id = $1 and campaign.state = 'active' and campaign.complete_date is not null
+      group by campaign.id, campaign_ui.id, creator_list.cpc,creator_list.average_unique_click,user_list.company, user_list.team_avatar`,
       [creatorId]
     );
 
