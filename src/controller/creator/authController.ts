@@ -49,7 +49,7 @@ const login: RequestHandler = async (req: Request, res: Response) => {
 const signup: RequestHandler = async (req: Request, res: Response) => {
   console.log("creator signup api called");
   try {
-    const { fullName, email, password, newsletter } = req.body;
+    const { fullName, email, password, newsletter, website_url } = req.body;
     const { rows } = await db.query(
       "SELECT * FROM creator_list WHERE email = $1",
       [email]
@@ -62,8 +62,8 @@ const signup: RequestHandler = async (req: Request, res: Response) => {
       const hash = bcrypt.hashSync(password.toString(), 10);
       const time = moment().valueOf();
       const { rows } = await db.query(
-        "insert into creator_list (create_time, name, email, password, newsletter, verified, user_type, email_verified) values ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *",
-        [time, fullName, email, hash, newsletter, 0, "creator", 0]
+        "insert into creator_list (create_time, name, email, password, newsletter, verified, user_type, email_verified, website_url) values ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING *",
+        [time, fullName, email, hash, newsletter, 0, "creator", 0, website_url]
       );
       await mailer.sendCreatorWelcomeEmail(email, fullName, {
         creatorId: rows[0].id,
