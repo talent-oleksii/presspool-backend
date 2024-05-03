@@ -21,9 +21,10 @@ const updateCreatorPreferences: RequestHandler = async (
       averageUniqueClick,
       cpc,
       creatorId,
+      subscribers,
     } = req.body;
     const { rows } = await db.query(
-      "update creator_list set audience_size = $2,audience= $3,industry= $4,position=$5,geography=$6,average_unique_click=$7,cpc=$8, email_verified= $9 where id = $1 RETURNING *",
+      "update creator_list set audience_size = $2,audience= $3,industry= $4,position=$5,geography=$6,average_unique_click=$7,cpc=$8, email_verified= $9,total_subscribers=$10 where id = $1 RETURNING *",
       [
         creatorId,
         audienceSize,
@@ -33,8 +34,33 @@ const updateCreatorPreferences: RequestHandler = async (
         JSON.stringify(geography),
         averageUniqueClick,
         cpc,
-        1
+        1,
+        subscribers,
       ]
+    );
+    return res.status(StatusCodes.OK).json({
+      ...rows[0],
+    });
+  } catch (error: any) {
+    return res
+      .status(StatusCodes.INTERNAL_SERVER_ERROR)
+      .json({ message: error.message });
+  }
+};
+
+const updateSubscribeProof: RequestHandler = async (
+  req: Request,
+  res: Response
+) => {
+  console.log("creator login api called");
+  try {
+    const proof = (req.files as any)["subscriber_proof"]
+      ? (req.files as any)["subscriber_proof"][0].location
+      : null;
+    const { creatorId } = req.body;
+    const { rows } = await db.query(
+      "update creator_list set proof_image = $2 where id = $1 RETURNING *",
+      [creatorId, proof]
     );
     return res.status(StatusCodes.OK).json({
       ...rows[0],
@@ -175,7 +201,10 @@ const getCampaignList: RequestHandler = async (req: Request, res: Response) => {
   }
 };
 
-const getReadyToPublish: RequestHandler = async (req: Request, res: Response) => {
+const getReadyToPublish: RequestHandler = async (
+  req: Request,
+  res: Response
+) => {
   log.info("get campaign list called");
   try {
     const { creatorId } = req.query;
@@ -212,7 +241,10 @@ const getReadyToPublish: RequestHandler = async (req: Request, res: Response) =>
   }
 };
 
-const getActiveCampaigns: RequestHandler = async (req: Request, res: Response) => {
+const getActiveCampaigns: RequestHandler = async (
+  req: Request,
+  res: Response
+) => {
   log.info("get campaign list called");
   try {
     const { creatorId } = req.query;
@@ -249,7 +281,10 @@ const getActiveCampaigns: RequestHandler = async (req: Request, res: Response) =
   }
 };
 
-const getCompletedCampaigns: RequestHandler = async (req: Request, res: Response) => {
+const getCompletedCampaigns: RequestHandler = async (
+  req: Request,
+  res: Response
+) => {
   log.info("get campaign list called");
   try {
     const { creatorId } = req.query;
@@ -293,7 +328,8 @@ const authController = {
   getCampaignList,
   getReadyToPublish,
   getActiveCampaigns,
-  getCompletedCampaigns
+  getCompletedCampaigns,
+  updateSubscribeProof,
 };
 
 export default authController;
