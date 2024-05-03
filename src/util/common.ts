@@ -42,8 +42,8 @@ export const calculateCampStats = (campaignData: any, clickedData: any) => {
     totalBudget === 0 || verifiedClicks === 0
       ? 0
       : totalBudget / verifiedClicks > 10
-        ? 10
-        : totalBudget / verifiedClicks;
+      ? 10
+      : totalBudget / verifiedClicks;
 
   const totalSpend = avgCPC * verifiedClicks;
   return {
@@ -57,7 +57,7 @@ export const calculateCampStats = (campaignData: any, clickedData: any) => {
 };
 
 const secretKey = "presspool-ai";
-export const generateToken = (payload: any) => {
-  const token = sign(payload, secretKey, { expiresIn: "1d" });
+export const generateToken = (payload: any, expiresIn: string = "1d") => {
+  const token = sign(payload, secretKey, { expiresIn });
   return token;
 };
