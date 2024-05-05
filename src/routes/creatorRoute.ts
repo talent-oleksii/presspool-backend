@@ -36,6 +36,7 @@ router.get("/getCampaign", data.getCampaign);
 router.get("/getNewsletter", data.getNewsletter);
 router.get("/getCampaignList", data.getCampaignList);
 router.get("/getCreatorDetail", auth.getCreatorDetail);
+router.get("/getNewRequests", data.getNewRequests);
 router.get("/getReadyToPublish", data.getReadyToPublish);
 router.get("/getActiveCampaigns", data.getActiveCampaigns);
 router.get("/getCompletedCampaigns", data.getCompletedCampaigns);
