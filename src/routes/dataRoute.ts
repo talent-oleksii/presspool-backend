@@ -49,6 +49,8 @@ router.put(
   data.updateCampaignUI
 );
 
+router.post('/request-newsletter', upload.fields([{ name: 'file', maxCount: 1 }]), data.requestNewsletter);
+
 router.get("/profile", data.getProfile);
 router.put(
   "/profile",

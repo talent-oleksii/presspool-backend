@@ -1216,6 +1216,26 @@ const publishCampaign = async (
   }
 };
 
+const requestNewsletter: RequestHandler = async (req: Request, res: Response) => {
+  console.log(' request newsleter called');
+  try {
+    const file = (req.files as any)["file"]
+      ? (req.files as any)["file"][0].location
+      : null;
+
+    const { url, name, email } = req.body;
+
+    const superAdmins = (await db.query('SELECT email FROM admin_user WHERE role = $1', ['super_admin'])).rows;
+
+    for (const admin of superAdmins) {
+      mailer.sendRequestNewsletterEmail(admin.email, email, name, url, file);
+    }
+    return res.status(StatusCodes.OK).json();
+  } catch (error: any) {
+    log.error(`request newsletter error: ${error}`);
+    return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json(error.message);
+  }
+};
 
 const data = {
   getNewsletter,
@@ -1233,6 +1253,7 @@ const data = {
   updateCampaignDetail,
   updateCampaignUI,
   getUnbilled,
+  requestNewsletter,
 
   clicked,
 

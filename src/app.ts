@@ -18,6 +18,7 @@ dotenv.config({ path: './.env' });
 import db from './util/db';
 import log from './util/logger';
 import mailer from './util/mailer';
+import dataController from './controller/dataController';
 
 AWS.config.update({
     region: 'us-east-1',
@@ -56,7 +57,7 @@ app.listen(PORT, async () => {
     log.info(`Server is running on PORT:${PORT}`);
     await db.testConnection();
 
-    await cronFunction.dailyAnalyticsUpdate();
+    // await cronFunction.dailyAnalyticsUpdate();
 });
 
 
@@ -85,6 +86,7 @@ cron.schedule('1 0 * * *', async () => {
 // data.publishCampaign('bernard@remote.com', 204, 227);
 
 // mailer.generateToken();
+// mailer.sendCampaignRequestToCreator('oleksii@presspool.ai', 'Oleksii Karavanov', 'New Age');
 
 cron.schedule('0 */12 * * *', async () => {
     await cronFunction.dailyAnalyticsUpdate();

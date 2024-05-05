@@ -1123,6 +1123,42 @@ const getPlaceHolder = (name: string) => {
   }
 };
 
+const sendRequestNewsletterEmail = async (admin: string, email: string, name: string, url: string, file: string) => {
+  console.log("send request newsletter emails");
+  try {
+    const mailComposer = new MailComposer({
+      from: "Zoe Martinez-PressPool Support Team<zoe@presspool.ai>",
+      to: admin,
+      subject: `New Newsletter Request!`,
+      // text: content,
+      html: `
+      <p style="margin-top: 15px;">${email} has submitted newsletter request</p>
+      <p>Newsletter Name: ${name}</p>
+      <p>Newsletter URL: ${url}</p>
+      ${file && `<a href="${file}">Download File</a>`}
+      <p style="margin:0px">Cheers,</p>
+      <p style="margin:0px">Zoe</p>
+      `,
+      // attachments: fileAttachments,
+      textEncoding: "base64",
+      headers: [
+        {
+          key: "X-Application-Developer",
+          value: "Oleksii Karavanov",
+        },
+        {
+          key: "X-Application-Version",
+          value: "v1.0.0",
+        },
+      ],
+    });
+
+    await sendEmail(mailComposer);
+  } catch (error) {
+    log.error(`send request newsletter email error: ${error}`);
+  }
+};
+
 const sendCreatorWelcomeEmail = async (
   emailAddress: string,
   userName: string,
@@ -1224,6 +1260,8 @@ const mailer = {
   sendBudgetReachEmail,
   sendPurchaseEmail,
   sendAddTemmateEmail,
+
+  sendRequestNewsletterEmail,
 
   sendAdminNotificationEmail,
   sendSuperAdminNotificationEmail,
