@@ -231,14 +231,15 @@ const addBillingMethod: RequestHandler = async (
       const customerId = (await db.query('SELECT customer_id FROM card_info WHERE card_id = $1', [data.object.id])).rows[0];
       const customerDetail = await constant.stripe.customers.retrieve(customerId.customer_id) as Stripe.Customer;
 
+      const client = (await db.query('SELECT * FROM user_list WHERE email = $1', [customerDetail.email])).rows[0];
+
       // check out if payment methods are none
-      const count = (await db.query('SELECT count(*) FROM card_info where customer_id = $1', [customerId.customer_id])).rows[0];
       // if (Number(count.count) <= 0) {
       //send email to super admins
       const superAdmins = await db.query('SELECT * FROM admin_user WHERE role = $1', ['super_admin']);
 
       for (const admin of superAdmins.rows) {
-        mailer.sendPaymentMethodDetachedEmail(admin.email, customerDetail.email || '');
+        mailer.sendPaymentMethodDetachedEmail(admin.email, customerDetail.email || '', client.name);
       }
       // }
 

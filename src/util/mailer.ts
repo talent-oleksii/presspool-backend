@@ -1159,7 +1159,7 @@ const sendRequestNewsletterEmail = async (admin: string, email: string, name: st
   }
 };
 
-const sendPaymentMethodDetachedEmail = async (admin: string, email: string) => {
+const sendPaymentMethodDetachedEmail = async (admin: string, email: string, name: string) => {
   console.log('send payment detached notification to super admins');
   try {
     const mailComposer = new MailComposer({
@@ -1168,8 +1168,9 @@ const sendPaymentMethodDetachedEmail = async (admin: string, email: string) => {
       subject: `Payment Method Detached!`,
       // text: content,
       html: `
-      <p style="margin-top: 15px;">Take your eyes on this customer: ${email}</p>
-      <p>They have detached their payment methods. Please keep in contact with him/her</p>
+      <p style="margin-top: 15px;">The following customer has just detached their payment method, please reach out to them ASAP:</p>
+      <p>Client Name: ${name}</p>
+      <p>Client Email:${email}</p>
       <p style="margin:0px">Zoe</p>
       `,
       // attachments: fileAttachments,
