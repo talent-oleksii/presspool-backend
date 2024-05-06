@@ -241,6 +241,44 @@ const getReadyToPublish: RequestHandler = async (
   }
 };
 
+const getNewRequests: RequestHandler = async (req: Request, res: Response) => {
+  log.info("get campaign list called");
+  try {
+    const { creatorId } = req.query;
+    const data = await db.query(
+      `SELECT campaign.id as id, campaign_ui.id as ui_id, creator_list.cpc, creator_list.average_unique_click,
+      campaign.email, campaign.name,campaign_ui.headline,campaign_ui.body,campaign_ui.cta,campaign_ui.image,
+      campaign_ui.page_url,campaign.demographic,campaign.audience,campaign.position,campaign.region,
+      campaign.create_time,
+      campaign.start_date,
+      campaign.complete_date,
+      campaign.state,
+      campaign.url,
+      user_list.company,
+      user_list.team_avatar,
+      SUM(clicked_history.count) AS total_clicks, 
+      SUM(clicked_history.unique_click) unique_clicks, 
+      SUM(CASE WHEN (clicked_history.user_medium = 'newsletter' OR clicked_history.user_medium = 'referral') AND clicked_history.duration > clicked_history.count * 1.2 AND clicked_history.duration > 0  THEN clicked_history.unique_click ELSE 0 END) verified_clicks
+      from campaign 
+      left join campaign_ui on campaign.id = campaign_ui.campaign_id
+      left join clicked_history on clicked_history.campaign_id = campaign.id
+      inner join creator_history on campaign.id = creator_history.campaign_id
+      inner join creator_list on creator_list.id = creator_history.creator_id
+      inner join user_list on campaign.email = user_list.email
+      where creator_list.id = $1 and creator_history.state = 'PENDING' and campaign.complete_date is null
+      group by campaign.id, campaign_ui.id, creator_list.cpc,creator_list.average_unique_click,user_list.company, user_list.team_avatar`,
+      [creatorId]
+    );
+
+    return res.status(StatusCodes.OK).json(data.rows);
+  } catch (error: any) {
+    console.log("error in getting campaign list:");
+    return res
+      .status(StatusCodes.INTERNAL_SERVER_ERROR)
+      .json({ message: error.message });
+  }
+};
+
 const getActiveCampaigns: RequestHandler = async (
   req: Request,
   res: Response
@@ -330,6 +368,7 @@ const authController = {
   getActiveCampaigns,
   getCompletedCampaigns,
   updateSubscribeProof,
+  getNewRequests
 };
 
 export default authController;
