@@ -1170,7 +1170,7 @@ const sendPaymentMethodDetachedEmail = async (admin: string, email: string, name
       html: `
       <p style="margin-top: 15px;">The following customer has just detached their payment method, please reach out to them ASAP:</p>
       <p>Client Name: ${name}</p>
-      <p>Client Email:${email}</p>
+      <p>Client Email: ${email}</p>
       <p style="margin:0px">Zoe</p>
       `,
       // attachments: fileAttachments,
