@@ -1159,6 +1159,39 @@ const sendRequestNewsletterEmail = async (admin: string, email: string, name: st
   }
 };
 
+const sendPaymentMethodDetachedEmail = async (admin: string, email: string) => {
+  console.log('send payment detached notification to super admins');
+  try {
+    const mailComposer = new MailComposer({
+      from: "Zoe Martinez-PressPool Support Team<zoe@presspool.ai>",
+      to: admin,
+      subject: `Payment Method Detached!`,
+      // text: content,
+      html: `
+      <p style="margin-top: 15px;">Take your eyes on this customer: ${email}</p>
+      <p>They have detached their payment methods. Please keep in contact with him/her</p>
+      <p style="margin:0px">Zoe</p>
+      `,
+      // attachments: fileAttachments,
+      textEncoding: "base64",
+      headers: [
+        {
+          key: "X-Application-Developer",
+          value: "Oleksii Karavanov",
+        },
+        {
+          key: "X-Application-Version",
+          value: "v1.0.0",
+        },
+      ],
+    });
+
+    await sendEmail(mailComposer);
+  } catch (error) {
+    log.error(`send request newsletter email error: ${error}`);
+  }
+};
+
 const sendCreatorWelcomeEmail = async (
   emailAddress: string,
   userName: string,
@@ -1262,6 +1295,7 @@ const mailer = {
   sendAddTemmateEmail,
 
   sendRequestNewsletterEmail,
+  sendPaymentMethodDetachedEmail,
 
   sendAdminNotificationEmail,
   sendSuperAdminNotificationEmail,
