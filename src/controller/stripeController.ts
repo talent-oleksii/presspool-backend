@@ -138,7 +138,7 @@ const purchaseCampaign: RequestHandler = async (
             (prev, item) =>
               prev +
               Number(
-                (item?.user_medium === "newsletter" || item?.user_medium === 'referral') && item?.duration > item?.count * 1.2
+                (item?.user_medium === "newsletter" || item?.user_medium === 'referral') && item?.duration > item?.count * 0.37
                   ? item?.unique_click
                   : 0
               ),
@@ -148,8 +148,8 @@ const purchaseCampaign: RequestHandler = async (
         const avgCPC =
           item.price === 0 || verifiedClick === 0
             ? 0
-            : item.price / verifiedClick > 10
-              ? 10
+            : item.price / verifiedClick > 11
+              ? 11
               : Number(item.price / verifiedClick);
 
         let sumEmail = 0;

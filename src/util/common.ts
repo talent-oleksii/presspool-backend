@@ -30,7 +30,7 @@ export const calculateCampStats = (campaignData: any, clickedData: any) => {
       Number(
         (item?.user_medium === "newsletter" ||
           item?.user_medium === "referral") &&
-          item.duration > item.count * 1.2 &&
+          item.duration > item.count * 0.37 &&
           item.duration > 0
           ? item?.unique_click
           : 0
@@ -41,9 +41,9 @@ export const calculateCampStats = (campaignData: any, clickedData: any) => {
   const avgCPC =
     totalBudget === 0 || verifiedClicks === 0
       ? 0
-      : totalBudget / verifiedClicks > 10
-      ? 10
-      : totalBudget / verifiedClicks;
+      : totalBudget / verifiedClicks > 11
+        ? 11
+        : totalBudget / verifiedClicks;
 
   const totalSpend = avgCPC * verifiedClicks;
   return {

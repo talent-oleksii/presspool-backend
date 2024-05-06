@@ -155,7 +155,7 @@ const getNewsletter: RequestHandler = async (req: Request, res: Response) => {
     const formattedFromDate = fromDateObject.format("YYYY-MM-DD 00:00:00");
     const formattedToDate = toDateObject.format("YYYY-MM-DD 00:00:00");
     let params = [creatorId];
-    let query = `SELECT ch.newsletter_id name,camp.id, SUM(ch.count) AS total_clicks, SUM(ch.unique_click) unique_clicks, SUM(CASE WHEN (ch.user_medium = 'newsletter' OR ch.user_medium = 'referral') AND ch.duration > ch.count * 1.2 AND ch.duration > 0  THEN ch.unique_click ELSE 0 END) verified_clicks FROM public.clicked_history ch
+    let query = `SELECT ch.newsletter_id name,camp.id, SUM(ch.count) AS total_clicks, SUM(ch.unique_click) unique_clicks, SUM(CASE WHEN (ch.user_medium = 'newsletter' OR ch.user_medium = 'referral') AND ch.duration > ch.count * 0.37 AND ch.duration > 0  THEN ch.unique_click ELSE 0 END) verified_clicks FROM public.clicked_history ch
     INNER JOIN public.campaign camp on ch.campaign_id = camp.id
     inner join campaign_creator on camp.id = campaign_creator.campaign_id
     inner join creator_list cl on cl.newsletter = ch.newsletter_id 
@@ -220,7 +220,7 @@ const getReadyToPublish: RequestHandler = async (
       user_list.team_avatar,
       SUM(clicked_history.count) AS total_clicks, 
       SUM(clicked_history.unique_click) unique_clicks, 
-      SUM(CASE WHEN (clicked_history.user_medium = 'newsletter' OR clicked_history.user_medium = 'referral') AND clicked_history.duration > clicked_history.count * 1.2 AND clicked_history.duration > 0  THEN clicked_history.unique_click ELSE 0 END) verified_clicks
+      SUM(CASE WHEN (clicked_history.user_medium = 'newsletter' OR clicked_history.user_medium = 'referral') AND clicked_history.duration > clicked_history.count * 0.37 AND clicked_history.duration > 0  THEN clicked_history.unique_click ELSE 0 END) verified_clicks
       from campaign 
       left join campaign_ui on campaign.id = campaign_ui.campaign_id
       left join clicked_history on clicked_history.campaign_id = campaign.id
@@ -258,7 +258,7 @@ const getNewRequests: RequestHandler = async (req: Request, res: Response) => {
       user_list.team_avatar,
       SUM(clicked_history.count) AS total_clicks, 
       SUM(clicked_history.unique_click) unique_clicks, 
-      SUM(CASE WHEN (clicked_history.user_medium = 'newsletter' OR clicked_history.user_medium = 'referral') AND clicked_history.duration > clicked_history.count * 1.2 AND clicked_history.duration > 0  THEN clicked_history.unique_click ELSE 0 END) verified_clicks
+      SUM(CASE WHEN (clicked_history.user_medium = 'newsletter' OR clicked_history.user_medium = 'referral') AND clicked_history.duration > clicked_history.count * 0.37 AND clicked_history.duration > 0  THEN clicked_history.unique_click ELSE 0 END) verified_clicks
       from campaign 
       left join campaign_ui on campaign.id = campaign_ui.campaign_id
       left join clicked_history on clicked_history.campaign_id = campaign.id
@@ -298,7 +298,7 @@ const getActiveCampaigns: RequestHandler = async (
       user_list.team_avatar,
       SUM(clicked_history.count) AS total_clicks, 
       SUM(clicked_history.unique_click) unique_clicks, 
-      SUM(CASE WHEN (clicked_history.user_medium = 'newsletter' OR clicked_history.user_medium = 'referral') AND clicked_history.duration > clicked_history.count * 1.2 AND clicked_history.duration > 0  THEN clicked_history.unique_click ELSE 0 END) verified_clicks
+      SUM(CASE WHEN (clicked_history.user_medium = 'newsletter' OR clicked_history.user_medium = 'referral') AND clicked_history.duration > clicked_history.count * 0.37 AND clicked_history.duration > 0  THEN clicked_history.unique_click ELSE 0 END) verified_clicks
       from campaign 
       left join campaign_ui on campaign.id = campaign_ui.campaign_id
       left join clicked_history on clicked_history.campaign_id = campaign.id
@@ -338,7 +338,7 @@ const getCompletedCampaigns: RequestHandler = async (
       user_list.team_avatar,
       SUM(clicked_history.count) AS total_clicks, 
       SUM(clicked_history.unique_click) unique_clicks, 
-      SUM(CASE WHEN (clicked_history.user_medium = 'newsletter' OR clicked_history.user_medium = 'referral') AND clicked_history.duration > clicked_history.count * 1.2 AND clicked_history.duration > 0  THEN clicked_history.unique_click ELSE 0 END) verified_clicks
+      SUM(CASE WHEN (clicked_history.user_medium = 'newsletter' OR clicked_history.user_medium = 'referral') AND clicked_history.duration > clicked_history.count * 0.37 AND clicked_history.duration > 0  THEN clicked_history.unique_click ELSE 0 END) verified_clicks
       from campaign 
       left join campaign_ui on campaign.id = campaign_ui.campaign_id
       left join clicked_history on clicked_history.campaign_id = campaign.id
