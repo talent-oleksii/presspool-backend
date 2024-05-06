@@ -233,14 +233,14 @@ const addBillingMethod: RequestHandler = async (
 
       // check out if payment methods are none
       const count = (await db.query('SELECT count(*) FROM card_info where customer_id = $1', [customerId.customer_id])).rows[0];
-      if (Number(count.count) <= 0) {
-        //send email to super admins
-        const superAdmins = await db.query('SELECT * FROM admin_user WHERE role = $1', ['super_admin']);
+      // if (Number(count.count) <= 0) {
+      //send email to super admins
+      const superAdmins = await db.query('SELECT * FROM admin_user WHERE role = $1', ['super_admin']);
 
-        for (const admin of superAdmins.rows) {
-          mailer.sendPaymentMethodDetachedEmail(admin.email, customerDetail.email || '');
-        }
+      for (const admin of superAdmins.rows) {
+        mailer.sendPaymentMethodDetachedEmail(admin.email, customerDetail.email || '');
       }
+      // }
 
 
       await db.query("delete from card_info where card_id = $1", [
