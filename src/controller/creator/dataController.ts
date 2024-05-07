@@ -246,8 +246,8 @@ const getNewRequests: RequestHandler = async (req: Request, res: Response) => {
   try {
     const { creatorId } = req.query;
     const data = await db.query(
-      `SELECT campaign.id as id, campaign_ui.id as ui_id, creator_list.cpc, creator_list.average_unique_click,
-      campaign.email, campaign.name,campaign_ui.headline,campaign_ui.body,campaign_ui.cta,campaign_ui.image,
+      `SELECT creator_history.id as requestId,  campaign.id as id, campaign_ui.id as ui_id, creator_list.cpc, creator_list.average_unique_click,
+      campaign.email, campaign.name,campaign_ui.headline,campaign_ui.body,campaign_ui.cta,campaign_ui.image,campaign_ui.additional_files,
       campaign_ui.page_url,campaign.demographic,campaign.audience,campaign.position,campaign.region,
       campaign.create_time,
       campaign.start_date,
@@ -266,7 +266,7 @@ const getNewRequests: RequestHandler = async (req: Request, res: Response) => {
       inner join creator_list on creator_list.id = creator_history.creator_id
       inner join user_list on campaign.email = user_list.email
       where creator_list.id = $1 and creator_history.state = 'PENDING' and campaign.complete_date is null
-      group by campaign.id, campaign_ui.id, creator_list.cpc,creator_list.average_unique_click,user_list.company, user_list.team_avatar`,
+      group by campaign.id, campaign_ui.id, creator_list.cpc,creator_list.average_unique_click,user_list.company, user_list.team_avatar, creator_history.id`,
       [creatorId]
     );
 
@@ -359,6 +359,26 @@ const getCompletedCampaigns: RequestHandler = async (
   }
 };
 
+const subscribeCampaign: RequestHandler = async (
+  req: Request,
+  res: Response
+) => {
+  try {
+    const { scheduleDate, requestId } = req.body;
+    const { rows } = await db.query(
+      "update creator_history set state = $2, scheduled_date = $3 where id = $1 RETURNING *",
+      [requestId, "ACCEPTED", scheduleDate]
+    );
+    return res.status(StatusCodes.OK).json({
+      ...rows[0],
+    });
+  } catch (error: any) {
+    return res
+      .status(StatusCodes.INTERNAL_SERVER_ERROR)
+      .json({ message: error.message });
+  }
+};
+
 const authController = {
   updateCreatorPreferences,
   getCampaign,
@@ -368,7 +388,8 @@ const authController = {
   getActiveCampaigns,
   getCompletedCampaigns,
   updateSubscribeProof,
-  getNewRequests
+  getNewRequests,
+  subscribeCampaign,
 };
 
 export default authController;
