@@ -434,7 +434,7 @@ const dailyAnalyticsUpdate = async () => {
 
         uniqueClicks += Number(totalUsers);
         totalClicks += Number(screenPageViews);
-        verifiedClicks += (firstUserMedium === 'newsletter' || firstUserMedium === 'referral') && userEngagementDuration > screenPageViews * 1.2 ? Number(totalUsers) : 0;
+        verifiedClicks += (firstUserMedium === 'newsletter' || firstUserMedium === 'referral') && userEngagementDuration > screenPageViews * 0.37 ? Number(totalUsers) : 0;
       }
 
       const oneDay = moment().add(-1, 'day').valueOf();

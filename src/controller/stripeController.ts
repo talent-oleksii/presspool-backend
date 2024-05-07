@@ -1,4 +1,5 @@
 import moment from "moment";
+import Stripe from 'stripe';
 import { RequestHandler, Request, Response } from "express";
 import { StatusCodes } from "http-status-codes/build/cjs/status-codes";
 import constant from "../util/constant";
@@ -137,7 +138,7 @@ const purchaseCampaign: RequestHandler = async (
             (prev, item) =>
               prev +
               Number(
-                (item?.user_medium === "newsletter" || item?.user_medium === 'referral') && item?.duration > item?.count * 1.2
+                (item?.user_medium === "newsletter" || item?.user_medium === 'referral') && item?.duration > item?.count * 0.37
                   ? item?.unique_click
                   : 0
               ),
@@ -147,8 +148,8 @@ const purchaseCampaign: RequestHandler = async (
         const avgCPC =
           item.price === 0 || verifiedClick === 0
             ? 0
-            : item.price / verifiedClick > 10
-              ? 10
+            : item.price / verifiedClick > 11
+              ? 11
               : Number(item.price / verifiedClick);
 
         let sumEmail = 0;
@@ -227,6 +228,22 @@ const addBillingMethod: RequestHandler = async (
 
       return res.status(StatusCodes.OK).json("attached");
     } else if (req.body.type === "payment_method.detached") {
+      const customerId = (await db.query('SELECT customer_id FROM card_info WHERE card_id = $1', [data.object.id])).rows[0];
+      const customerDetail = await constant.stripe.customers.retrieve(customerId.customer_id) as Stripe.Customer;
+
+      const client = (await db.query('SELECT * FROM user_list WHERE email = $1', [customerDetail.email])).rows[0];
+
+      // check out if payment methods are none
+      // if (Number(count.count) <= 0) {
+      //send email to super admins
+      const superAdmins = await db.query('SELECT * FROM admin_user WHERE role = $1', ['super_admin']);
+
+      for (const admin of superAdmins.rows) {
+        mailer.sendPaymentMethodDetachedEmail(admin.email, customerDetail.email || '', client.name);
+      }
+      // }
+
+
       await db.query("delete from card_info where card_id = $1", [
         data.object.id,
       ]);
@@ -234,6 +251,7 @@ const addBillingMethod: RequestHandler = async (
       return res.status(StatusCodes.OK).json("detached");
     }
   } catch (error: any) {
+    console.log('billing method function error:', error.message);
     return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json(error.message);
   }
 };
