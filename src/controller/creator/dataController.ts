@@ -265,7 +265,7 @@ const getNewRequests: RequestHandler = async (req: Request, res: Response) => {
       inner join creator_history on campaign.id = creator_history.campaign_id
       inner join creator_list on creator_list.id = creator_history.creator_id
       inner join user_list on campaign.email = user_list.email
-      where creator_list.id = $1 and creator_history.state = 'PENDING' and campaign.complete_date is null
+      where creator_list.id = $1 and creator_history.state = 'PENDING' and campaign.complete_date is null and campaign.use_creator = true
       group by campaign.id, campaign_ui.id, creator_list.cpc,creator_list.average_unique_click,user_list.company, user_list.team_avatar, creator_history.id`,
       [creatorId]
     );
@@ -379,6 +379,23 @@ const subscribeCampaign: RequestHandler = async (
   }
 };
 
+const rejectCampaign: RequestHandler = async (req: Request, res: Response) => {
+  try {
+    const { notes, requestId, rejectDate } = req.body;
+    const { rows } = await db.query(
+      "update creator_history set notes = $2, rejected_date = $3, state = $4 where id = $1 RETURNING *",
+      [requestId, notes, rejectDate, "REJECTED"]
+    );
+    return res.status(StatusCodes.OK).json({
+      ...rows[0],
+    });
+  } catch (error: any) {
+    return res
+      .status(StatusCodes.INTERNAL_SERVER_ERROR)
+      .json({ message: error.message });
+  }
+};
+
 const authController = {
   updateCreatorPreferences,
   getCampaign,
@@ -390,6 +407,7 @@ const authController = {
   updateSubscribeProof,
   getNewRequests,
   subscribeCampaign,
+  rejectCampaign,
 };
 
 export default authController;
