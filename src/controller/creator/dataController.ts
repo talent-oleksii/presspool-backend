@@ -265,7 +265,7 @@ const getNewRequests: RequestHandler = async (req: Request, res: Response) => {
       inner join creator_history on campaign.id = creator_history.campaign_id
       inner join creator_list on creator_list.id = creator_history.creator_id
       inner join user_list on campaign.email = user_list.email
-      where creator_list.id = $1 and creator_history.state = 'PENDING' and campaign.complete_date is null and campaign.use_creator = true
+      where creator_list.id = $1 and creator_history.state = 'PENDING' and campaign.complete_date is null and campaign.use_creator = true and campaign.state = 'active'
       group by campaign.id, campaign_ui.id, creator_list.cpc,creator_list.average_unique_click,user_list.company, user_list.team_avatar, creator_history.id`,
       [creatorId]
     );
