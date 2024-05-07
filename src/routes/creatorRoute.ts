@@ -40,5 +40,6 @@ router.get("/getNewRequests", data.getNewRequests);
 router.get("/getReadyToPublish", data.getReadyToPublish);
 router.get("/getActiveCampaigns", data.getActiveCampaigns);
 router.get("/getCompletedCampaigns", data.getCompletedCampaigns);
+router.put("/scheduleCampaign", data.subscribeCampaign);
 
 export default router;
