@@ -27,10 +27,21 @@ const upload = multer({
 router.post("/auth/login", auth.login);
 router.post("/auth/signup", auth.signup);
 router.post("/updatePreferences", data.updateCreatorPreferences);
+router.post("/updateAudienceSize", data.updateAudienceSize);
+router.post("/updateAudience", data.updateAudience);
+router.post("/updateTargeting", data.updateTargeting);
 router.put(
   "/updateSubscribeProof",
   upload.fields([{ name: "subscriber_proof", maxCount: 1 }]),
   data.updateSubscribeProof
+);
+router.put(
+  "/updateAvatar",
+  upload.fields([
+    { name: "avatar", maxCount: 10 },
+    { name: "team_avatar", maxCount: 2 },
+  ]),
+  data.updateAvatar
 );
 router.get("/getCampaign", data.getCampaign);
 router.get("/getNewsletter", data.getNewsletter);

@@ -48,6 +48,76 @@ const updateCreatorPreferences: RequestHandler = async (
   }
 };
 
+const updateAudienceSize: RequestHandler = async (
+  req: Request,
+  res: Response
+) => {
+  console.log("creator login api called");
+  try {
+    const { creatorId, subscribers } = req.body;
+    const { rows } = await db.query(
+      "update creator_list set total_subscribers = $2 where id = $1 RETURNING *",
+      [creatorId, subscribers]
+    );
+    return res.status(StatusCodes.OK).json({
+      ...rows[0],
+    });
+  } catch (error: any) {
+    return res
+      .status(StatusCodes.INTERNAL_SERVER_ERROR)
+      .json({ message: error.message });
+  }
+};
+
+const updateAudience: RequestHandler = async (req: Request, res: Response) => {
+  console.log("creator login api called");
+  try {
+    const { creatorId, audience } = req.body;
+    const { rows } = await db.query(
+      "update creator_list set audience = $2 where id = $1 RETURNING *",
+      [creatorId, audience]
+    );
+    return res.status(StatusCodes.OK).json({
+      ...rows[0],
+    });
+  } catch (error: any) {
+    return res
+      .status(StatusCodes.INTERNAL_SERVER_ERROR)
+      .json({ message: error.message });
+  }
+};
+
+const updateTargeting: RequestHandler = async (req: Request, res: Response) => {
+  try {
+    const {
+      industry,
+      position,
+      geography,
+      averageUniqueClick,
+      cpc,
+      creatorId,
+    } = req.body;
+    const { rows } = await db.query(
+      "update creator_list set industry= $2,position=$3,geography=$4,average_unique_click=$5,cpc=$6 where id = $1 RETURNING *",
+      [
+        creatorId,
+        JSON.stringify(industry),
+        JSON.stringify(position),
+        JSON.stringify(geography),
+        averageUniqueClick,
+        cpc,
+      ]
+    );
+    return res.status(StatusCodes.OK).json({
+      ...rows[0],
+    });
+  } catch (error: any) {
+    return res
+      .status(StatusCodes.INTERNAL_SERVER_ERROR)
+      .json({ message: error.message });
+  }
+};
+
 const updateSubscribeProof: RequestHandler = async (
   req: Request,
   res: Response
@@ -396,6 +466,40 @@ const rejectCampaign: RequestHandler = async (req: Request, res: Response) => {
   }
 };
 
+const updateAvatar: RequestHandler = async (req: Request, res: Response) => {
+  log.info("update profile clicked");
+  try {
+    if (!req.files)
+      return res
+        .status(StatusCodes.BAD_REQUEST)
+        .json({ message: "No images are provided!" });
+    const avatar = (req.files as any)["avatar"]
+      ? (req.files as any)["avatar"][0].location
+      : null;
+    const teamAvatar = (req.files as any)["team_avatar"]
+      ? (req.files as any)["team_avatar"][0].location
+      : null;
+    const { creatorId } = req.body;
+    if (avatar) {
+      await db.query(
+        "update creator_list set avatar = $2 where id = $1 RETURNING *",
+        [creatorId, avatar]
+      );
+    }
+    if (teamAvatar) {
+      await db.query(
+        "update creator_list set team_avatar = $2 where id = $1 RETURNING *",
+        [creatorId, teamAvatar]
+      );
+    }
+
+    return res.status(StatusCodes.OK).json({ avatar, teamAvatar });
+  } catch (error: any) {
+    log.error(`update profile error: ${error}`);
+    return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json(error.message);
+  }
+};
+
 const authController = {
   updateCreatorPreferences,
   getCampaign,
@@ -408,6 +512,10 @@ const authController = {
   getNewRequests,
   subscribeCampaign,
   rejectCampaign,
+  updateAudienceSize,
+  updateAudience,
+  updateTargeting,
+  updateAvatar,
 };
 
 export default authController;
