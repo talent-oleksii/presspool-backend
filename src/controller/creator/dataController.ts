@@ -435,10 +435,18 @@ const subscribeCampaign: RequestHandler = async (
 ) => {
   try {
     const { scheduleDate, requestId } = req.body;
+    const time = moment().valueOf();
     const { rows } = await db.query(
       "update creator_history set state = $2, scheduled_date = $3 where id = $1 RETURNING *",
       [requestId, "ACCEPTED", scheduleDate]
     );
+    if (rows.length > 0) {
+      const [row] = rows;
+      await db.query(
+        "insert into campaign_creator (create_time, campaign_id, creator_id) values ($1, $2, $3) returning *",
+        [time, row.campaign_id, row.creator_id]
+      );
+    }
     return res.status(StatusCodes.OK).json({
       ...rows[0],
     });
