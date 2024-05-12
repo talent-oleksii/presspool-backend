@@ -1193,6 +1193,42 @@ const sendPaymentMethodDetachedEmail = async (admin: string, email: string, name
   }
 };
 
+const sendPaymentFailedEmail = async (admin: string, email: string, name: string, company: string, amount: string) => {
+  console.log('notify payment intent failed to super admins');
+  try {
+    const mailComposer = new MailComposer({
+      from: "Zoe Martinez-PressPool Support Team<zoe@presspool.ai>",
+      to: admin,
+      subject: `Payment Intent Failed!`,
+      // text: content,
+      html: `
+      <p style="margin-top: 15px;">The following customer's payment intent failed, please reach out to them ASAP:</p>
+      <p>Client Name: ${name}</p>
+      <p>Client Company: ${company}</p>
+      <p>Client Email: ${email}</p>
+      <p>Payment Amount: ${amount}</p>
+      <p style="margin:0px">Zoe</p>
+      `,
+      // attachments: fileAttachments,
+      textEncoding: "base64",
+      headers: [
+        {
+          key: "X-Application-Developer",
+          value: "Oleksii Karavanov",
+        },
+        {
+          key: "X-Application-Version",
+          value: "v1.0.0",
+        },
+      ],
+    });
+
+    await sendEmail(mailComposer);
+  } catch (error) {
+    log.error(`send request newsletter email error: ${error}`);
+  }
+};
+
 const sendCreatorWelcomeEmail = async (
   emailAddress: string,
   userName: string,
@@ -1297,6 +1333,7 @@ const mailer = {
 
   sendRequestNewsletterEmail,
   sendPaymentMethodDetachedEmail,
+  sendPaymentFailedEmail,
 
   sendAdminNotificationEmail,
   sendSuperAdminNotificationEmail,

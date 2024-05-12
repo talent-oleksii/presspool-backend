@@ -42,6 +42,8 @@ const billingFunction = async () => { // Here we notify users about billing
   try {
     console.log('billined called');
     const current = moment().hour(0).minute(0).second(0);
+
+    const admins = (await db.query('SELECT * FROM admin_user WHERE role = $1', ['super_admin'])).rows;
     // pay unpaid campaigns
     const activeCampaigns = await db.query('SELECT campaign.start_date, campaign.id, campaign.name, campaign.price, campaign.email, campaign.billed, campaign.spent, campaign.card_id from campaign LEFT JOIN card_info ON campaign.card_id = card_info.card_id  where state = $1', ['active']);
     for (const campaign of activeCampaigns.rows) {
@@ -68,6 +70,8 @@ const billingFunction = async () => { // Here we notify users about billing
         customer = await stripe.customers.create({ email: campaign.email as string });
       }
 
+      const client = (await db.query('SELECT name, company FROM user_list WHERE email = $1', [campaign.email])).rows[0];
+
       try {
         await stripe.paymentIntents.create({
           customer: customer.id,
@@ -87,6 +91,10 @@ const billingFunction = async () => { // Here we notify users about billing
         });
       } catch (error) {
         console.log('error:', error);
+        for (const admin of admins) {
+          console.log(`send payment intent failed email to admin :${admin.email}`);
+          await mailer.sendPaymentFailedEmail(admin.email, campaign.email, client.name, client.company, billAmount.toString());
+        }
         continue;
       }
 
