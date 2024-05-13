@@ -215,8 +215,9 @@ const addCampaign: RequestHandler = async (req: Request, res: Response) => {
     let campaignState = req.body.state;
 
     // update campaign ui id
+    const presspoolBudget = Number(req.body.currentPrice) * 0.4;
     const result = await db.query(
-      "INSERT INTO campaign(email, name, url, demographic, audience, price, create_time, uid, card_id, state, stream_id, region, position, presspool_budget) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14) RETURNING *",
+      "INSERT INTO campaign(email, name, url, demographic, audience, price, create_time, uid, card_id, state, stream_id, region, position, presspool_budget, remaining_presspool_budget) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15) RETURNING *",
       [
         req.body.email,
         req.body.campaignName,
@@ -232,7 +233,8 @@ const addCampaign: RequestHandler = async (req: Request, res: Response) => {
         "",
         JSON.stringify(req.body.currentRegion),
         JSON.stringify(req.body.currentPosition),
-        Number(req.body.currentPrice) * 0.4,
+        presspoolBudget,
+        presspoolBudget
       ]
     );
 
@@ -679,7 +681,7 @@ const updateCampaignDetail: RequestHandler = async (
     } else {
       if (state) {
         const campaignData = await db.query(
-          "update campaign set email = $1, name = $2, url = $3, demographic = $4, newsletter = $5, price = $6, card_id = $7, state = $8, region = $9, position = $10, presspool_budget = $12 where id = $11 returning *",
+          "update campaign set email = $1, name = $2, url = $3, demographic = $4, newsletter = $5, price = $6, card_id = $7, state = $8, region = $9, position = $10, presspool_budget = $12, remaining_presspool_budget = $13 where id = $11 returning *",
           [
             email,
             campaignName,
@@ -693,6 +695,7 @@ const updateCampaignDetail: RequestHandler = async (
             JSON.stringify(currentPosition),
             id,
             presspoolBudget,
+            presspoolBudget
           ]
         );
         if (state === "active") {
@@ -744,7 +747,7 @@ const updateCampaignDetail: RequestHandler = async (
         }
       } else {
         await db.query(
-          "update campaign set email = $1, name = $2, url = $3, demographic = $4, newsletter = $5, price = $6, card_id = $7, region = $8,presspool_budget = $10 where id = $9",
+          "update campaign set email = $1, name = $2, url = $3, demographic = $4, newsletter = $5, price = $6, card_id = $7, region = $8,presspool_budget = $10, remaining_presspool_budget = $11 where id = $9",
           [
             email,
             campaignName,
@@ -755,6 +758,7 @@ const updateCampaignDetail: RequestHandler = async (
             currentCard,
             JSON.stringify(currentRegion),
             id,
+            presspoolBudget,
             presspoolBudget
           ]
         );
