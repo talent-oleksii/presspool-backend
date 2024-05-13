@@ -828,7 +828,7 @@ const sendSuperAdminNotificationEmail = async (
 
     const html = `<div>
               <div style="text-align: center">
-                <img style="width: 115px; height: 40px" src="https://presspool-upload-images.s3.amazonaws.com/logo1+1.png" alt="logo"/>
+                <img style="width: 115px; height: 40px" src="https://presspool-upload-images.s3.amazonaws.com/logo1.png" alt="logo"/>
               </div>
             </div>
               <hr />
@@ -1243,7 +1243,7 @@ const sendCreatorWelcomeEmail = async (
       // text: content,
       html: `<div>
       <div style="text-align: center">
-        <img style="width: 115px; height: 40px" src="https://presspool-upload-images.s3.amazonaws.com/logo1+1.png" alt="logo"/>
+        <img style="width: 115px; height: 40px" src="https://presspool-upload-images.s3.amazonaws.com/logo1.png" alt="logo"/>
       </div>
     </div>
       <hr />
