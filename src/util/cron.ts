@@ -93,7 +93,7 @@ const billingFunction = async () => { // Here we notify users about billing
         console.log('error:', error);
         for (const admin of admins) {
           console.log(`send payment intent failed email to admin :${admin.email}`);
-          await mailer.sendPaymentFailedEmail(admin.email, campaign.email, client.name, client.company, billAmount.toString());
+          await mailer.sendPaymentFailedEmail(admin.email, campaign.email, client.name, client.company, (billAmount / 100).toString());
         }
         continue;
       }
