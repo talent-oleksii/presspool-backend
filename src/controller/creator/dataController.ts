@@ -335,11 +335,10 @@ const getNewRequests: RequestHandler = async (req: Request, res: Response) => {
       inner join creator_history on campaign.id = creator_history.campaign_id
       inner join creator_list on creator_list.id = creator_history.creator_id
       inner join user_list on campaign.email = user_list.email
-      where creator_list.id = 25 and creator_history.state = 'PENDING' and campaign.complete_date is null and campaign.use_creator = true and campaign.state = 'active' 
-	    and campaign.presspool_budget > 
-	  	(select Sum(creator_list.average_unique_click * creator_list.cpc) from creator_history
-	  	 inner join creator_list on creator_list.id = creator_history.creator_id
-	  	 where creator_history.campaign_id = campaign.id and creator_history.state != 'REJECTED')
+      where creator_list.id = $1 and creator_history.state = 'PENDING' and campaign.complete_date is null and campaign.use_creator = true and campaign.state = 'active' 
+	    and campaign.remaining_presspool_budget > 
+	  	(SELECT creator_list.average_unique_click * creator_list.cpc 
+        FROM creator_list where creator_list.id = creator_history.creator_id)
       group by campaign.id, campaign_ui.id, creator_list.cpc,creator_list.average_unique_click,user_list.company, user_list.team_avatar, creator_history.id`,
       [creatorId]
     );
@@ -438,7 +437,7 @@ const subscribeCampaign: RequestHandler = async (
   res: Response
 ) => {
   try {
-    const { scheduleDate, requestId } = req.body;
+    const { scheduleDate, requestid } = req.body;
     const time = moment().valueOf();
     const { rows } = await db.query(
       `UPDATE creator_history
@@ -446,16 +445,25 @@ const subscribeCampaign: RequestHandler = async (
       scheduled_date = $3
       FROM campaign
       WHERE creator_history.id = $1 
-        AND campaign.presspool_budget > (
-          select Sum(creator_list.average_unique_click * creator_list.cpc) from creator_history
-             inner join creator_list on creator_list.id = creator_history.creator_id
-             where creator_history.campaign_Id = campaign.id and creator_history.state != 'REJECTED'
+        AND campaign.remaining_presspool_budget >= (
+          SELECT creator_list.average_unique_click * creator_list.cpc 
+          FROM creator_list where creator_list.id = creator_history.creator_id
         )
       RETURNING creator_history.*`,
-      [requestId, "ACCEPTED", scheduleDate]
+      [requestid, "ACCEPTED", scheduleDate]
     );
     if (rows.length > 0) {
       const [row] = rows;
+      await db.query(
+        `UPDATE campaign
+        SET remaining_presspool_budget = remaining_presspool_budget - (
+            SELECT average_unique_click * cpc
+            FROM creator_list
+            WHERE creator_list.id = $2
+        )
+        WHERE campaign.id = $1`,
+        [row.campaign_id, row.creator_id]
+      );
       await db.query(
         "insert into campaign_creator (create_time, campaign_id, creator_id) values ($1, $2, $3) returning *",
         [time, row.campaign_id, row.creator_id]
