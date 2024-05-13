@@ -72,7 +72,7 @@ const getNewsletter: RequestHandler = async (req: Request, res: Response) => {
     const newsletter = await db.query(query, params);
     return res.status(StatusCodes.OK).json(newsletter.rows);
   } catch (error: any) {
-    console.log('error:', error);
+    console.log("error:", error);
     return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json(error.message);
   }
 };
@@ -152,33 +152,48 @@ const getPricing: RequestHandler = async (_req: Request, res: Response) => {
 };
 
 const checkIfAraryIs = (a: Array<any>, b: Array<any>) => {
-  console.log('check in:', a, b);
+  console.log("check in:", a, b);
   for (const item of a) {
     if (b.includes(item)) return true;
   }
   return false;
 };
 
-const sendEmailToCreators = async (id: string) => { // campaign id
+const sendEmailToCreators = async (id: string) => {
+  // campaign id
   log.info(`send email to creators called`);
 
-  const campaignData = (await db.query('SELECT * FROM campaign WHERE id = $1', [id])).rows[0];
+  const campaignData = (
+    await db.query("SELECT * FROM campaign WHERE id = $1", [id])
+  ).rows[0];
 
-  const creators = await db.query(`SELECT id, email, name, audience, industry, position, geography, cpc, average_unique_click 
-    FROM creator_list WHERE state = $1 ORDER BY cpc ASC, average_unique_click`, ['active']
+  const creators = await db.query(
+    `SELECT id, email, name, audience, industry, position, geography, cpc, average_unique_click 
+    FROM creator_list WHERE state = $1 ORDER BY cpc ASC, average_unique_click`,
+    ["active"]
   );
 
   for (const creator of creators.rows) {
     if (!creator.industry || !creator.geography) continue;
 
-    if (checkIfAraryIs(creator.industry, campaignData.audience) && checkIfAraryIs(creator.geography, campaignData.region)) {
-      console.log('this creator is possible:', creator.email)
+    if (
+      checkIfAraryIs(creator.industry, campaignData.audience) &&
+      checkIfAraryIs(creator.geography, campaignData.region)
+    ) {
+      console.log("this creator is possible:", creator.email);
 
-      mailer.sendCampaignRequestToCreator(creator.email, creator.name, campaignData.name);
+      mailer.sendCampaignRequestToCreator(
+        creator.email,
+        creator.name,
+        campaignData.name
+      );
 
-      // mark on creator_history table - 
+      // mark on creator_history table -
       const now = moment().valueOf();
-      await db.query('INSERT INTO creator_history (create_time, campaign_id, creator_id, state) values ($1, $2, $3, $4)', [now, id, creator.id, 'PENDING']);
+      await db.query(
+        "INSERT INTO creator_history (create_time, campaign_id, creator_id, state) values ($1, $2, $3, $4)",
+        [now, id, creator.id, "PENDING"]
+      );
     }
   }
 };
@@ -201,7 +216,7 @@ const addCampaign: RequestHandler = async (req: Request, res: Response) => {
 
     // update campaign ui id
     const result = await db.query(
-      "INSERT INTO campaign(email, name, url, demographic, audience, price, create_time, uid, card_id, state, stream_id, region, position) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13) RETURNING *",
+      "INSERT INTO campaign(email, name, url, demographic, audience, price, create_time, uid, card_id, state, stream_id, region, position, presspool_budget) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14) RETURNING *",
       [
         req.body.email,
         req.body.campaignName,
@@ -213,10 +228,11 @@ const addCampaign: RequestHandler = async (req: Request, res: Response) => {
         uid,
         req.body.currentCard,
         campaignState,
-        // nameParts[nameParts.length - 1], 
+        // nameParts[nameParts.length - 1],
         "",
         JSON.stringify(req.body.currentRegion),
         JSON.stringify(req.body.currentPosition),
+        Number(req.body.currentPrice) * 0.4,
       ]
     );
 
@@ -510,6 +526,8 @@ const updateCampaignDetail: RequestHandler = async (
       currentCard,
     } = req.body;
 
+    const presspoolBudget = Number(currentPrice) * 0.4;
+
     // update uid of campaign for tracking purpose
     const uiData = (
       await db.query("SELECT * FROM campaign_ui WHERE campaign_id = $1", [id])
@@ -661,7 +679,7 @@ const updateCampaignDetail: RequestHandler = async (
     } else {
       if (state) {
         const campaignData = await db.query(
-          "update campaign set email = $1, name = $2, url = $3, demographic = $4, newsletter = $5, price = $6, card_id = $7, state = $8, region = $9, position = $10 where id = $11 returning *",
+          "update campaign set email = $1, name = $2, url = $3, demographic = $4, newsletter = $5, price = $6, card_id = $7, state = $8, region = $9, position = $10, presspool_budget = $12 where id = $11 returning *",
           [
             email,
             campaignName,
@@ -674,6 +692,7 @@ const updateCampaignDetail: RequestHandler = async (
             JSON.stringify(currentRegion),
             JSON.stringify(currentPosition),
             id,
+            presspoolBudget,
           ]
         );
         if (state === "active") {
@@ -725,7 +744,7 @@ const updateCampaignDetail: RequestHandler = async (
         }
       } else {
         await db.query(
-          "update campaign set email = $1, name = $2, url = $3, demographic = $4, newsletter = $5, price = $6, card_id = $7, region = $8 where id = $9",
+          "update campaign set email = $1, name = $2, url = $3, demographic = $4, newsletter = $5, price = $6, card_id = $7, region = $8,presspool_budget = $10 where id = $9",
           [
             email,
             campaignName,
@@ -736,6 +755,7 @@ const updateCampaignDetail: RequestHandler = async (
             currentCard,
             JSON.stringify(currentRegion),
             id,
+            presspoolBudget
           ]
         );
       }
@@ -1216,8 +1236,11 @@ const publishCampaign = async (
   }
 };
 
-const requestNewsletter: RequestHandler = async (req: Request, res: Response) => {
-  console.log(' request newsleter called');
+const requestNewsletter: RequestHandler = async (
+  req: Request,
+  res: Response
+) => {
+  console.log(" request newsleter called");
   try {
     const file = (req.files as any)["file"]
       ? (req.files as any)["file"][0].location
@@ -1225,7 +1248,11 @@ const requestNewsletter: RequestHandler = async (req: Request, res: Response) =>
 
     const { url, name, email } = req.body;
 
-    const superAdmins = (await db.query('SELECT email FROM admin_user WHERE role = $1', ['super_admin'])).rows;
+    const superAdmins = (
+      await db.query("SELECT email FROM admin_user WHERE role = $1", [
+        "super_admin",
+      ])
+    ).rows;
 
     for (const admin of superAdmins) {
       mailer.sendRequestNewsletterEmail(admin.email, email, name, url, file);
