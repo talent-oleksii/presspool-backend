@@ -1215,7 +1215,7 @@ const sendCreatorWelcomeEmail = async (
         <span>Hello ${firstName},</span><br /><br />
         <span>We are inviting you to join PressPool, where AI meets precision marketing.</span><br /><br />
         <span>Join us for targeted audience reach and campaign success.</span><br /><br />
-        <p>Click <a href='https://go.presspool.ai/creator/${payload.creatorId}/onboarding?token=${payload.token}' style="color: #6c63ff; text-decoration:underline;" target="_blank">here</a> to get started!.</p><br /><br />
+        <p>Click <a href='https://go.presspool.ai/publishers/${payload.creatorId}/onboarding?token=${payload.token}' style="color: #6c63ff; text-decoration:underline;" target="_blank">here</a> to get started!.</p><br /><br />
         <span>Cheers,</span><br />
         <span>Zoe</span>
       </div>
@@ -1261,7 +1261,7 @@ const sendCampaignRequestToCreator = async (
       // text: content,
       html: `
       <p>You have a new campaign request waiting for approval! This could be a great opportunity to collaborate with a new client and get their message out there.</p>
-      <a href='https://go.presspool.ai/creator/dashboard' style="color: #6c63ff; text-decoration:underline;" target="_blank">${campaignName}</a>
+      <a href='https://go.presspool.ai/publishers/dashboard' style="color: #6c63ff; text-decoration:underline;" target="_blank">${campaignName}</a>
       <p>Please take a moment to review the campaign details. If it's a match, you can accept and schedule the publication. If not, free to decline and provide feedback.<p>
       <p>Warmly</p>
       <p>Zoe</p>
