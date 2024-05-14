@@ -65,15 +65,20 @@ const signup: RequestHandler = async (req: Request, res: Response) => {
         "insert into creator_list (create_time, name, email, password, newsletter, verified, user_type, email_verified, website_url) values ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING *",
         [time, fullName, email, hash, newsletter, 0, "creator", 0, website_url]
       );
-      await mailer.sendCreatorWelcomeEmail(email, fullName, {
-        creatorId: rows[0].id,
-        token: generateToken({ email, expiresIn: "30d" }),
+      const token = generateToken({
+        id: rows[0].id,
+        email,
+        role: rows[0].user_type,
       });
+      // await mailer.sendCreatorWelcomeEmail(email, fullName, {
+      //   creatorId: rows[0].id,
+      //   token: generateToken({ email, expiresIn: "30d" }),
+      // });
       return res.status(StatusCodes.OK).json({
         ...rows[0],
         verified: 0,
         email_verified: 0,
-        token: generateToken({ email }),
+        token,
       });
     }
   } catch (error: any) {
@@ -117,7 +122,7 @@ const getCreatorDetail: RequestHandler = async (
 const authController = {
   login,
   signup,
-  getCreatorDetail
+  getCreatorDetail,
 };
 
 export default authController;
