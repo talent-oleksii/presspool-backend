@@ -26,6 +26,9 @@ const upload = multer({
 
 router.post("/auth/login", auth.login);
 router.post("/auth/signup", auth.signup);
+router.post('/auth/password', auth.sendPasswordEmail);
+router.post('/auth/verify-password-email', auth.verifyPasswordEmail);
+router.put('/auth/password', auth.changePassword);
 router.post("/updatePreferences", data.updateCreatorPreferences);
 router.post("/updateAudienceSize", data.updateAudienceSize);
 router.post("/updateAudience", data.updateAudience);

@@ -61,3 +61,13 @@ export const generateToken = (payload: any, expiresIn: string = "1d") => {
   const token = sign(payload, secretKey, { expiresIn });
   return token;
 };
+
+export const generateRandomNumbers = (count: number) => {
+  const randomNumbers = [];
+  for (let i = 0; i < count; i++) {
+      const randomNumber = Math.floor(Math.random() * 10); // Adjust the range as needed
+      randomNumbers.push(randomNumber);
+  }
+
+  return randomNumbers.join('');
+};
