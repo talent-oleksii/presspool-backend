@@ -101,7 +101,7 @@ const clientSignUp: RequestHandler = async (req: Request, res: Response) => {
         company,
         0,
         "client",
-        0
+        1
     ]);
 
     // linkUrl = `https://go.presspool.ai/${linkUrl}`;
@@ -122,16 +122,16 @@ const clientSignUp: RequestHandler = async (req: Request, res: Response) => {
         'User Group': 'Client',
     })?.then(data => {
         // Send email to users
-        mailer.sendWelcomeEmail(email, fullName, {
-            type: 'sign-up',
-            subject: 'Client Sign Up',
-            token: generateToken({ email }),
-        });
+        // mailer.sendWelcomeEmail(email, fullName, {
+        //     type: 'sign-up',
+        //     subject: 'Client Sign Up',
+        //     token: generateToken({ email }),
+        // });
 
         return res.status(StatusCodes.OK).json({
             ...data.data,
             verified: 0,
-            email_verified: 0,
+            email_verified: 1,
             token: generateToken({ email }),
         });
     }).catch(error => {
