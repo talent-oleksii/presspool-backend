@@ -362,7 +362,7 @@ const addCampaign: RequestHandler = async (req: Request, res: Response) => {
         }
       }
 
-      sendEmailToCreators(result.rows[0].id);
+      // sendEmailToCreators(result.rows[0].id);
     }
 
     return res.status(StatusCodes.OK).json(data);
@@ -670,7 +670,7 @@ const updateCampaignDetail: RequestHandler = async (
           }
         }
 
-        sendEmailToCreators(id);
+        // sendEmailToCreators(id);
       }
       return res.status(StatusCodes.OK).json("successfully updated!");
     } else if (type === "budget") {
@@ -747,7 +747,7 @@ const updateCampaignDetail: RequestHandler = async (
             }
           }
         }
-        sendEmailToCreators(id);
+        // sendEmailToCreators(id);
       } else {
         await db.query(
           "update campaign set email = $1, name = $2, url = $3, demographic = $4, newsletter = $5, price = $6, card_id = $7, region = $8,presspool_budget = $10, remaining_presspool_budget = $11 where id = $9",
