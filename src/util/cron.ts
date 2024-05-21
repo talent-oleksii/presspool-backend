@@ -374,7 +374,7 @@ const dailyAnalyticsUpdate = async () => {
   // Calculate yesterday's date for the report
   const today = new Date();
   const startDate = new Date(today.getFullYear(), today.getMonth(), today.getDate() - 1);
-  const endDate = new Date(today.getFullYear(), today.getMonth(), today.getDate() + 1);
+  const endDate = new Date(today.getFullYear(), today.getMonth(), today.getDate() + 2);
   const stD = startDate.toISOString().split('T')[0]; // Format as 'YYYY-MM-DD'
   const enD = endDate.toISOString().split('T')[0];
 
