@@ -279,13 +279,15 @@ const getReadyToPublish: RequestHandler = async (
   try {
     const { creatorId } = req.query;
     const data = await db.query(
-      `SELECT campaign.id as id, campaign_ui.id as ui_id, creator_list.cpc, creator_list.average_unique_click,
+      `SELECT creator_history.id as requestId, campaign.id as id, campaign_ui.id as ui_id, creator_list.cpc, creator_list.average_unique_click,
       campaign.email, campaign.name,campaign_ui.headline,campaign_ui.body,campaign_ui.cta,campaign_ui.image,
-      campaign_ui.page_url,campaign.demographic,campaign.audience,campaign.position,campaign.region,
+      campaign_ui.page_url,campaign.demographic,campaign.audience,campaign.position,campaign.region,campaign_ui.conversion,
       campaign.create_time,
       campaign.start_date,
       campaign.complete_date,
+	  creator_history.scheduled_date,
       campaign.state,
+      campaign.url,
       user_list.company,
       user_list.team_avatar,
       SUM(clicked_history.count) AS total_clicks, 
@@ -295,10 +297,11 @@ const getReadyToPublish: RequestHandler = async (
       left join campaign_ui on campaign.id = campaign_ui.campaign_id
       left join clicked_history on clicked_history.campaign_id = campaign.id
       inner join campaign_creator on campaign.id = campaign_creator.campaign_id
+      inner join creator_history on creator_history.campaign_id = campaign_creator.campaign_id and creator_history.creator_id = campaign_creator.creator_id
       inner join creator_list on creator_list.id = campaign_creator.creator_id
       inner join user_list on campaign.email = user_list.email
-      where creator_list.id = $1 and campaign.start_date is null
-      group by campaign.id, campaign_ui.id, creator_list.cpc,creator_list.average_unique_click,user_list.company, user_list.team_avatar`,
+      where creator_list.id = $1 and campaign.complete_date is null and TO_TIMESTAMP(CAST(creator_history.scheduled_date AS bigint)/1000) < CURRENT_TIMESTAMP
+      group by campaign.id, campaign_ui.id, creator_list.cpc,creator_list.average_unique_click,user_list.company, user_list.team_avatar, creator_history.scheduled_date, creator_history.id`,
       [creatorId]
     );
 
@@ -318,7 +321,7 @@ const getNewRequests: RequestHandler = async (req: Request, res: Response) => {
     const data = await db.query(
       `SELECT creator_history.id as requestId,  campaign.id as id, campaign_ui.id as ui_id, creator_list.cpc, creator_list.average_unique_click,
       campaign.email, campaign.name,campaign_ui.headline,campaign_ui.body,campaign_ui.cta,campaign_ui.image,campaign_ui.additional_files,
-      campaign_ui.page_url,campaign.demographic,campaign.audience,campaign.position,campaign.region,
+      campaign_ui.page_url,campaign.demographic,campaign.audience,campaign.position,campaign.region,campaign_ui.conversion,
       campaign.create_time,
       campaign.start_date,
       campaign.complete_date,
@@ -362,11 +365,12 @@ const getActiveCampaigns: RequestHandler = async (
     const data = await db.query(
       `SELECT campaign.id as id, campaign_ui.id as ui_id, creator_list.cpc, creator_list.average_unique_click,
       campaign.email, campaign.name,campaign_ui.headline,campaign_ui.body,campaign_ui.cta,campaign_ui.image,
-      campaign_ui.page_url,campaign.demographic,campaign.audience,campaign.position,campaign.region,
+      campaign_ui.page_url,campaign.demographic,campaign.audience,campaign.position,campaign.region,campaign_ui.conversion,
       campaign.create_time,
       campaign.start_date,
       campaign.complete_date,
       campaign.state,
+      campaign.url,
       user_list.company,
       user_list.team_avatar,
       SUM(clicked_history.count) AS total_clicks, 
@@ -376,9 +380,10 @@ const getActiveCampaigns: RequestHandler = async (
       left join campaign_ui on campaign.id = campaign_ui.campaign_id
       left join clicked_history on clicked_history.campaign_id = campaign.id
       inner join campaign_creator on campaign.id = campaign_creator.campaign_id
+	    inner join creator_history on creator_history.campaign_id = campaign_creator.campaign_id and creator_history.creator_id = campaign_creator.creator_id
       inner join creator_list on creator_list.id = campaign_creator.creator_id
       inner join user_list on campaign.email = user_list.email
-      where creator_list.id = $1 and campaign.state = 'active' and campaign.complete_date is null
+      where creator_list.id = $1 and campaign.state = 'active' and campaign.complete_date is null and TO_TIMESTAMP(CAST(creator_history.scheduled_date AS bigint)/1000) > CURRENT_TIMESTAMP
       group by campaign.id, campaign_ui.id, creator_list.cpc,creator_list.average_unique_click,user_list.company, user_list.team_avatar`,
       [creatorId]
     );
@@ -402,11 +407,12 @@ const getCompletedCampaigns: RequestHandler = async (
     const data = await db.query(
       `SELECT campaign.id as id, campaign_ui.id as ui_id, creator_list.cpc, creator_list.average_unique_click,
       campaign.email, campaign.name,campaign_ui.headline,campaign_ui.body,campaign_ui.cta,campaign_ui.image,
-      campaign_ui.page_url,campaign.demographic,campaign.audience,campaign.position,campaign.region,
+      campaign_ui.page_url,campaign.demographic,campaign.audience,campaign.position,campaign.region,campaign_ui.conversion,
       campaign.create_time,
       campaign.start_date,
       campaign.complete_date,
       campaign.state,
+      campaign.url,
       user_list.company,
       user_list.team_avatar,
       SUM(clicked_history.count) AS total_clicks, 
@@ -437,44 +443,64 @@ const subscribeCampaign: RequestHandler = async (
   res: Response
 ) => {
   try {
-    const { scheduleDate, requestid } = req.body;
+    const { scheduleDate, requestid, isReschedule } = req.body;
+    const isRescheduleBoolean =
+      isReschedule === "true"
+        ? true
+        : isReschedule === "false"
+        ? false
+        : Boolean(isReschedule);
     const time = moment().valueOf();
-    const { rows } = await db.query(
-      `UPDATE creator_history
-      SET state = $2,
-      scheduled_date = $3
-      FROM campaign
-      WHERE creator_history.id = $1 
-        AND campaign.remaining_presspool_budget >= (
-          SELECT creator_list.average_unique_click * creator_list.cpc 
-          FROM creator_list where creator_list.id = creator_history.creator_id
-        )
-      RETURNING creator_history.*`,
-      [requestid, "ACCEPTED", scheduleDate]
-    );
-    if (rows.length > 0) {
-      const [row] = rows;
-      await db.query(
-        `UPDATE campaign
-        SET remaining_presspool_budget = remaining_presspool_budget - (
-            SELECT average_unique_click * cpc
-            FROM creator_list
-            WHERE creator_list.id = $2
-        )
-        WHERE campaign.id = $1`,
-        [row.campaign_id, row.creator_id]
-      );
-      await db.query(
-        "insert into campaign_creator (create_time, campaign_id, creator_id) values ($1, $2, $3) returning *",
-        [time, row.campaign_id, row.creator_id]
+    if (isRescheduleBoolean) {
+      const { rows } = await db.query(
+        `UPDATE creator_history
+        SET scheduled_date = $2
+        FROM campaign
+        WHERE creator_history.id = $1
+        RETURNING creator_history.*`,
+        [requestid, scheduleDate]
       );
       return res.status(StatusCodes.OK).json({
         ...rows[0],
       });
     } else {
-      return res
-        .status(StatusCodes.BAD_REQUEST)
-        .json({ message: `Sorry! budget exceed for selected campaign` });
+      const { rows } = await db.query(
+        `UPDATE creator_history
+        SET state = $2,
+        scheduled_date = $3
+        FROM campaign
+        WHERE creator_history.id = $1 
+          AND campaign.remaining_presspool_budget >= (
+            SELECT creator_list.average_unique_click * creator_list.cpc 
+            FROM creator_list where creator_list.id = creator_history.creator_id
+          )
+        RETURNING creator_history.*`,
+        [requestid, "ACCEPTED", scheduleDate]
+      );
+      if (rows.length > 0) {
+        const [row] = rows;
+        await db.query(
+          `UPDATE campaign
+          SET remaining_presspool_budget = remaining_presspool_budget - (
+              SELECT average_unique_click * cpc
+              FROM creator_list
+              WHERE creator_list.id = $2
+          )
+          WHERE campaign.id = $1`,
+          [row.campaign_id, row.creator_id]
+        );
+        await db.query(
+          "insert into campaign_creator (create_time, campaign_id, creator_id) values ($1, $2, $3) returning *",
+          [time, row.campaign_id, row.creator_id]
+        );
+        return res.status(StatusCodes.OK).json({
+          ...rows[0],
+        });
+      } else {
+        return res
+          .status(StatusCodes.BAD_REQUEST)
+          .json({ message: `Sorry! budget exceed for selected campaign` });
+      }
     }
   } catch (error: any) {
     return res
