@@ -218,6 +218,7 @@ async function runReport(client: BetaAnalyticsDataClient, propertyId: any, start
       }],
       // metrics: [{ name: 'sessions' }],
       // dimensions: [{ name: 'country' }]
+      limit: 99999999999,
     });
     return response;
   } catch (e) {
