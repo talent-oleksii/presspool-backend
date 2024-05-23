@@ -191,7 +191,9 @@ const sendEmailToCreators = async (id: string) => {
       // mark on creator_history table -
       const now = moment().valueOf();
       await db.query(
-        "INSERT INTO creator_history (create_time, campaign_id, creator_id, state) values ($1, $2, $3, $4)",
+        `INSERT INTO creator_history (create_time, campaign_id, creator_id, state)
+        VALUES ($1, $2, $3, $4)
+        ON CONFLICT (campaign_id, creator_id) DO NOTHING;`,
         [now, id, creator.id, "PENDING"]
       );
     }
@@ -234,7 +236,7 @@ const addCampaign: RequestHandler = async (req: Request, res: Response) => {
         JSON.stringify(req.body.currentRegion),
         JSON.stringify(req.body.currentPosition),
         presspoolBudget,
-        presspoolBudget
+        presspoolBudget,
       ]
     );
 
@@ -697,7 +699,7 @@ const updateCampaignDetail: RequestHandler = async (
             JSON.stringify(currentPosition),
             id,
             presspoolBudget,
-            presspoolBudget
+            presspoolBudget,
           ]
         );
         if (state === "active") {
@@ -762,7 +764,7 @@ const updateCampaignDetail: RequestHandler = async (
             JSON.stringify(currentRegion),
             id,
             presspoolBudget,
-            presspoolBudget
+            presspoolBudget,
           ]
         );
       }
