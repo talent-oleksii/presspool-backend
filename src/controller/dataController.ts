@@ -207,12 +207,17 @@ const addCampaign: RequestHandler = async (req: Request, res: Response) => {
     const uiData = (
       await db.query("SELECT * FROM campaign_ui WHERE id = $1", [req.body.uiId])
     ).rows[0];
-    const uid = encodeURIComponent(
-      CryptoJS.AES.encrypt(
-        uiData.page_url,
-        process.env.PRESSPOOL_AES_KEY as string
-      ).toString()
-    );
+    let uid = '';
+
+    do {
+      uid = encodeURIComponent(
+        CryptoJS.AES.encrypt(
+          uiData.page_url,
+          process.env.PRESSPOOL_AES_KEY as string
+        ).toString()
+      );
+      console.log('each attempt:', uid);
+    } while (uid.includes('%2F'));
     // Get if user payment verified or not
     let campaignState = req.body.state;
 
@@ -536,12 +541,17 @@ const updateCampaignDetail: RequestHandler = async (
     const uiData = (
       await db.query("SELECT * FROM campaign_ui WHERE campaign_id = $1", [id])
     ).rows[0];
-    const uid = encodeURIComponent(
-      CryptoJS.AES.encrypt(
-        uiData.page_url,
-        process.env.PRESSPOOL_AES_KEY as string
-      ).toString()
-    );
+
+    let uid = '';
+    do {
+      uid = encodeURIComponent(
+        CryptoJS.AES.encrypt(
+          uiData.page_url,
+          process.env.PRESSPOOL_AES_KEY as string
+        ).toString()
+      );
+      console.log('each attempt:', uid);
+    } while (uid.includes('%2F'));
     await db.query("UPDATE campaign set uid = $1 where id = $2", [uid, id]);
     // Get
 
@@ -749,7 +759,7 @@ const updateCampaignDetail: RequestHandler = async (
             }
           }
         }
-        sendEmailToCreators(id);
+        // sendEmailToCreators(id);
       } else {
         await db.query(
           "update campaign set email = $1, name = $2, url = $3, demographic = $4, newsletter = $5, price = $6, card_id = $7, region = $8,presspool_budget = $10, remaining_presspool_budget = $11 where id = $9",
@@ -1185,12 +1195,17 @@ const publishCampaign = async (
   const uiData = (
     await db.query("SELECT * FROM campaign_ui WHERE id = $1", [uiId])
   ).rows[0];
-  const uid = encodeURIComponent(
-    CryptoJS.AES.encrypt(
-      uiData.page_url,
-      process.env.PRESSPOOL_AES_KEY as string
-    ).toString()
-  );
+
+  let uid = '';
+  do {
+    uid = encodeURIComponent(
+      CryptoJS.AES.encrypt(
+        uiData.page_url,
+        process.env.PRESSPOOL_AES_KEY as string
+      ).toString()
+    );
+    console.log('each attempt:', uid);
+  } while (uid.includes('%2F'));
   await db.query("UPDATE campaign set uid = $1 where id = $2", [
     uid,
     campaignId,
