@@ -68,6 +68,7 @@ cron.schedule('0 0 * * *', async () => { // minute, hour, day, month, day_of_wee
 });
 
 cron.schedule('0 0 * * 5', async () => {
+    // cron.schedule('*/30 * * * * *', async () => {
     await cronFunction.payToAccountManagers();
 });
 
@@ -87,7 +88,8 @@ cron.schedule('1 0 * * *', async () => {
 
 // mailer.generateToken();
 // mailer.sendCampaignRequestToCreator('oleksii@presspool.ai', 'Oleksii Karavanov', 'New Age');
+// mailer.sendPaymentFailedEmail('oleksii@presspool.ai ', 'Oleksii@presspool.ai', 'TEST', '10000');
 
-cron.schedule('0 */12 * * *', async () => {
+cron.schedule('5 */12 * * *', async () => {
     await cronFunction.dailyAnalyticsUpdate();
 });
