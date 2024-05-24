@@ -26,9 +26,9 @@ const upload = multer({
 
 router.post("/auth/login", auth.login);
 router.post("/auth/signup", auth.signup);
-router.post('/auth/password', auth.sendPasswordEmail);
-router.post('/auth/verify-password-email', auth.verifyPasswordEmail);
-router.put('/auth/password', auth.changePassword);
+router.post("/auth/password", auth.sendPasswordEmail);
+router.post("/auth/verify-password-email", auth.verifyPasswordEmail);
+router.put("/auth/password", auth.changePassword);
 router.post("/updatePreferences", data.updateCreatorPreferences);
 router.post("/updateAudienceSize", data.updateAudienceSize);
 router.post("/updateAudience", data.updateAudience);
@@ -56,5 +56,7 @@ router.get("/getActiveCampaigns", data.getActiveCampaigns);
 router.get("/getCompletedCampaigns", data.getCompletedCampaigns);
 router.put("/scheduleCampaign", data.subscribeCampaign);
 router.put("/rejectCampaign", data.rejectCampaign);
+router.get("/getNotifications", data.getNotifications);
+router.get("/getCampaignDetail", data.getCampaignDetail);
 
 export default router;
