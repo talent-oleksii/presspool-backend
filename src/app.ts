@@ -57,7 +57,7 @@ app.listen(PORT, async () => {
     log.info(`Server is running on PORT:${PORT}`);
     await db.testConnection();
 
-    await cronFunction.dailyAnalyticsUpdate();
+    // await cronFunction.dailyAnalyticsUpdate();
 });
 
 

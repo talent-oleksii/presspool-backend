@@ -369,7 +369,7 @@ const addCampaign: RequestHandler = async (req: Request, res: Response) => {
         }
       }
 
-      sendEmailToCreators(result.rows[0].id);
+      // sendEmailToCreators(result.rows[0].id);
     }
 
     return res.status(StatusCodes.OK).json(data);
@@ -682,7 +682,7 @@ const updateCampaignDetail: RequestHandler = async (
           }
         }
 
-        sendEmailToCreators(id);
+        // sendEmailToCreators(id);
       }
       return res.status(StatusCodes.OK).json("successfully updated!");
     } else if (type === "budget") {
