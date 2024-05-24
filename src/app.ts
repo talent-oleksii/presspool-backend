@@ -57,7 +57,7 @@ app.listen(PORT, async () => {
     log.info(`Server is running on PORT:${PORT}`);
     await db.testConnection();
 
-    // await cronFunction.dailyAnalyticsUpdate();
+    await cronFunction.dailyAnalyticsUpdate();
 });
 
 
@@ -90,6 +90,6 @@ cron.schedule('1 0 * * *', async () => {
 // mailer.sendCampaignRequestToCreator('oleksii@presspool.ai', 'Oleksii Karavanov', 'New Age');
 // mailer.sendPaymentFailedEmail('oleksii@presspool.ai ', 'Oleksii@presspool.ai', 'TEST', '10000');
 
-cron.schedule('5 */12 * * *', async () => {
+cron.schedule('21 0 * * *', async () => {
     await cronFunction.dailyAnalyticsUpdate();
 });
