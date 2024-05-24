@@ -560,6 +560,53 @@ const updateAvatar: RequestHandler = async (req: Request, res: Response) => {
   }
 };
 
+const getNotifications: RequestHandler = async (
+  req: Request,
+  res: Response
+) => {
+  log.info("get notifications list called");
+  try {
+    const { creatorId } = req.query;
+    const data = await db.query(
+      `SELECT creator_history.id as requestId,  campaign.id as campaign_id, campaign_ui.id as ui_id,
+      user_list.company
+      from campaign 
+      left join campaign_ui on campaign.id = campaign_ui.campaign_id
+      inner join creator_history on campaign.id = creator_history.campaign_id
+      inner join creator_list on creator_list.id = creator_history.creator_id
+      inner join user_list on campaign.email = user_list.email
+      where creator_list.id = $1 and creator_history.state = 'PENDING'`,
+      [creatorId]
+    );
+
+    return res.status(StatusCodes.OK).json(data.rows);
+  } catch (error: any) {
+    console.log("error in getting campaign list:");
+    return res
+      .status(StatusCodes.INTERNAL_SERVER_ERROR)
+      .json({ message: error.message });
+  }
+};
+
+const getCampaignDetail: RequestHandler = async (
+  req: Request,
+  res: Response
+) => {
+  log.info("get campaign detail called");
+  try {
+    const { id } = req.query;
+    const campaignData = await db.query(
+      "select *, campaign.id as id, campaign_ui.id as ui_id from campaign left join campaign_ui on campaign.id = campaign_ui.campaign_id where campaign.id = $1",
+      [id]
+    );
+
+    return res.status(StatusCodes.OK).json(campaignData.rows);
+  } catch (error: any) {
+    log.error(` get campaign detail error: ${error}`);
+    return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json(error.message);
+  }
+};
+
 const authController = {
   updateCreatorPreferences,
   getCampaign,
@@ -576,6 +623,8 @@ const authController = {
   updateAudience,
   updateTargeting,
   updateAvatar,
+  getNotifications,
+  getCampaignDetail
 };
 
 export default authController;
