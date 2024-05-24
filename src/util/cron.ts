@@ -375,7 +375,7 @@ const dailyAnalyticsUpdate = async () => {
   // Calculate yesterday's date for the report
   const today = new Date();
   const startDate = new Date(today.getFullYear(), today.getMonth(), today.getDate() - 1);
-  const endDate = new Date(today.getFullYear(), today.getMonth(), today.getDate() + 2);
+  const endDate = new Date(today.getFullYear(), today.getMonth(), today.getDate());
   const stD = startDate.toISOString().split('T')[0]; // Format as 'YYYY-MM-DD'
   const enD = endDate.toISOString().split('T')[0];
 
@@ -383,7 +383,8 @@ const dailyAnalyticsUpdate = async () => {
     const client = await initializeClient() as BetaAnalyticsDataClient;
     const propertyId = process.env.GOOGLE_ANALYTIC_PROPERTY_ID as string;
 
-    const response = await runReport(client, propertyId, '2024-02-18', enD);
+    const response = await runReport(client, propertyId, stD, enD);
+    // const response = await runReport(client, propertyId, '2024-02-18', enD);
     if (!response) {
       console.error('Failed to fetch report data');
       return;
@@ -397,7 +398,7 @@ const dailyAnalyticsUpdate = async () => {
 
     for (const campaign of campaigns.rows) {
       let uniqueClicks = 0, totalClicks = 0, verifiedClicks = 0;
-      await db.query('DELETE FROM clicked_history WHERE campaign_id = $1', [campaign.id]);
+      // await db.query('DELETE FROM clicked_history WHERE campaign_id = $1', [campaign.id]);
       for (const item of response.rows) {
         const pageUrl = item.dimensionValues?.[0]?.value ? encodeURIComponent(item.dimensionValues[0].value) : '';
         if (!pageUrl.includes(campaign.uid)) continue;
@@ -443,7 +444,8 @@ const dailyAnalyticsUpdate = async () => {
 
         uniqueClicks += Number(totalUsers);
         totalClicks += Number(screenPageViews);
-        verifiedClicks += (firstUserMedium === 'newsletter' || firstUserMedium === 'referral') && userEngagementDuration > screenPageViews * 0.37 ? Number(totalUsers) : 0;
+        // verifiedClicks += (firstUserMedium === 'newsletter' || firstUserMedium === 'referral') && userEngagementDuration > screenPageViews * 0.37 ? Number(totalUsers) : 0;
+        verifiedClicks = uniqueClicks;
       }
 
       const oneDay = moment().add(-1, 'day').valueOf();
@@ -457,7 +459,9 @@ const dailyAnalyticsUpdate = async () => {
       if (Math.ceil(verifiedClicks * Number(campaign.cpc)) >= Number(campaign.price) && !campaign.complete_date) {
         await db.query('UPDATE campaign SET complete_date = $1 where id = $2', [now, campaign.id]);
       }
-      await db.query('UPDATE campaign set click_count = $1, spent = $2, unique_clicks = $3 WHERE id = $4', [totalClicks, Math.ceil(verifiedClicks * Number(campaign.cpc)), uniqueClicks, campaign.id]);
+      // await db.query('UPDATE campaign set click_count = $1, spent = $2, unique_clicks = $3 WHERE id = $4', [totalClicks, Math.ceil(verifiedClicks * Number(campaign.cpc)), uniqueClicks, campaign.id]);
+      await db.query('UPDATE campaign set click_count = click_count + $1, spent = spent + $2, unique_clicks = unique_clicks + $3 WHERE id = $4', [totalClicks, Math.ceil(verifiedClicks * Number(campaign.cpc)), uniqueClicks, campaign.id]);
+
       console.log(`update finished for campaign:${campaign.id}`);
     }
 
