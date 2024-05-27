@@ -372,6 +372,17 @@ const getPageTitle = async (url: string) => {
 const dailyAnalyticsUpdate = async () => {
   console.log('Running daily analytics update...');
 
+  // set campaign status as running for assigned to publishers.
+  const creatorHis = await db.query('SELECT id, scheduled_date FROM creator_history WHERE state = $1', ['ACCEPTED']);
+  const todayTime = moment().hour(0);
+  for (const item of creatorHis.rows) {
+    const after3days = moment.unix(Number(item.scheduled_date)).add(3, 'days');
+    console.log('after 3 days:', after3days.format('YYYY.MM.DD HH:mm:ss'), 'today:', todayTime.format('YYYY.MM.DD HH:mm:ss'), 'which is ibgger:', after3days > todayTime);
+    if (moment.unix(Number(item.scheduled_date)).add(3, 'days') > todayTime) {
+      await db.query('UPDATE creator_history SET state = $1 WHERE id = $2', ['RUNNING', item.id]);
+    }
+  }
+
   // Calculate yesterday's date for the report
   const today = new Date();
   const startDate = new Date(today.getFullYear(), today.getMonth(), today.getDate() - 1);
