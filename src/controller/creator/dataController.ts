@@ -363,7 +363,7 @@ const getActiveCampaigns: RequestHandler = async (
   try {
     const { creatorId } = req.query;
     const data = await db.query(
-      `SELECT campaign.id as id, campaign_ui.id as ui_id, creator_list.cpc, creator_list.average_unique_click,
+      `SELECT campaign.id as id, campaign_ui.id as ui_id, creator_list.cpc, creator_list.average_unique_click,campaign.uid,
       campaign.email, campaign.name,campaign_ui.headline,campaign_ui.body,campaign_ui.cta,campaign_ui.image,
       campaign_ui.page_url,campaign.demographic,campaign.audience,campaign.position,campaign.region,campaign_ui.conversion,
       campaign.create_time,
@@ -405,7 +405,7 @@ const getCompletedCampaigns: RequestHandler = async (
   try {
     const { creatorId } = req.query;
     const data = await db.query(
-      `SELECT campaign.id as id, campaign_ui.id as ui_id, creator_list.cpc, creator_list.average_unique_click,
+      `SELECT campaign.id as id, campaign_ui.id as ui_id, creator_list.cpc, creator_list.average_unique_click,campaign.uid,
       campaign.email, campaign.name,campaign_ui.headline,campaign_ui.body,campaign_ui.cta,campaign_ui.image,
       campaign_ui.page_url,campaign.demographic,campaign.audience,campaign.position,campaign.region,campaign_ui.conversion,
       campaign.create_time,
@@ -575,7 +575,7 @@ const getNotifications: RequestHandler = async (
       inner join creator_history on campaign.id = creator_history.campaign_id
       inner join creator_list on creator_list.id = creator_history.creator_id
       inner join user_list on campaign.email = user_list.email
-      where creator_list.id = $1 and creator_history.state = 'PENDING'`,
+      where creator_list.id = $1 and creator_history.state not in ('PENDING','REJECTED')`,
       [creatorId]
     );
 
@@ -596,7 +596,22 @@ const getCampaignDetail: RequestHandler = async (
   try {
     const { id } = req.query;
     const campaignData = await db.query(
-      "select *, campaign.id as id, campaign_ui.id as ui_id from campaign left join campaign_ui on campaign.id = campaign_ui.campaign_id where campaign.id = $1",
+      `select  
+      campaign.name,
+      campaign.url,
+      campaign.demographic,
+      campaign.newsletter,
+      campaign.region,
+      campaign.position,
+      campaign.audience,
+      campaign_ui.headline,
+      campaign_ui.body,
+      campaign_ui.cta,
+      campaign_ui.conversion,
+      campaign_ui.page_url AS PageUrl,
+      'https://track.presspool.ai/' || campaign.uid AS TrackingLink
+      from campaign 
+      left join campaign_ui on campaign.id = campaign_ui.campaign_id where campaign.id = $1`,
       [id]
     );
 
@@ -624,7 +639,7 @@ const authController = {
   updateTargeting,
   updateAvatar,
   getNotifications,
-  getCampaignDetail
+  getCampaignDetail,
 };
 
 export default authController;
