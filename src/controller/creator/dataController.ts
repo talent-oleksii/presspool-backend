@@ -609,7 +609,9 @@ const getCampaignDetail: RequestHandler = async (
       campaign_ui.cta,
       campaign_ui.conversion,
       campaign_ui.page_url AS PageUrl,
-      'https://track.presspool.ai/' || campaign.uid AS TrackingLink
+      'https://track.presspool.ai/' || campaign.uid AS TrackingLink,
+      campaign_ui.image,
+      campaign_ui.additional_files
       from campaign 
       left join campaign_ui on campaign.id = campaign_ui.campaign_id where campaign.id = $1`,
       [id]
