@@ -280,7 +280,7 @@ const getReadyToPublish: RequestHandler = async (
     const { creatorId } = req.query;
     const data = await db.query(
       `SELECT creator_history.id as requestId, campaign.id as id, campaign_ui.id as ui_id, creator_list.cpc, creator_list.average_unique_click,campaign.uid,
-      campaign.email, campaign.name,campaign_ui.headline,campaign_ui.body,campaign_ui.cta,campaign_ui.image,
+      campaign.email, campaign.name,campaign_ui.headline,campaign_ui.body,campaign_ui.cta,campaign_ui.image,campaign_ui.additional_files,
       campaign_ui.page_url,campaign.demographic,campaign.audience,campaign.position,campaign.region,campaign_ui.conversion,
       campaign.create_time,
       campaign.start_date,
@@ -364,7 +364,7 @@ const getActiveCampaigns: RequestHandler = async (
     const { creatorId } = req.query;
     const data = await db.query(
       `SELECT campaign.id as id, campaign_ui.id as ui_id, creator_list.cpc, creator_list.average_unique_click,campaign.uid,
-      campaign.email, campaign.name,campaign_ui.headline,campaign_ui.body,campaign_ui.cta,campaign_ui.image,
+      campaign.email, campaign.name,campaign_ui.headline,campaign_ui.body,campaign_ui.cta,campaign_ui.image,campaign_ui.additional_files,
       campaign_ui.page_url,campaign.demographic,campaign.audience,campaign.position,campaign.region,campaign_ui.conversion,
       campaign.create_time,
       campaign.start_date,
@@ -406,7 +406,7 @@ const getCompletedCampaigns: RequestHandler = async (
     const { creatorId } = req.query;
     const data = await db.query(
       `SELECT campaign.id as id, campaign_ui.id as ui_id, creator_list.cpc, creator_list.average_unique_click,campaign.uid,
-      campaign.email, campaign.name,campaign_ui.headline,campaign_ui.body,campaign_ui.cta,campaign_ui.image,
+      campaign.email, campaign.name,campaign_ui.headline,campaign_ui.body,campaign_ui.cta,campaign_ui.image,campaign_ui.additional_files,
       campaign_ui.page_url,campaign.demographic,campaign.audience,campaign.position,campaign.region,campaign_ui.conversion,
       campaign.create_time,
       campaign.start_date,
