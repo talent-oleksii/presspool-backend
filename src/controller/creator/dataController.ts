@@ -279,13 +279,13 @@ const getReadyToPublish: RequestHandler = async (
   try {
     const { creatorId } = req.query;
     const data = await db.query(
-      `SELECT creator_history.id as requestId, campaign.id as id, campaign_ui.id as ui_id, creator_list.cpc, creator_list.average_unique_click,
+      `SELECT creator_history.id as requestId, campaign.id as id, campaign_ui.id as ui_id, creator_list.cpc, creator_list.average_unique_click,campaign.uid,
       campaign.email, campaign.name,campaign_ui.headline,campaign_ui.body,campaign_ui.cta,campaign_ui.image,
       campaign_ui.page_url,campaign.demographic,campaign.audience,campaign.position,campaign.region,campaign_ui.conversion,
       campaign.create_time,
       campaign.start_date,
       campaign.complete_date,
-	  creator_history.scheduled_date,
+	    creator_history.scheduled_date,
       campaign.state,
       campaign.url,
       user_list.company,
@@ -300,7 +300,7 @@ const getReadyToPublish: RequestHandler = async (
       inner join creator_history on creator_history.campaign_id = campaign_creator.campaign_id and creator_history.creator_id = campaign_creator.creator_id
       inner join creator_list on creator_list.id = campaign_creator.creator_id
       inner join user_list on campaign.email = user_list.email
-      where creator_list.id = $1 and campaign.complete_date is null and TO_TIMESTAMP(CAST(creator_history.scheduled_date AS bigint)/1000) < CURRENT_TIMESTAMP
+      where creator_list.id = $1 and campaign.complete_date is null and TO_TIMESTAMP(CAST(creator_history.scheduled_date AS bigint)) > CURRENT_TIMESTAMP and creator_history.state = 'ACCEPTED'
       group by campaign.id, campaign_ui.id, creator_list.cpc,creator_list.average_unique_click,user_list.company, user_list.team_avatar, creator_history.scheduled_date, creator_history.id`,
       [creatorId]
     );
@@ -383,7 +383,7 @@ const getActiveCampaigns: RequestHandler = async (
 	    inner join creator_history on creator_history.campaign_id = campaign_creator.campaign_id and creator_history.creator_id = campaign_creator.creator_id
       inner join creator_list on creator_list.id = campaign_creator.creator_id
       inner join user_list on campaign.email = user_list.email
-      where creator_list.id = $1 and campaign.state = 'active' and campaign.complete_date is null and TO_TIMESTAMP(CAST(creator_history.scheduled_date AS bigint)/1000) > CURRENT_TIMESTAMP
+      where creator_list.id = $1 and campaign.state = 'active' and campaign.complete_date is null and TO_TIMESTAMP(CAST(creator_history.scheduled_date AS bigint)) < CURRENT_TIMESTAMP and creator_history.state = 'RUNNING'
       group by campaign.id, campaign_ui.id, creator_list.cpc,creator_list.average_unique_click,user_list.company, user_list.team_avatar`,
       [creatorId]
     );
