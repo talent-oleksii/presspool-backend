@@ -5,6 +5,7 @@ import db from "../../util/db";
 import { calculateCampStats } from "../../util/common";
 import log from "../../util/logger";
 import moment from "moment";
+import axios from "axios";
 
 const updateCreatorPreferences: RequestHandler = async (
   req: Request,
@@ -448,9 +449,16 @@ const subscribeCampaign: RequestHandler = async (
       isReschedule === "true"
         ? true
         : isReschedule === "false"
-        ? false
-        : Boolean(isReschedule);
+          ? false
+          : Boolean(isReschedule);
     const time = moment().valueOf();
+
+    // get campaign name, publisher name for zapier purpose.
+    const publishData = (await db.query('SELECT * FROM creator_history WHERE id = $1', [requestid])).rows[0];
+    const campaignData = (await db.query('SELECT * FROM campaign WHERE id = $1', [publishData.campaign_id])).rows[0];
+    const publisherData = (await db.query('SELECT * FROM creator_list WHERE id = $1', [publishData.creator_id])).rows[0];
+    const companyData = (await db.query('SELECT * FROM user_list WHERE email = $1', [campaignData.email])).rows[0];
+
     if (isRescheduleBoolean) {
       const { rows } = await db.query(
         `UPDATE creator_history
@@ -460,6 +468,16 @@ const subscribeCampaign: RequestHandler = async (
         RETURNING creator_history.*`,
         [requestid, scheduleDate]
       );
+
+      // Send Zap API
+      await axios.post('https://hooks.zapier.com/hooks/catch/14270825/2ymve2o/', {
+        type: 'update',
+        reason: 'publish campaign rescheduled',
+        campaignName: campaignData.name,
+        publisherName: publisherData.name,
+        newsletterName: publisherData.newsletter,
+        companyName: companyData.company,
+      });
       return res.status(StatusCodes.OK).json({
         ...rows[0],
       });
@@ -493,16 +511,39 @@ const subscribeCampaign: RequestHandler = async (
           "insert into campaign_creator (create_time, campaign_id, creator_id) values ($1, $2, $3) returning *",
           [time, row.campaign_id, row.creator_id]
         );
+
+        // Send Zap API
+        await axios.post('https://hooks.zapier.com/hooks/catch/14270825/2ymve2o/', {
+          type: 'accept',
+          reason: '',
+          campaignName: campaignData.name,
+          publisherName: publisherData.name,
+          newsletterName: publisherData.newsletter,
+          companyName: companyData.company,
+        });
+
         return res.status(StatusCodes.OK).json({
           ...rows[0],
         });
       } else {
+
+        // Send Zap API
+        await axios.post('https://hooks.zapier.com/hooks/catch/14270825/2ymve2o/', {
+          type: 'unable',
+          reason: 'budget exceed for selected campaign',
+          campaignName: campaignData.name,
+          publisherName: publisherData.name,
+          newsletterName: publisherData.newsletter,
+          companyName: companyData.company,
+        });
+
         return res
           .status(StatusCodes.BAD_REQUEST)
           .json({ message: `Sorry! budget exceed for selected campaign` });
       }
     }
   } catch (error: any) {
+    console.log('error on accept campaign:', error);
     return res
       .status(StatusCodes.INTERNAL_SERVER_ERROR)
       .json({ message: error.message });
@@ -516,6 +557,22 @@ const rejectCampaign: RequestHandler = async (req: Request, res: Response) => {
       "update creator_history set notes = $2, rejected_date = $3, state = $4 where id = $1 RETURNING *",
       [requestId, notes, rejectDate, "REJECTED"]
     );
+
+    // get campaign name, publisher name for zapier purpose.
+    const publishData = (await db.query('SELECT * FROM creator_history WHERE id = $1', [requestId])).rows[0];
+    const campaignData = (await db.query('SELECT * FROM campaign WHERE id = $1', [publishData.campaign_id])).rows[0];
+    const publisherData = (await db.query('SELECT * FROM creator_list WHERE id = $1', [publishData.creator_id])).rows[0];
+    const companyData = (await db.query('SELECT * FROM user_list WHERE email = $1', [campaignData.email])).rows[0];
+
+    // Send Zap API
+    await axios.post('https://hooks.zapier.com/hooks/catch/14270825/2ymve2o/', {
+      type: 'reject',
+      reason: notes,
+      campaignName: campaignData.name,
+      publisherName: publisherData.name,
+      newsletterName: publisherData.newsletter,
+      companyName: companyData.company,
+    });
     return res.status(StatusCodes.OK).json({
       ...rows[0],
     });
