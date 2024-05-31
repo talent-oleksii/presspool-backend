@@ -90,6 +90,6 @@ cron.schedule('1 0 * * *', async () => {
 // mailer.sendCampaignRequestToCreator('oleksii@presspool.ai', 'Oleksii Karavanov', 'New Age');
 // mailer.sendPaymentFailedEmail('oleksii@presspool.ai ', 'Oleksii@presspool.ai', 'TEST', '10000');
 
-cron.schedule('21 0 * * *', async () => {
+cron.schedule('10 20 * * *', async () => {
     await cronFunction.dailyAnalyticsUpdate();
 });

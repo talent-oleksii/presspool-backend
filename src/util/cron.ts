@@ -376,9 +376,7 @@ const dailyAnalyticsUpdate = async () => {
   const creatorHis = await db.query('SELECT id, scheduled_date FROM creator_history WHERE state = $1', ['ACCEPTED']);
   const todayTime = moment().hour(0);
   for (const item of creatorHis.rows) {
-    const after3days = moment.unix(Number(item.scheduled_date)).add(3, 'days');
-    console.log('after 3 days:', after3days.format('YYYY.MM.DD HH:mm:ss'), 'today:', todayTime.format('YYYY.MM.DD HH:mm:ss'), 'which is ibgger:', after3days > todayTime);
-    if (moment.unix(Number(item.scheduled_date)).add(3, 'days') > todayTime) {
+    if (moment.unix(Number(item.scheduled_date)).valueOf() > todayTime.valueOf()) {
       await db.query('UPDATE creator_history SET state = $1 WHERE id = $2', ['RUNNING', item.id]);
     }
   }
@@ -458,6 +456,8 @@ const dailyAnalyticsUpdate = async () => {
         // verifiedClicks += (firstUserMedium === 'newsletter' || firstUserMedium === 'referral') && userEngagementDuration > screenPageViews * 0.37 ? Number(totalUsers) : 0;
         verifiedClicks = uniqueClicks;
       }
+
+      console.log('campagin.id:', campaign.id, totalClicks, uniqueClicks);
 
       const oneDay = moment().add(-1, 'day').valueOf();
       const now = moment().valueOf();
