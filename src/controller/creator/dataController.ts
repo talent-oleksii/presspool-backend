@@ -469,9 +469,12 @@ const subscribeCampaign: RequestHandler = async (
       ])
     ).rows[0];
     const publisherData = (
-      await db.query("SELECT * FROM creator_list WHERE id = $1", [
-        publishData.creator_id,
-      ])
+      await db.query(
+        `SELECT * FROM creator_list
+        inner join publication on publication.publisher_id = creator_list.id 
+        WHERE id = $1`,
+        [publishData.creator_id]
+      )
     ).rows[0];
     const companyData = (
       await db.query("SELECT * FROM user_list WHERE email = $1", [
@@ -599,9 +602,12 @@ const rejectCampaign: RequestHandler = async (req: Request, res: Response) => {
       ])
     ).rows[0];
     const publisherData = (
-      await db.query("SELECT * FROM creator_list WHERE id = $1", [
-        publishData.creator_id,
-      ])
+      await db.query(
+        `SELECT * FROM creator_list
+        inner join publication on publication.publisher_id = creator_list.id 
+        WHERE id = $1`,
+        [publishData.creator_id]
+      )
     ).rows[0];
     const companyData = (
       await db.query("SELECT * FROM user_list WHERE email = $1", [
