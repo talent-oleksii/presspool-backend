@@ -71,4 +71,8 @@ router.get('/data/campaign', campaign.getCampaign);
 router.post('/invite', adminData.inviteClient);
 router.post('/invite-am', adminData.inviteAccountManager);
 
+router.get('/getPublications', adminData.getPublications);
+router.put('/approvePublication', adminData.approvePublication);
+router.put('/rejectPublication', adminData.rejectPublication);
+
 export default router;

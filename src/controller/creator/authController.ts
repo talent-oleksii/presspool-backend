@@ -36,10 +36,10 @@ const login: RequestHandler = async (req: Request, res: Response) => {
     } else {
       return res
         .status(StatusCodes.NOT_FOUND)
-        .json({ message: `User with email: ${email} not exists` });
+        .json({ message: `Publisher with email: ${email} not exists` });
     }
   } catch (error: any) {
-    console.log("creator login error: ", error.message);
+    console.log("Publisher login error: ", error.message);
     return res
       .status(StatusCodes.INTERNAL_SERVER_ERROR)
       .json({ message: error.message });
@@ -57,13 +57,17 @@ const signup: RequestHandler = async (req: Request, res: Response) => {
     if (rows.length >= 1) {
       return res
         .status(StatusCodes.CONFLICT)
-        .json({ message: `Creator with email: ${email} already exists` });
+        .json({ message: `Publisher with email: ${email} already exists` });
     } else {
       const hash = bcrypt.hashSync(password.toString(), 10);
       const time = moment().valueOf();
       const { rows } = await db.query(
-        "insert into creator_list (create_time, name, email, password, newsletter, verified, user_type, email_verified, website_url) values ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING *",
-        [time, fullName, email, hash, newsletter, 0, "creator", 0, website_url]
+        "insert into creator_list (create_time, name, email, password, verified, user_type, email_verified) values ($1, $2, $3, $4, $5, $6, $7) RETURNING *",
+        [time, fullName, email, hash, 0, "creator", 1]
+      );
+      await db.query(
+        "insert into publication (create_time, newsletter, website_url, publisher_id, state) values ($1, $2, $3,$4,$5) RETURNING *",
+        [time, newsletter, website_url, rows[0].id, "PENDING"]
       );
       const token = generateToken({
         id: rows[0].id,
@@ -76,8 +80,6 @@ const signup: RequestHandler = async (req: Request, res: Response) => {
       // });
       return res.status(StatusCodes.OK).json({
         ...rows[0],
-        verified: 0,
-        email_verified: 0,
         token,
       });
     }
@@ -126,9 +128,10 @@ const sendPasswordEmail: RequestHandler = async (
   try {
     const { email } = req.body;
 
-    const isExist = await db.query("select * from creator_list where email = $1", [
-      email,
-    ]);
+    const isExist = await db.query(
+      "select * from creator_list where email = $1",
+      [email]
+    );
 
     if (isExist.rows.length <= 0) {
       return res
@@ -179,17 +182,22 @@ const verifyPasswordEmail: RequestHandler = async (
 };
 
 const changePassword: RequestHandler = async (req: Request, res: Response) => {
-  console.log('password reset called');
+  console.log("password reset called");
   try {
-      const { email, password } = req.body;
-      console.log('eee:', email, password);
-      const hash = bcrypt.hashSync(password.toString(), 10);
-      await db.query('UPDATE creator_list set password = $1 where email = $2', [hash, email]);
+    const { email, password } = req.body;
+    console.log("eee:", email, password);
+    const hash = bcrypt.hashSync(password.toString(), 10);
+    await db.query("UPDATE creator_list set password = $1 where email = $2", [
+      hash,
+      email,
+    ]);
 
-      return res.status(StatusCodes.OK).json('ok');
+    return res.status(StatusCodes.OK).json("ok");
   } catch (error: any) {
-      console.log('error:', error);
-      return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ message: error.message });
+    console.log("error:", error);
+    return res
+      .status(StatusCodes.INTERNAL_SERVER_ERROR)
+      .json({ message: error.message });
   }
 };
 
@@ -199,9 +207,7 @@ const authController = {
   getCreatorDetail,
   sendPasswordEmail,
   verifyPasswordEmail,
-  changePassword
+  changePassword,
 };
 
 export default authController;
-
-
