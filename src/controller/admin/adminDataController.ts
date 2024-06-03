@@ -542,12 +542,16 @@ const getCampaignsByClient: RequestHandler = async (
 const getPublications: RequestHandler = async (req: Request, res: Response) => {
   console.log("get publications called");
   try {
-    const publications = await db.query(
-      `SELECT publication.*,creator_list.id,creator_list.name,creator_list.email FROM public.publication
-      inner join creator_list on publication.publisher_id = creator_list.id
-      ORDER BY publication.publication_id DESC`
-    );
+    const { state } = req.query;
+    console.log(state);
+    let query = `SELECT publication.*,creator_list.id,creator_list.name,creator_list.email FROM public.publication
+    inner join creator_list on publication.publisher_id = creator_list.id`;
+    if (state) {
+      query += ` where publication.state = $1`;
+    }
+    query += ` ORDER BY publication.publication_id DESC`;
 
+    const publications = await db.query(query, state ? [state] : []);
     return res.status(StatusCodes.OK).json(publications.rows);
   } catch (error: any) {
     console.log("get campaign error:", error.message);
