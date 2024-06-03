@@ -135,8 +135,9 @@ const getDashboardOverviewData: RequestHandler = async (
       console.log(`Difference in days: ${differenceInDays}`);
       console.log(`Prev: ${prevDate}`);
 
-      clickedHistoryQuery += ` and TO_TIMESTAMP(CAST(create_time AS bigint)/1000) BETWEEN ${values.length ? `$2 and $3` : `$1 and $2`
-        }`;
+      clickedHistoryQuery += ` and TO_TIMESTAMP(CAST(create_time AS bigint)/1000) BETWEEN ${
+        values.length ? `$2 and $3` : `$1 and $2`
+      }`;
       values = [...values, formattedFromDate, formattedToDate];
       prevQueryValues = [...prevQueryValues, prevDate, formattedFromDate];
     }
@@ -538,6 +539,73 @@ const getCampaignsByClient: RequestHandler = async (
   }
 };
 
+const getPublications: RequestHandler = async (req: Request, res: Response) => {
+  console.log("get publications called");
+  try {
+    const publications = await db.query(
+      `SELECT publication.*,creator_list.id,creator_list.name,creator_list.email FROM public.publication
+      inner join creator_list on publication.publisher_id = creator_list.id
+      ORDER BY publication.publication_id DESC`
+    );
+
+    return res.status(StatusCodes.OK).json(publications.rows);
+  } catch (error: any) {
+    console.log("get campaign error:", error.message);
+    return res
+      .status(StatusCodes.INTERNAL_SERVER_ERROR)
+      .json({ message: error.message });
+  }
+};
+
+const approvePublication: RequestHandler = async (
+  req: Request,
+  res: Response
+) => {
+  console.log("approved publication called");
+  try {
+    const { publicationId } = req.body;
+    const { rows } = await db.query(
+      `UPDATE publication
+      SET state = $2
+      WHERE publication_id = $1
+      RETURNING *`,
+      [publicationId, "APPROVED"]
+    );
+
+    return res.status(StatusCodes.OK).json(rows[0]);
+  } catch (error: any) {
+    console.log("get campaign error:", error.message);
+    return res
+      .status(StatusCodes.INTERNAL_SERVER_ERROR)
+      .json({ message: error.message });
+  }
+};
+
+const rejectPublication: RequestHandler = async (
+  req: Request,
+  res: Response
+) => {
+  console.log("reject publication called");
+  try {
+    const time = moment().valueOf();
+    const { publicationId, rejectedNotes } = req.body;
+    const { rows } = await db.query(
+      `UPDATE publication
+      SET state = $2, rejected_date = $3, rejected_notes = $4
+      WHERE publication_id = $1
+      RETURNING *`,
+      [publicationId, "REJECTED", time, rejectedNotes]
+    );
+
+    return res.status(StatusCodes.OK).json(rows[0]);
+  } catch (error: any) {
+    console.log("get campaign error:", error.message);
+    return res
+      .status(StatusCodes.INTERNAL_SERVER_ERROR)
+      .json({ message: error.message });
+  }
+};
+
 const adminData = {
   getDashboardOverviewData,
   getDashboardCampaignList,
@@ -556,6 +624,9 @@ const adminData = {
   getGuide,
   deleteGuide,
   getNewsletter,
+  getPublications,
+  approvePublication,
+  rejectPublication,
 };
 
 export default adminData;

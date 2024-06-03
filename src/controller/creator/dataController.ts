@@ -14,28 +14,25 @@ const updateCreatorPreferences: RequestHandler = async (
   console.log("creator login api called");
   try {
     const {
-      audienceSize,
       audience,
       industry,
       position,
       geography,
       averageUniqueClick,
       cpc,
-      creatorId,
+      publicationId,
       subscribers,
     } = req.body;
     const { rows } = await db.query(
-      "update creator_list set audience_size = $2,audience= $3,industry= $4,position=$5,geography=$6,average_unique_click=$7,cpc=$8, email_verified= $9,total_subscribers=$10 where id = $1 RETURNING *",
+      "update publication set audience= $2,industry= $3,position=$4,geography=$5,average_unique_click=$6,cpc=$7,total_subscribers=$8 where publication_id = $1 RETURNING *",
       [
-        creatorId,
-        audienceSize,
+        publicationId,
         audience,
         JSON.stringify(industry),
         JSON.stringify(position),
         JSON.stringify(geography),
         averageUniqueClick,
         cpc,
-        1,
         subscribers,
       ]
     );
@@ -57,7 +54,7 @@ const updateAudienceSize: RequestHandler = async (
   try {
     const { creatorId, subscribers } = req.body;
     const { rows } = await db.query(
-      "update creator_list set total_subscribers = $2 where id = $1 RETURNING *",
+      "update publication set total_subscribers = $2 where publication_id = $1 RETURNING *",
       [creatorId, subscribers]
     );
     return res.status(StatusCodes.OK).json({
@@ -75,7 +72,7 @@ const updateAudience: RequestHandler = async (req: Request, res: Response) => {
   try {
     const { creatorId, audience } = req.body;
     const { rows } = await db.query(
-      "update creator_list set audience = $2 where id = $1 RETURNING *",
+      "update publication set audience = $2 where publication_id = $1 RETURNING *",
       [creatorId, audience]
     );
     return res.status(StatusCodes.OK).json({
@@ -99,7 +96,7 @@ const updateTargeting: RequestHandler = async (req: Request, res: Response) => {
       creatorId,
     } = req.body;
     const { rows } = await db.query(
-      "update creator_list set industry= $2,position=$3,geography=$4,average_unique_click=$5,cpc=$6 where id = $1 RETURNING *",
+      "update publication set industry= $2,position=$3,geography=$4,average_unique_click=$5,cpc=$6 where publication_id = $1 RETURNING *",
       [
         creatorId,
         JSON.stringify(industry),
@@ -128,10 +125,10 @@ const updateSubscribeProof: RequestHandler = async (
     const proof = (req.files as any)["subscriber_proof"]
       ? (req.files as any)["subscriber_proof"][0].location
       : null;
-    const { creatorId } = req.body;
+    const { publicationId } = req.body;
     const { rows } = await db.query(
-      "update creator_list set proof_image = $2 where id = $1 RETURNING *",
-      [creatorId, proof]
+      "update publication set proof_image = $2 where publication_id = $1 RETURNING *",
+      [publicationId, proof]
     );
     return res.status(StatusCodes.OK).json({
       ...rows[0],
@@ -177,7 +174,8 @@ const getCampaign: RequestHandler = async (req: Request, res: Response) => {
       result.rows.map((item: any) => Number(item.id)),
     ];
     let clickedHistoryQuery = `SELECT ch.create_time, ch.id, ch.campaign_id, ch.count, ch.ip, ch.unique_click, ch.duration, ch.user_medium FROM clicked_history ch
-      inner join creator_list cl on cl.newsletter = ch.newsletter_id
+      inner join publication on publication.newsletter = ch.newsletter_id 
+      inner join creator_list cl on publication.publisher_id = cl.id
       WHERE cl.id = $1 and campaign_id = ANY($2)`;
     let prevRangeClickedHistoryQuery = null;
     if (from && to) {
@@ -196,7 +194,8 @@ const getCampaign: RequestHandler = async (req: Request, res: Response) => {
       values = [...values, formattedFromDate, formattedToDate];
       prevValues = [...prevValues, prevDate, formattedFromDate];
       prevRangeClickedHistoryQuery = `SELECT ch.create_time, ch.id, ch.campaign_id, ch.count, ch.ip, ch.unique_click, ch.duration, ch.user_medium FROM clicked_history ch
-        inner join creator_list cl on cl.newsletter = ch.newsletter_id
+      inner join publication on publication.newsletter = ch.newsletter_id 
+      inner join creator_list cl on publication.publisher_id = cl.id
         WHERE cl.id = $1 and campaign_id = ANY($2) and TO_TIMESTAMP(CAST(create_time AS bigint)/1000) BETWEEN $3 and $4`;
     }
     log.info(`query: ${clickedHistoryQuery}, values; ${values}`);
@@ -229,7 +228,8 @@ const getNewsletter: RequestHandler = async (req: Request, res: Response) => {
     let query = `SELECT ch.newsletter_id name,camp.id, SUM(ch.count) AS total_clicks, SUM(ch.unique_click) unique_clicks, SUM(CASE WHEN (ch.user_medium = 'newsletter' OR ch.user_medium = 'referral') AND ch.duration > ch.count * 0.37 AND ch.duration > 0  THEN ch.unique_click ELSE 0 END) verified_clicks FROM public.clicked_history ch
     INNER JOIN public.campaign camp on ch.campaign_id = camp.id
     inner join campaign_creator on camp.id = campaign_creator.campaign_id
-    inner join creator_list cl on cl.newsletter = ch.newsletter_id 
+    inner join publication on publication.newsletter = ch.newsletter_id 
+    inner join creator_list cl on publication.publisher_id = cl.id
     where campaign_creator.creator_id = $1`;
 
     if (from && to) {
@@ -280,7 +280,7 @@ const getReadyToPublish: RequestHandler = async (
   try {
     const { creatorId } = req.query;
     const data = await db.query(
-      `SELECT creator_history.id as requestId, campaign.id as id, campaign_ui.id as ui_id, creator_list.cpc, creator_list.average_unique_click,campaign.uid,
+      `SELECT creator_history.id as requestId, campaign.id as id, campaign_ui.id as ui_id, publication.cpc, publication.average_unique_click,campaign.uid,
       campaign.email, campaign.name,campaign_ui.headline,campaign_ui.body,campaign_ui.cta,campaign_ui.image,campaign_ui.additional_files,
       campaign_ui.page_url,campaign.demographic,campaign.audience,campaign.position,campaign.region,campaign_ui.conversion,
       campaign.create_time,
@@ -300,9 +300,10 @@ const getReadyToPublish: RequestHandler = async (
       inner join campaign_creator on campaign.id = campaign_creator.campaign_id
       inner join creator_history on creator_history.campaign_id = campaign_creator.campaign_id and creator_history.creator_id = campaign_creator.creator_id
       inner join creator_list on creator_list.id = campaign_creator.creator_id
+      inner join publication on publication.publisher_id = creator_list.id
       inner join user_list on campaign.email = user_list.email
       where creator_list.id = $1 and campaign.complete_date is null and TO_TIMESTAMP(CAST(creator_history.scheduled_date AS bigint)) > CURRENT_TIMESTAMP and creator_history.state = 'ACCEPTED'
-      group by campaign.id, campaign_ui.id, creator_list.cpc,creator_list.average_unique_click,user_list.company, user_list.team_avatar, creator_history.scheduled_date, creator_history.id`,
+      group by campaign.id, campaign_ui.id, publication.cpc,publication.average_unique_click,user_list.company, user_list.team_avatar, creator_history.scheduled_date, creator_history.id`,
       [creatorId]
     );
 
@@ -320,7 +321,7 @@ const getNewRequests: RequestHandler = async (req: Request, res: Response) => {
   try {
     const { creatorId } = req.query;
     const data = await db.query(
-      `SELECT creator_history.id as requestId,  campaign.id as id, campaign_ui.id as ui_id, creator_list.cpc, creator_list.average_unique_click,campaign.uid,
+      `SELECT creator_history.id as requestId,  campaign.id as id, campaign_ui.id as ui_id, publication.cpc, publication.average_unique_click,campaign.uid,
       campaign.email, campaign.name,campaign_ui.headline,campaign_ui.body,campaign_ui.cta,campaign_ui.image,campaign_ui.additional_files,
       campaign_ui.page_url,campaign.demographic,campaign.audience,campaign.position,campaign.region,campaign_ui.conversion,
       campaign.create_time,
@@ -338,12 +339,15 @@ const getNewRequests: RequestHandler = async (req: Request, res: Response) => {
       left join clicked_history on clicked_history.campaign_id = campaign.id
       inner join creator_history on campaign.id = creator_history.campaign_id
       inner join creator_list on creator_list.id = creator_history.creator_id
+      inner join publication on publication.publisher_id = creator_list.id
       inner join user_list on campaign.email = user_list.email
       where creator_list.id = $1 and creator_history.state = 'PENDING' and campaign.complete_date is null and campaign.use_creator = true and campaign.state = 'active' 
 	    and campaign.remaining_presspool_budget > 
-	  	(SELECT creator_list.average_unique_click * creator_list.cpc 
-        FROM creator_list where creator_list.id = creator_history.creator_id)
-      group by campaign.id, campaign_ui.id, creator_list.cpc,creator_list.average_unique_click,user_list.company, user_list.team_avatar, creator_history.id`,
+	  	(SELECT publication.average_unique_click * publication.cpc 
+        FROM creator_list 
+        inner join publication on publication.publisher_id = creator_list.id
+        where creator_list.id = creator_history.creator_id)
+      group by campaign.id, campaign_ui.id, publication.cpc,publication.average_unique_click,user_list.company, user_list.team_avatar, creator_history.id`,
       [creatorId]
     );
 
@@ -364,7 +368,7 @@ const getActiveCampaigns: RequestHandler = async (
   try {
     const { creatorId } = req.query;
     const data = await db.query(
-      `SELECT campaign.id as id, campaign_ui.id as ui_id, creator_list.cpc, creator_list.average_unique_click,campaign.uid,
+      `SELECT campaign.id as id, campaign_ui.id as ui_id, publication.cpc, publication.average_unique_click,campaign.uid,
       campaign.email, campaign.name,campaign_ui.headline,campaign_ui.body,campaign_ui.cta,campaign_ui.image,campaign_ui.additional_files,
       campaign_ui.page_url,campaign.demographic,campaign.audience,campaign.position,campaign.region,campaign_ui.conversion,
       campaign.create_time,
@@ -383,9 +387,10 @@ const getActiveCampaigns: RequestHandler = async (
       inner join campaign_creator on campaign.id = campaign_creator.campaign_id
 	    inner join creator_history on creator_history.campaign_id = campaign_creator.campaign_id and creator_history.creator_id = campaign_creator.creator_id
       inner join creator_list on creator_list.id = campaign_creator.creator_id
+      inner join publication on publication.publisher_id = creator_list.id
       inner join user_list on campaign.email = user_list.email
       where creator_list.id = $1 and campaign.state = 'active' and campaign.complete_date is null and TO_TIMESTAMP(CAST(creator_history.scheduled_date AS bigint)) < CURRENT_TIMESTAMP and creator_history.state = 'RUNNING'
-      group by campaign.id, campaign_ui.id, creator_list.cpc,creator_list.average_unique_click,user_list.company, user_list.team_avatar`,
+      group by campaign.id, campaign_ui.id, publication.cpc,publication.average_unique_click,user_list.company, user_list.team_avatar`,
       [creatorId]
     );
 
@@ -406,7 +411,7 @@ const getCompletedCampaigns: RequestHandler = async (
   try {
     const { creatorId } = req.query;
     const data = await db.query(
-      `SELECT campaign.id as id, campaign_ui.id as ui_id, creator_list.cpc, creator_list.average_unique_click,campaign.uid,
+      `SELECT campaign.id as id, campaign_ui.id as ui_id, publication.cpc, publication.average_unique_click,campaign.uid,
       campaign.email, campaign.name,campaign_ui.headline,campaign_ui.body,campaign_ui.cta,campaign_ui.image,campaign_ui.additional_files,
       campaign_ui.page_url,campaign.demographic,campaign.audience,campaign.position,campaign.region,campaign_ui.conversion,
       campaign.create_time,
@@ -424,9 +429,10 @@ const getCompletedCampaigns: RequestHandler = async (
       left join clicked_history on clicked_history.campaign_id = campaign.id
       inner join campaign_creator on campaign.id = campaign_creator.campaign_id
       inner join creator_list on creator_list.id = campaign_creator.creator_id
+      inner join publication on publication.publisher_id = creator_list.id
       inner join user_list on campaign.email = user_list.email
       where creator_list.id = $1 and campaign.state = 'active' and campaign.complete_date is not null
-      group by campaign.id, campaign_ui.id, creator_list.cpc,creator_list.average_unique_click,user_list.company, user_list.team_avatar`,
+      group by campaign.id, campaign_ui.id, publication.cpc,publication.average_unique_click,user_list.company, user_list.team_avatar`,
       [creatorId]
     );
 
@@ -449,15 +455,29 @@ const subscribeCampaign: RequestHandler = async (
       isReschedule === "true"
         ? true
         : isReschedule === "false"
-          ? false
-          : Boolean(isReschedule);
+        ? false
+        : Boolean(isReschedule);
     const time = moment().valueOf();
 
     // get campaign name, publisher name for zapier purpose.
-    const publishData = (await db.query('SELECT * FROM creator_history WHERE id = $1', [requestid])).rows[0];
-    const campaignData = (await db.query('SELECT * FROM campaign WHERE id = $1', [publishData.campaign_id])).rows[0];
-    const publisherData = (await db.query('SELECT * FROM creator_list WHERE id = $1', [publishData.creator_id])).rows[0];
-    const companyData = (await db.query('SELECT * FROM user_list WHERE email = $1', [campaignData.email])).rows[0];
+    const publishData = (
+      await db.query("SELECT * FROM creator_history WHERE id = $1", [requestid])
+    ).rows[0];
+    const campaignData = (
+      await db.query("SELECT * FROM campaign WHERE id = $1", [
+        publishData.campaign_id,
+      ])
+    ).rows[0];
+    const publisherData = (
+      await db.query("SELECT * FROM creator_list WHERE id = $1", [
+        publishData.creator_id,
+      ])
+    ).rows[0];
+    const companyData = (
+      await db.query("SELECT * FROM user_list WHERE email = $1", [
+        campaignData.email,
+      ])
+    ).rows[0];
 
     if (isRescheduleBoolean) {
       const { rows } = await db.query(
@@ -470,14 +490,17 @@ const subscribeCampaign: RequestHandler = async (
       );
 
       // Send Zap API
-      await axios.post('https://hooks.zapier.com/hooks/catch/14270825/2ymve2o/', {
-        type: 'update',
-        reason: 'publish campaign rescheduled',
-        campaignName: campaignData.name,
-        publisherName: publisherData.name,
-        newsletterName: publisherData.newsletter,
-        companyName: companyData.company,
-      });
+      await axios.post(
+        "https://hooks.zapier.com/hooks/catch/14270825/2ymve2o/",
+        {
+          type: "update",
+          reason: "publish campaign rescheduled",
+          campaignName: campaignData.name,
+          publisherName: publisherData.name,
+          newsletterName: publisherData.newsletter,
+          companyName: companyData.company,
+        }
+      );
       return res.status(StatusCodes.OK).json({
         ...rows[0],
       });
@@ -489,8 +512,10 @@ const subscribeCampaign: RequestHandler = async (
         FROM campaign
         WHERE creator_history.id = $1 
           AND campaign.remaining_presspool_budget >= (
-            SELECT creator_list.average_unique_click * creator_list.cpc 
-            FROM creator_list where creator_list.id = creator_history.creator_id
+            SELECT publication.average_unique_click * publication.cpc 
+            FROM creator_list 
+            inner join publication on publication.publisher_id = creator_list.id
+            where creator_list.id = creator_history.creator_id
           )
         RETURNING creator_history.*`,
         [requestid, "ACCEPTED", scheduleDate]
@@ -502,6 +527,7 @@ const subscribeCampaign: RequestHandler = async (
           SET remaining_presspool_budget = remaining_presspool_budget - (
               SELECT average_unique_click * cpc
               FROM creator_list
+              inner join publication on publication.publisher_id = creator_list.id
               WHERE creator_list.id = $2
           )
           WHERE campaign.id = $1`,
@@ -513,29 +539,34 @@ const subscribeCampaign: RequestHandler = async (
         );
 
         // Send Zap API
-        await axios.post('https://hooks.zapier.com/hooks/catch/14270825/2ymve2o/', {
-          type: 'accept',
-          reason: '',
-          campaignName: campaignData.name,
-          publisherName: publisherData.name,
-          newsletterName: publisherData.newsletter,
-          companyName: companyData.company,
-        });
+        await axios.post(
+          "https://hooks.zapier.com/hooks/catch/14270825/2ymve2o/",
+          {
+            type: "accept",
+            reason: "",
+            campaignName: campaignData.name,
+            publisherName: publisherData.name,
+            newsletterName: publisherData.newsletter,
+            companyName: companyData.company,
+          }
+        );
 
         return res.status(StatusCodes.OK).json({
           ...rows[0],
         });
       } else {
-
         // Send Zap API
-        await axios.post('https://hooks.zapier.com/hooks/catch/14270825/2ymve2o/', {
-          type: 'unable',
-          reason: 'budget exceed for selected campaign',
-          campaignName: campaignData.name,
-          publisherName: publisherData.name,
-          newsletterName: publisherData.newsletter,
-          companyName: companyData.company,
-        });
+        await axios.post(
+          "https://hooks.zapier.com/hooks/catch/14270825/2ymve2o/",
+          {
+            type: "unable",
+            reason: "budget exceed for selected campaign",
+            campaignName: campaignData.name,
+            publisherName: publisherData.name,
+            newsletterName: publisherData.newsletter,
+            companyName: companyData.company,
+          }
+        );
 
         return res
           .status(StatusCodes.BAD_REQUEST)
@@ -543,7 +574,7 @@ const subscribeCampaign: RequestHandler = async (
       }
     }
   } catch (error: any) {
-    console.log('error on accept campaign:', error);
+    console.log("error on accept campaign:", error);
     return res
       .status(StatusCodes.INTERNAL_SERVER_ERROR)
       .json({ message: error.message });
@@ -559,14 +590,28 @@ const rejectCampaign: RequestHandler = async (req: Request, res: Response) => {
     );
 
     // get campaign name, publisher name for zapier purpose.
-    const publishData = (await db.query('SELECT * FROM creator_history WHERE id = $1', [requestId])).rows[0];
-    const campaignData = (await db.query('SELECT * FROM campaign WHERE id = $1', [publishData.campaign_id])).rows[0];
-    const publisherData = (await db.query('SELECT * FROM creator_list WHERE id = $1', [publishData.creator_id])).rows[0];
-    const companyData = (await db.query('SELECT * FROM user_list WHERE email = $1', [campaignData.email])).rows[0];
+    const publishData = (
+      await db.query("SELECT * FROM creator_history WHERE id = $1", [requestId])
+    ).rows[0];
+    const campaignData = (
+      await db.query("SELECT * FROM campaign WHERE id = $1", [
+        publishData.campaign_id,
+      ])
+    ).rows[0];
+    const publisherData = (
+      await db.query("SELECT * FROM creator_list WHERE id = $1", [
+        publishData.creator_id,
+      ])
+    ).rows[0];
+    const companyData = (
+      await db.query("SELECT * FROM user_list WHERE email = $1", [
+        campaignData.email,
+      ])
+    ).rows[0];
 
     // Send Zap API
-    await axios.post('https://hooks.zapier.com/hooks/catch/14270825/2ymve2o/', {
-      type: 'reject',
+    await axios.post("https://hooks.zapier.com/hooks/catch/14270825/2ymve2o/", {
+      type: "reject",
       reason: notes,
       campaignName: campaignData.name,
       publisherName: publisherData.name,
@@ -596,17 +641,17 @@ const updateAvatar: RequestHandler = async (req: Request, res: Response) => {
     const teamAvatar = (req.files as any)["team_avatar"]
       ? (req.files as any)["team_avatar"][0].location
       : null;
-    const { creatorId } = req.body;
+    const { publicationId } = req.body;
     if (avatar) {
       await db.query(
-        "update creator_list set avatar = $2 where id = $1 RETURNING *",
-        [creatorId, avatar]
+        "update publication set avatar = $2 where publication_id = $1 RETURNING *",
+        [publicationId, avatar]
       );
     }
     if (teamAvatar) {
       await db.query(
-        "update creator_list set team_avatar = $2 where id = $1 RETURNING *",
-        [creatorId, teamAvatar]
+        "update publication set team_avatar = $2 where publication_id = $1 RETURNING *",
+        [publicationId, teamAvatar]
       );
     }
 
@@ -681,6 +726,44 @@ const getCampaignDetail: RequestHandler = async (
   }
 };
 
+const getAllPublications: RequestHandler = async (
+  req: Request,
+  res: Response
+) => {
+  log.info("get all publications called");
+  try {
+    const { creatorId } = req.query;
+    const publishers = await db.query(
+      `SELECT * FROM public.publication where publisher_id = $1`,
+      [creatorId]
+    );
+
+    return res.status(StatusCodes.OK).json(publishers.rows);
+  } catch (error: any) {
+    log.error(` get campaign detail error: ${error}`);
+    return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json(error.message);
+  }
+};
+
+const getPublicationDetail: RequestHandler = async (
+  req: Request,
+  res: Response
+) => {
+  log.info("get all publications called");
+  try {
+    const { publicationId } = req.query;
+    const { rows } = await db.query(
+      `SELECT * FROM public.publication where publication_id = $1`,
+      [publicationId]
+    );
+
+    return res.status(StatusCodes.OK).json(rows[0]);
+  } catch (error: any) {
+    log.error(` get campaign detail error: ${error}`);
+    return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json(error.message);
+  }
+};
+
 const authController = {
   updateCreatorPreferences,
   getCampaign,
@@ -699,6 +782,8 @@ const authController = {
   updateAvatar,
   getNotifications,
   getCampaignDetail,
+  getAllPublications,
+  getPublicationDetail,
 };
 
 export default authController;

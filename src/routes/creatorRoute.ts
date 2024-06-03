@@ -58,5 +58,7 @@ router.put("/scheduleCampaign", data.subscribeCampaign);
 router.put("/rejectCampaign", data.rejectCampaign);
 router.get("/getNotifications", data.getNotifications);
 router.get("/getCampaignDetail", data.getCampaignDetail);
+router.get("/getAllPublications", data.getAllPublications);
+router.get("/getPublicationDetail", data.getPublicationDetail);
 
 export default router;
