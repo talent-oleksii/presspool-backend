@@ -1231,8 +1231,7 @@ const sendPaymentFailedEmail = async (admin: string, email: string, name: string
 
 const sendCreatorWelcomeEmail = async (
   emailAddress: string,
-  userName: string,
-  payload: any
+  userName: string
 ) => {
   try {
     const firstName = userName.split(" ")[0];
@@ -1248,10 +1247,69 @@ const sendCreatorWelcomeEmail = async (
     </div>
       <hr />
       <div style="margin: 20px">
-        <span>Hello ${firstName},</span><br /><br />
-        <span>We are inviting you to join PressPool, where AI meets precision marketing.</span><br /><br />
-        <span>Join us for targeted audience reach and campaign success.</span><br /><br />
-        <p>Click <a href='https://go.presspool.ai/publishers/${payload.creatorId}/onboarding?token=${payload.token}' style="color: #6c63ff; text-decoration:underline;" target="_blank">here</a> to get started!.</p><br /><br />
+        <span>Hi ${userName},</span><br /><br />
+        <span>Thank you for applying to join Presspool.ai!</span><br /><br />
+        <span>We’re excited to review your application to be considered as a publisher on our platform. Our team is dedicated to ensuring a perfect match between companies and newsletters, and we believe you could be a great addition to our community.</span><br /><br />
+        <span style="font-weight: 700;">What’s Next?</span><br/>
+        <span>Our team will carefully review your application and get back to you within 2 business days. In the meantime, if you have any questions, feel free to reach out to <a href="mailto:christian@gopresspool.ai">christian@gopresspool.ai</a>.<span/><br/><br/>
+        <span>Thank you for your interest in <a href="https://go.presspool.ai">Presspool.ai</a>. We look forward to the possibility of working together!</span><br /><br />
+        <span>Best regards,</span><br />
+        <span>Zoe</span>
+      </div>
+      <hr />
+      <div>
+        <div style="text-align: center">
+          <img style="width: 40px; height: 40px" src="https://presspool-upload-images.s3.amazonaws.com/Presspool+Black+Logo.png" alt="logo"/>
+        </div>
+        <div style="text-align: center">
+          <span>@ 2024 Presspool</span>
+        </div>
+      </div>`,
+      textEncoding: "base64",
+      headers: [
+        {
+          key: "X-Application-Developer",
+          value: "Oleksii Karavanov",
+        },
+        {
+          key: "X-Application-Version",
+          value: "v1.0.0",
+        },
+      ],
+    });
+
+    await sendEmail(mailComposer);
+  } catch (error) {
+    log.error(`welcome email seinding error: ${error}`);
+  }
+};
+
+const sendCreatorApproveEmail = async (
+  emailAddress: string,
+  userName: string
+) => {
+  try {
+    const firstName = userName.split(" ")[0];
+    const mailComposer = new MailComposer({
+      from: "Zoe Martinez-PressPool Support Team<zoe@presspool.ai>",
+      to: emailAddress,
+      subject: `Congrats! - ${firstName}`,
+      // text: content,
+      html: `<div>
+      <div style="text-align: center">
+        <img style="width: 115px; height: 40px" src="https://presspool-upload-images.s3.amazonaws.com/logo1.png" alt="logo"/>
+      </div>
+    </div>
+      <hr />
+      <div style="margin: 20px">
+        <span>Hi ${userName},</span><br /><br />
+        <span>Welcome to Presspool.ai!</span><br /><br />
+        <span>We're thrilled to have you onboard. You're now part of a vibrant community dedicated to connecting companies and brands with highly targeted and credible newsletters.</span><br /><br />
+        <span style="font-weight: 700;">Get Started:</span><br/>
+        <span>To begin your journey, <a href="https://go.presspool.ai/publishers/login">click here</a> to sign in and bookmark this link for easy access in the future. Be on the lookout for your first partner opportunity!<span/><br/><br/>
+        <span style="font-weight: 700;">Need Help?</span><br/>
+        <span>For quick feedback, questions, or support, join our <a href="https://join.slack.com/t/publishersupport/shared_invite/zt-2jlz48zu9-GEwvDXYk6IR57u1afRtNFQ">Slack Support channel</a>. Our team is always ready to assist you.<span/><br/><br/>
+        <span>Thank you for joining us, and we look forward to a successful partnership!</span><br /><br />
         <span>Cheers,</span><br />
         <span>Zoe</span>
       </div>
@@ -1285,23 +1343,42 @@ const sendCreatorWelcomeEmail = async (
 
 const sendCampaignRequestToCreator = async (
   emailAddress: string,
-  name: string,
-  campaignName: string,
+  userName: string,
 ) => {
   try {
-    const firstName = name.split(" ")[0];
+    const firstName = userName.split(" ")[0];
     const mailComposer = new MailComposer({
       from: "Zoe Martinez-PressPool Support Team<zoe@presspool.ai>",
       to: emailAddress,
-      subject: `Hello ${firstName}`,
+      subject: `A chance is coming in! - ${firstName}`,
       // text: content,
-      html: `
-      <p>You have a new campaign request waiting for approval! This could be a great opportunity to collaborate with a new client and get their message out there.</p>
-      <a href='https://go.presspool.ai/publishers/dashboard' style="color: #6c63ff; text-decoration:underline;" target="_blank">${campaignName}</a>
-      <p>Please take a moment to review the campaign details. If it's a match, you can accept and schedule the publication. If not, free to decline and provide feedback.<p>
-      <p>Warmly</p>
-      <p>Zoe</p>
-      `,
+      html: `<div>
+      <div style="text-align: center">
+        <img style="width: 115px; height: 40px" src="https://presspool-upload-images.s3.amazonaws.com/logo1.png" alt="logo"/>
+      </div>
+    </div>
+      <hr />
+      <div style="margin: 20px">
+        <span>Hi ${userName},</span><br /><br />
+        <span>Congratulations! A new opportunity is now available in your <a href="https://go.presspool.ai/publishers/dashboard">Presspool.ai dashboard</a>.</span><br /><br />
+        <span>We're thrilled to have you onboard. You're now part of a vibrant community dedicated to connecting companies and brands with highly targeted and credible newsletters.</span><br /><br />
+        <span style="font-weight: 700;">Get Started:</span><br/>
+        <span>To review and accept the opportunity, <a href="https://go.presspool.ai/publishers/login">click here</a> to sign in. Remember to bookmark this link for easy access in the future.<span/><br/><br/>
+        <span style="font-weight: 700;">Need Help?</span><br/>
+        <span>For quick feedback, questions, or support, join our <a href="https://join.slack.com/t/publishersupport/shared_invite/zt-2jlz48zu9-GEwvDXYk6IR57u1afRtNFQ">Slack Support channel</a>. Our team is always ready to assist you.<span/><br/><br/>
+        <span>Thank you for being an integral part of our platform. We look forward to seeing your continued success!</span><br /><br />
+        <span>Cheers,</span><br />
+        <span>Zoe</span>
+      </div>
+      <hr />
+      <div>
+        <div style="text-align: center">
+          <img style="width: 40px; height: 40px" src="https://presspool-upload-images.s3.amazonaws.com/Presspool+Black+Logo.png" alt="logo"/>
+        </div>
+        <div style="text-align: center">
+          <span>@ 2024 Presspool</span>
+        </div>
+      </div>`,
       textEncoding: "base64",
       headers: [
         {
@@ -1344,6 +1421,7 @@ const mailer = {
   showUrl,
   generateToken,
   sendCreatorWelcomeEmail,
+  sendCreatorApproveEmail,
 
   sendCampaignRequestToCreator,
 };

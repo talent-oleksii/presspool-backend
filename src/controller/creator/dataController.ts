@@ -455,8 +455,8 @@ const subscribeCampaign: RequestHandler = async (
       isReschedule === "true"
         ? true
         : isReschedule === "false"
-        ? false
-        : Boolean(isReschedule);
+          ? false
+          : Boolean(isReschedule);
     const time = moment().valueOf();
 
     // get campaign name, publisher name for zapier purpose.
@@ -502,6 +502,7 @@ const subscribeCampaign: RequestHandler = async (
           publisherName: publisherData.name,
           newsletterName: publisherData.newsletter,
           companyName: companyData.company,
+          scheduleDate: moment.unix(scheduleDate).format('YYYY-DD-MM HH:mm:ss'),
         }
       );
       return res.status(StatusCodes.OK).json({

@@ -135,9 +135,8 @@ const getDashboardOverviewData: RequestHandler = async (
       console.log(`Difference in days: ${differenceInDays}`);
       console.log(`Prev: ${prevDate}`);
 
-      clickedHistoryQuery += ` and TO_TIMESTAMP(CAST(create_time AS bigint)/1000) BETWEEN ${
-        values.length ? `$2 and $3` : `$1 and $2`
-      }`;
+      clickedHistoryQuery += ` and TO_TIMESTAMP(CAST(create_time AS bigint)/1000) BETWEEN ${values.length ? `$2 and $3` : `$1 and $2`
+        }`;
       values = [...values, formattedFromDate, formattedToDate];
       prevQueryValues = [...prevQueryValues, prevDate, formattedFromDate];
     }
@@ -571,6 +570,9 @@ const approvePublication: RequestHandler = async (
       RETURNING *`,
       [publicationId, "APPROVED"]
     );
+
+    const data = (await db.query('SELECT publisher.name, publisher.email FROM publication INNER JOIN creator_list as publisher ON publisher.id = publication.publisher_id WHERE publication.publication_id = $1', [publicationId])).rows[0];
+    await mailer.sendCreatorApproveEmail(data.email, data.name);
 
     return res.status(StatusCodes.OK).json(rows[0]);
   } catch (error: any) {

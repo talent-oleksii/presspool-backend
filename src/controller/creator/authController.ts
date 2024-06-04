@@ -74,10 +74,7 @@ const signup: RequestHandler = async (req: Request, res: Response) => {
         email,
         role: rows[0].user_type,
       });
-      // await mailer.sendCreatorWelcomeEmail(email, fullName, {
-      //   creatorId: rows[0].id,
-      //   token: generateToken({ email, expiresIn: "30d" }),
-      // });
+      await mailer.sendCreatorWelcomeEmail(email, fullName);
       return res.status(StatusCodes.OK).json({
         ...rows[0],
         token,
