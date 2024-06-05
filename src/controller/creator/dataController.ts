@@ -36,6 +36,16 @@ const updateCreatorPreferences: RequestHandler = async (
         subscribers,
       ]
     );
+
+    const publisherData = (await db.query('SELECT name, email, newsletter FROM creator_list INNER JOIN publication ON publication.publisher_id = creator_list.id WHERE publication.publication_id = $1', [publicationId])).rows[0];
+
+    // Send Zap notification
+    await axios.post('https://hooks.zapier.com/hooks/catch/14270825/3c3f36l/', {
+      name: publisherData.name,
+      email: publisherData.email,
+      newsletter: publisherData.newsletter,
+    });
+
     return res.status(StatusCodes.OK).json({
       ...rows[0],
     });
