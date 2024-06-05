@@ -389,7 +389,7 @@ const getActiveCampaigns: RequestHandler = async (
       inner join creator_list on creator_list.id = campaign_creator.creator_id
       inner join publication on publication.publisher_id = creator_list.id
       inner join user_list on campaign.email = user_list.email
-      where creator_list.id = $1 and campaign.state = 'active' and campaign.complete_date is null and TO_TIMESTAMP(CAST(creator_history.scheduled_date AS bigint)) < CURRENT_TIMESTAMP and creator_history.state = 'RUNNING'
+      where creator_list.id = $1 and campaign.state = 'active' and campaign.complete_date is null and creator_history.state = 'RUNNING'
       group by campaign.id, campaign_ui.id, publication.cpc,publication.average_unique_click,user_list.company, user_list.team_avatar`,
       [creatorId]
     );
