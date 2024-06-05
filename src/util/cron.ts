@@ -436,6 +436,8 @@ const dailyAnalyticsUpdate = async () => {
         }
         // title = firstUserManualContent;
 
+        if (title === 'beehiiv') title = 'Presspool.ai';
+
         await db.query('INSERT INTO clicked_history (create_time, ip, campaign_id, device, count, unique_click, duration, user_medium, full_url, newsletter_id, region, city) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)', [
           timeOf,
           country,
