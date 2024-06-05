@@ -376,7 +376,7 @@ const dailyAnalyticsUpdate = async () => {
   const creatorHis = await db.query('SELECT id, scheduled_date FROM creator_history WHERE state = $1', ['ACCEPTED']);
   const todayTime = moment().hour(0);
   for (const item of creatorHis.rows) {
-    if (moment.unix(Number(item.scheduled_date)).valueOf() > todayTime.valueOf()) {
+    if (moment.unix(Number(item.scheduled_date)).valueOf() <= todayTime.valueOf()) {
       await db.query('UPDATE creator_history SET state = $1 WHERE id = $2', ['RUNNING', item.id]);
     }
   }
