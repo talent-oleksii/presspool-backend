@@ -302,8 +302,7 @@ const getReadyToPublish: RequestHandler = async (
       user_list.company,
       user_list.team_avatar,
       SUM(clicked_history.count) AS total_clicks, 
-      SUM(clicked_history.unique_click) unique_clicks, 
-      SUM(CASE WHEN (clicked_history.user_medium = 'newsletter' OR clicked_history.user_medium = 'referral') AND clicked_history.duration > clicked_history.count * 0.37 AND clicked_history.duration > 0  THEN clicked_history.unique_click ELSE 0 END) verified_clicks
+      SUM(clicked_history.unique_click) verified_clicks
       from campaign 
       left join campaign_ui on campaign.id = campaign_ui.campaign_id
       left join clicked_history on clicked_history.campaign_id = campaign.id
@@ -389,8 +388,7 @@ const getActiveCampaigns: RequestHandler = async (
       user_list.company,
       user_list.team_avatar,
       SUM(clicked_history.count) AS total_clicks, 
-      SUM(clicked_history.unique_click) unique_clicks, 
-      SUM(CASE WHEN (clicked_history.user_medium = 'newsletter' OR clicked_history.user_medium = 'referral') AND clicked_history.duration > clicked_history.count * 0.37 AND clicked_history.duration > 0  THEN clicked_history.unique_click ELSE 0 END) verified_clicks
+      SUM(clicked_history.unique_click) verified_clicks
       from campaign 
       left join campaign_ui on campaign.id = campaign_ui.campaign_id
       left join clicked_history on clicked_history.campaign_id = campaign.id
@@ -432,8 +430,7 @@ const getCompletedCampaigns: RequestHandler = async (
       user_list.company,
       user_list.team_avatar,
       SUM(clicked_history.count) AS total_clicks, 
-      SUM(clicked_history.unique_click) unique_clicks, 
-      SUM(CASE WHEN (clicked_history.user_medium = 'newsletter' OR clicked_history.user_medium = 'referral') AND clicked_history.duration > clicked_history.count * 0.37 AND clicked_history.duration > 0  THEN clicked_history.unique_click ELSE 0 END) verified_clicks
+      SUM(clicked_history.unique_click) verified_clicks
       from campaign 
       left join campaign_ui on campaign.id = campaign_ui.campaign_id
       left join clicked_history on clicked_history.campaign_id = campaign.id
@@ -465,8 +462,8 @@ const subscribeCampaign: RequestHandler = async (
       isReschedule === "true"
         ? true
         : isReschedule === "false"
-          ? false
-          : Boolean(isReschedule);
+        ? false
+        : Boolean(isReschedule);
     const time = moment().valueOf();
 
     // get campaign name, publisher name for zapier purpose.
@@ -512,7 +509,7 @@ const subscribeCampaign: RequestHandler = async (
           publisherName: publisherData.name,
           newsletterName: publisherData.newsletter,
           companyName: companyData.company,
-          scheduleDate: moment.unix(scheduleDate).format('YYYY-DD-MM HH:mm:ss'),
+          scheduleDate: moment.unix(scheduleDate).format("YYYY-DD-MM HH:mm:ss"),
         }
       );
       return res.status(StatusCodes.OK).json({

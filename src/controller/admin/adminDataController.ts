@@ -1,4 +1,4 @@
-import { RequestHandler, Request, Response } from "express";
+import { RequestHandler, Request, Response, query } from "express";
 
 import db from "../../util/db";
 import { StatusCodes } from "http-status-codes";
@@ -135,8 +135,9 @@ const getDashboardOverviewData: RequestHandler = async (
       console.log(`Difference in days: ${differenceInDays}`);
       console.log(`Prev: ${prevDate}`);
 
-      clickedHistoryQuery += ` and TO_TIMESTAMP(CAST(create_time AS bigint)/1000) BETWEEN ${values.length ? `$2 and $3` : `$1 and $2`
-        }`;
+      clickedHistoryQuery += ` and TO_TIMESTAMP(CAST(create_time AS bigint)/1000) BETWEEN ${
+        values.length ? `$2 and $3` : `$1 and $2`
+      }`;
       values = [...values, formattedFromDate, formattedToDate];
       prevQueryValues = [...prevQueryValues, prevDate, formattedFromDate];
     }
@@ -542,7 +543,6 @@ const getPublications: RequestHandler = async (req: Request, res: Response) => {
   console.log("get publications called");
   try {
     const { state } = req.query;
-    console.log(state);
     let query = `SELECT publication.*,creator_list.id,creator_list.name,creator_list.email FROM public.publication
     inner join creator_list on publication.publisher_id = creator_list.id`;
     if (state) {
@@ -575,7 +575,12 @@ const approvePublication: RequestHandler = async (
       [publicationId, "APPROVED"]
     );
 
-    const data = (await db.query('SELECT publisher.name, publisher.email FROM publication INNER JOIN creator_list as publisher ON publisher.id = publication.publisher_id WHERE publication.publication_id = $1', [publicationId])).rows[0];
+    const data = (
+      await db.query(
+        "SELECT publisher.name, publisher.email FROM publication INNER JOIN creator_list as publisher ON publisher.id = publication.publisher_id WHERE publication.publication_id = $1",
+        [publicationId]
+      )
+    ).rows[0];
     await mailer.sendCreatorApproveEmail(data.email, data.name);
 
     return res.status(StatusCodes.OK).json(rows[0]);
@@ -612,6 +617,91 @@ const rejectPublication: RequestHandler = async (
   }
 };
 
+const getPublicationDetailById: RequestHandler = async (
+  req: Request,
+  res: Response
+) => {
+  console.log("get publications called");
+  try {
+    const { publicationId } = req.query;
+    let query = `SELECT publication.*,creator_list.id,creator_list.name,creator_list.email FROM public.publication
+    inner join creator_list on publication.publisher_id = creator_list.id
+    where publication.publication_id = $1`;
+    const { rows } = await db.query(query, [publicationId]);
+    return res.status(StatusCodes.OK).json(rows[0]);
+  } catch (error: any) {
+    console.log("get campaign error:", error.message);
+    return res
+      .status(StatusCodes.INTERNAL_SERVER_ERROR)
+      .json({ message: error.message });
+  }
+};
+
+const getCampaignsByPublicationId: RequestHandler = async (
+  req: Request,
+  res: Response
+) => {
+  log.info("get all publications called");
+  try {
+    const { publicationId, state } = req.query;
+
+    let query = `SELECT publication.publication_id,creator_history.id as requestId, campaign.id as id, campaign_ui.id as ui_id, publication.cpc, publication.average_unique_click,campaign.uid,
+      campaign.email, campaign.name,campaign_ui.headline,campaign_ui.body,campaign_ui.cta,campaign_ui.image,campaign_ui.additional_files,
+      campaign_ui.page_url,campaign.demographic,campaign.audience,campaign.position,campaign.region,campaign_ui.conversion,
+      campaign.create_time,
+      campaign.start_date,
+      campaign.complete_date,
+      creator_history.scheduled_date,
+      campaign.state,
+      campaign.url,
+      user_list.company,
+      user_list.team_avatar,
+      SUM(clicked_history.count) AS total_clicks, 
+      SUM(clicked_history.unique_click) verified_clicks, 
+      CASE 
+      WHEN campaign.state = 'active' 
+        AND campaign.complete_date IS NULL 
+        AND creator_history.state = 'RUNNING' THEN 'Active'
+      WHEN campaign.state = 'active' 
+        AND campaign.complete_date IS NOT NULL THEN 'Completed'
+      WHEN campaign.complete_date IS NULL 
+        AND TO_TIMESTAMP(CAST(creator_history.scheduled_date AS bigint)) > CURRENT_TIMESTAMP 
+        AND creator_history.state = 'ACCEPTED' THEN 'Scheduled'
+      END AS campaign_status
+      from campaign 
+      left join campaign_ui on campaign.id = campaign_ui.campaign_id
+      left join clicked_history on clicked_history.campaign_id = campaign.id
+      inner join campaign_creator on campaign.id = campaign_creator.campaign_id
+      inner join creator_history on creator_history.campaign_id = campaign_creator.campaign_id and creator_history.creator_id = campaign_creator.creator_id
+      inner join creator_list on creator_list.id = campaign_creator.creator_id
+      inner join publication on publication.publisher_id = creator_list.id
+      inner join user_list on campaign.email = user_list.email
+      where publication.publication_id = $1`;
+
+    if (state === "Active") {
+      query += ` and campaign.state = 'active' 
+      AND campaign.complete_date IS NULL 
+      AND creator_history.state = 'RUNNING'`;
+    } else if (state === "Scheduled") {
+      query += ` and campaign.complete_date IS NULL 
+      AND TO_TIMESTAMP(CAST(creator_history.scheduled_date AS bigint)) > CURRENT_TIMESTAMP 
+      AND creator_history.state = 'ACCEPTED'`;
+    } else if (state === "Completed") {
+      query += ` and campaign.state = 'active' 
+      AND campaign.complete_date IS NOT NULL`;
+    }
+
+    query += ` group by publication.publication_id,campaign.id, campaign_ui.id, publication.cpc,publication.average_unique_click,user_list.company, user_list.team_avatar, creator_history.scheduled_date, creator_history.id`;
+
+    const { rows } = await db.query(query, [publicationId]);
+
+    return res.status(StatusCodes.OK).json(rows);
+  } catch (error: any) {
+    log.error(` get campaign detail error: ${error}`);
+    return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json(error.message);
+  }
+};
+
 const adminData = {
   getDashboardOverviewData,
   getDashboardCampaignList,
@@ -625,7 +715,6 @@ const adminData = {
   assignDashboardClient,
   inviteClient,
   inviteAccountManager,
-
   addGuide,
   getGuide,
   deleteGuide,
@@ -633,6 +722,8 @@ const adminData = {
   getPublications,
   approvePublication,
   rejectPublication,
+  getPublicationDetailById,
+  getCampaignsByPublicationId,
 };
 
 export default adminData;
