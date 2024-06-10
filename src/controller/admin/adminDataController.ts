@@ -644,8 +644,9 @@ const getCampaignsByPublicationId: RequestHandler = async (
   log.info("get all publications called");
   try {
     const { publicationId, state } = req.query;
-
-    let query = `SELECT publication.publication_id,creator_history.id as requestId, campaign.id as id, campaign_ui.id as ui_id, publication.cpc, publication.average_unique_click,campaign.uid,
+    let query = "";
+    if (state !== "new") {
+      query = `SELECT publication.publication_id,creator_history.id as requestId, campaign.id as id, campaign_ui.id as ui_id, publication.cpc, publication.average_unique_click,campaign.uid,
       campaign.email, campaign.name,campaign_ui.headline,campaign_ui.body,campaign_ui.cta,campaign_ui.image,campaign_ui.additional_files,
       campaign_ui.page_url,campaign.demographic,campaign.audience,campaign.position,campaign.region,campaign_ui.conversion,
       campaign.create_time,
@@ -678,21 +679,48 @@ const getCampaignsByPublicationId: RequestHandler = async (
       inner join user_list on campaign.email = user_list.email
       where publication.publication_id = $1`;
 
-    if (state === "Active") {
-      query += ` and campaign.state = 'active' 
+      if (state === "Active") {
+        query += ` and campaign.state = 'active' 
       AND campaign.complete_date IS NULL 
       AND creator_history.state = 'RUNNING'`;
-    } else if (state === "Scheduled") {
-      query += ` and campaign.complete_date IS NULL 
+      } else if (state === "Scheduled") {
+        query += ` and campaign.complete_date IS NULL 
       AND TO_TIMESTAMP(CAST(creator_history.scheduled_date AS bigint)) > CURRENT_TIMESTAMP 
       AND creator_history.state = 'ACCEPTED'`;
-    } else if (state === "Completed") {
-      query += ` and campaign.state = 'active' 
+      } else if (state === "Completed") {
+        query += ` and campaign.state = 'active' 
       AND campaign.complete_date IS NOT NULL`;
+      }
+
+      query += ` group by publication.publication_id,campaign.id, campaign_ui.id, publication.cpc,publication.average_unique_click,user_list.company, user_list.team_avatar, creator_history.scheduled_date, creator_history.id`;
     }
 
-    query += ` group by publication.publication_id,campaign.id, campaign_ui.id, publication.cpc,publication.average_unique_click,user_list.company, user_list.team_avatar, creator_history.scheduled_date, creator_history.id`;
-
+    if(!state || state === "new"){
+      if(!state) query += ` UNION `;
+      query += `SELECT publication.publication_id,creator_history.id as requestId, campaign.id as id, campaign_ui.id as ui_id, publication.cpc, publication.average_unique_click,campaign.uid,
+      campaign.email, campaign.name,campaign_ui.headline,campaign_ui.body,campaign_ui.cta,campaign_ui.image,campaign_ui.additional_files,
+      campaign_ui.page_url,campaign.demographic,campaign.audience,campaign.position,campaign.region,campaign_ui.conversion,
+      creator_history.create_time,
+      campaign.start_date,
+      campaign.complete_date,
+      creator_history.scheduled_date,
+      campaign.state,
+      campaign.url,
+      user_list.company,
+      user_list.team_avatar,
+      SUM(clicked_history.count) AS total_clicks, 
+      SUM(clicked_history.unique_click) verified_clicks, 
+      'new' campaign_status
+      from campaign 
+      left join campaign_ui on campaign.id = campaign_ui.campaign_id
+      left join clicked_history on clicked_history.campaign_id = campaign.id
+      inner join creator_history on campaign.id = creator_history.campaign_id
+      inner join creator_list on creator_list.id = creator_history.creator_id
+      inner join publication on publication.publisher_id = creator_list.id
+      inner join user_list on campaign.email = user_list.email
+	    where publication.publication_id = $1 and creator_history.state = 'PENDING' and campaign.complete_date is null and campaign.use_creator = true and campaign.state = 'active'
+	    group by publication.publication_id,campaign.id, campaign_ui.id, publication.cpc,publication.average_unique_click,user_list.company, user_list.team_avatar, creator_history.scheduled_date, creator_history.id`
+    }
     const { rows } = await db.query(query, [publicationId]);
 
     return res.status(StatusCodes.OK).json(rows);
