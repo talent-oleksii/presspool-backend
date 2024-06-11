@@ -351,7 +351,7 @@ const getNewRequests: RequestHandler = async (req: Request, res: Response) => {
       inner join publication on publication.publisher_id = creator_list.id
       inner join user_list on campaign.email = user_list.email
       where creator_list.id = $1 and creator_history.state = 'PENDING' and campaign.complete_date is null and campaign.use_creator = true and campaign.state = 'active' 
-	    and campaign.remaining_presspool_budget > 
+	    and campaign.remaining_presspool_budget >= 
 	  	(SELECT publication.average_unique_click * publication.cpc 
         FROM creator_list 
         inner join publication on publication.publisher_id = creator_list.id
