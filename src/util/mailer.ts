@@ -1415,7 +1415,7 @@ const sendOnboardingFinishEmail = async (userName: string, emailAddress: string,
     </div>
       <hr />
       <div style="margin: 20px">
-        <span>Hi ${userName},</span><br /><br />
+        <span>Hi ${firstName},</span><br /><br />
         <span>Hope all is well! Just wanted to check in on your onboarding progress, as I noticed you started but didn't complete it, for ease here's the <a href="https://go.presspool.ai/publishers/${id}/onboarding">onboarding link</a></span><br /><br />
         <span>We're excited for you to join our community and start receiving opportunities tailored just for you. Let me know if you need any assistance wrapping things up.</span><br /><br />
         <span>Cheers,</span><br />
