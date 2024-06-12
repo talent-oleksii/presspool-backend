@@ -1393,6 +1393,59 @@ const sendCampaignRequestToCreator = async (
     });
 
     await sendEmail(mailComposer);
+
+    console.log(`email sent to ${emailAddress}`);
+  } catch (error) {
+    log.error(`welcome email seinding error: ${error}`);
+  }
+};
+
+const sendOnboardingFinishEmail = async (userName: string, emailAddress: string, id: string) => {
+  try {
+    const firstName = userName.split(" ")[0];
+    const mailComposer = new MailComposer({
+      from: "Zoe Martinez-PressPool Support Team<zoe@presspool.ai>",
+      to: emailAddress,
+      subject: `You're one step away`,
+      // text: content,
+      html: `<div>
+      <div style="text-align: center">
+        <img style="width: 115px; height: 40px" src="https://presspool-upload-images.s3.amazonaws.com/logo1.png" alt="logo"/>
+      </div>
+    </div>
+      <hr />
+      <div style="margin: 20px">
+        <span>Hi ${userName},</span><br /><br />
+        <span>Hope all is well! Just wanted to check in on your onboarding progress, as I noticed you started but didn't complete it, for ease here's the <a href="https://go.presspool.ai/publishers/${id}/onboarding">onboarding link</a></span><br /><br />
+        <span>We're excited for you to join our community and start receiving opportunities tailored just for you. Let me know if you need any assistance wrapping things up.</span><br /><br />
+        <span>Cheers,</span><br />
+        <span>Zoe</span>
+      </div>
+      <hr />
+      <div>
+        <div style="text-align: center">
+          <img style="width: 40px; height: 40px" src="https://presspool-upload-images.s3.amazonaws.com/Presspool+Black+Logo.png" alt="logo"/>
+        </div>
+        <div style="text-align: center">
+          <span>@ 2024 Presspool</span>
+        </div>
+      </div>`,
+      textEncoding: "base64",
+      headers: [
+        {
+          key: "X-Application-Developer",
+          value: "Oleksii Karavanov",
+        },
+        {
+          key: "X-Application-Version",
+          value: "v1.0.0",
+        },
+      ],
+    });
+
+    await sendEmail(mailComposer);
+
+    console.log(`email sent to ${emailAddress}`);
   } catch (error) {
     log.error(`welcome email seinding error: ${error}`);
   }
@@ -1424,6 +1477,7 @@ const mailer = {
   sendCreatorApproveEmail,
 
   sendCampaignRequestToCreator,
+  sendOnboardingFinishEmail,
 };
 
 export default mailer;

@@ -41,15 +41,15 @@ async function initializeClient() {
 const billingFunction = async () => { // Here we notify users about billing
   try {
     console.log('billined called');
-    const current = moment().hour(0).minute(0).second(0);
+    // const current = moment().hour(0).minute(0).second(0);
 
     const admins = (await db.query('SELECT * FROM admin_user WHERE role = $1', ['super_admin'])).rows;
     // pay unpaid campaigns
     const activeCampaigns = await db.query('SELECT campaign.start_date, campaign.id, campaign.name, campaign.price, campaign.email, campaign.billed, campaign.spent, campaign.card_id from campaign LEFT JOIN card_info ON campaign.card_id = card_info.card_id  where state = $1', ['active']);
     for (const campaign of activeCampaigns.rows) {
-      const startDate = moment(Number(campaign.start_date)).hour(0).minute(0).second(0);
-      const daysPassed = current.diff(startDate, 'days');
-      if (daysPassed % 14 !== 0) continue;
+      // const startDate = moment(Number(campaign.start_date)).hour(0).minute(0).second(0);
+      // const daysPassed = current.diff(startDate, 'days');
+      // if (daysPassed % 14 !== 0) continue;
       // decide how much to bill
       let billAmount = 0;
       if (Number(campaign.spent) - Number(campaign.billed) > (Number(campaign.price) - Number(campaign.billed))) billAmount = (Number(campaign.price) - Number(campaign.billed)) * 100;
@@ -176,26 +176,45 @@ const payToAccountManagers = async () => {
   }
 };
 
+const payToPublishers = async () => {
+  console.log('pay to publishers');
+  try {
+    const publishers = await db.query('SELECT * FROM');
+  } catch (error) {
+    console.log('pay out to publishers error:', error);
+  }
+};
+
 const mailingFunction = async () => {
   console.log('is this called?');
   try {
-    const users = await db.query('SELECT user_list.email, user_list.name, user_list.create_time FROM user_list LEFT JOIN campaign ON campaign.email = user_list.email WHERE campaign.email IS NULL');
-    for (const user of users.rows) {
-      const targetTimestamp = Number(user.create_time);
+    // const users = await db.query('SELECT user_list.email, user_list.name, user_list.create_time FROM user_list LEFT JOIN campaign ON campaign.email = user_list.email WHERE campaign.email IS NULL');
+    // for (const user of users.rows) {
+    //   const targetTimestamp = Number(user.create_time);
 
-      const currentTimestamp = Date.now();
+    //   const currentTimestamp = Date.now();
 
-      const oneDayInMilliseconds = 24 * 60 * 60 * 1000; // Number of milliseconds in a day
-      const previousDayTimestamp = currentTimestamp - oneDayInMilliseconds;
+    //   const oneDayInMilliseconds = 24 * 60 * 60 * 1000; // Number of milliseconds in a day
+    //   const previousDayTimestamp = currentTimestamp - oneDayInMilliseconds;
 
-      // Check if today is one day after the target timestamp
-      if (currentTimestamp > targetTimestamp && previousDayTimestamp <= targetTimestamp) {
-        console.log(`tutorial email sent to user ${user.email}`);
-        await mailer.sendTutorialEmail(user.email, user.name);
-      } else {
-        console.log('tutorial email check: all sent!');
-      }
+    //   // Check if today is one day after the target timestamp
+    //   if (currentTimestamp > targetTimestamp && previousDayTimestamp <= targetTimestamp) {
+    //     console.log(`tutorial email sent to user ${user.email}`);
+    //     await mailer.sendTutorialEmail(user.email, user.name);
+    //   } else {
+    //     console.log('tutorial email check: all sent!');
+    //   }
+    // }
+
+    // send emails to publishers who didn't finish his onboarding progress
+    const publishers = (await db.query('SELECT creator_list.id, name, email FROM publication INNER JOIN creator_list ON publication.publisher_id = creator_list.id WHERE cpc IS NULL and reminder = $1', [0])).rows;
+    for (const publisher of publishers) {
+      await mailer.sendOnboardingFinishEmail(publisher.name, publisher.email, publisher.id);
+
+      await db.query('UPDATE creator_list set reminder = $1 where id = $2', [1, publisher.id]);
     }
+
+
   } catch (error) {
     console.log('error:', error);
   }
@@ -218,7 +237,7 @@ async function runReport(client: BetaAnalyticsDataClient, propertyId: any, start
       }],
       // metrics: [{ name: 'sessions' }],
       // dimensions: [{ name: 'country' }]
-      limit: 99999999999,
+      limit: 999999999999999,
     });
     return response;
   } catch (e) {
@@ -373,13 +392,13 @@ const dailyAnalyticsUpdate = async () => {
   console.log('Running daily analytics update...');
 
   // set campaign status as running for assigned to publishers.
-  const creatorHis = await db.query('SELECT id, scheduled_date FROM creator_history WHERE state = $1', ['ACCEPTED']);
-  const todayTime = moment().hour(0);
-  for (const item of creatorHis.rows) {
-    if (moment.unix(Number(item.scheduled_date)).valueOf() <= todayTime.valueOf()) {
-      await db.query('UPDATE creator_history SET state = $1 WHERE id = $2', ['RUNNING', item.id]);
-    }
-  }
+  // const creatorHis = await db.query('SELECT id, scheduled_date FROM creator_history WHERE state = $1', ['ACCEPTED']);
+  // const todayTime = moment().hour(0);
+  // for (const item of creatorHis.rows) {
+  //   if (moment.unix(Number(item.scheduled_date)).valueOf() <= todayTime.valueOf()) {
+  //     await db.query('UPDATE creator_history SET state = $1 WHERE id = $2', ['RUNNING', item.id]);
+  //   }
+  // }
 
   // Calculate yesterday's date for the report
   const today = new Date();
@@ -392,8 +411,8 @@ const dailyAnalyticsUpdate = async () => {
     const client = await initializeClient() as BetaAnalyticsDataClient;
     const propertyId = process.env.GOOGLE_ANALYTIC_PROPERTY_ID as string;
 
-    const response = await runReport(client, propertyId, stD, enD);
-    // const response = await runReport(client, propertyId, '2024-02-18', enD);
+    // const response = await runReport(client, propertyId, stD, enD);
+    const response = await runReport(client, propertyId, '2024-02-18', '2024-05-18');
     if (!response) {
       console.error('Failed to fetch report data');
       return;
@@ -408,6 +427,7 @@ const dailyAnalyticsUpdate = async () => {
     for (const campaign of campaigns.rows) {
       let uniqueClicks = 0, totalClicks = 0, verifiedClicks = 0;
       // await db.query('DELETE FROM clicked_history WHERE campaign_id = $1', [campaign.id]);
+      if (Number(campaign.id) !== 215) continue;
       for (const item of response.rows) {
         const pageUrl = item.dimensionValues?.[0]?.value ? encodeURIComponent(item.dimensionValues[0].value) : '';
         if (!pageUrl.includes(campaign.uid)) continue;
@@ -438,20 +458,20 @@ const dailyAnalyticsUpdate = async () => {
 
         if (title === 'beehiiv') title = 'Presspool.ai';
 
-        await db.query('INSERT INTO clicked_history (create_time, ip, campaign_id, device, count, unique_click, duration, user_medium, full_url, newsletter_id, region, city) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)', [
-          timeOf,
-          country,
-          campaign.id,
-          device,
-          screenPageViews,
-          totalUsers,
-          userEngagementDuration,
-          firstUserMedium,
-          item.dimensionValues?.[0]?.value,
-          title,
-          region,
-          city,
-        ]);
+        // await db.query('INSERT INTO clicked_history (create_time, ip, campaign_id, device, count, unique_click, duration, user_medium, full_url, newsletter_id, region, city) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)', [
+        //   timeOf,
+        //   country,
+        //   campaign.id,
+        //   device,
+        //   screenPageViews,
+        //   totalUsers,
+        //   userEngagementDuration,
+        //   firstUserMedium,
+        //   item.dimensionValues?.[0]?.value,
+        //   title,
+        //   region,
+        //   city,
+        // ]);
 
         uniqueClicks += Number(totalUsers);
         totalClicks += Number(screenPageViews);
@@ -473,7 +493,7 @@ const dailyAnalyticsUpdate = async () => {
         await db.query('UPDATE campaign SET complete_date = $1 where id = $2', [now, campaign.id]);
       }
       // await db.query('UPDATE campaign set click_count = $1, spent = $2, unique_clicks = $3 WHERE id = $4', [totalClicks, Math.ceil(verifiedClicks * Number(campaign.cpc)), uniqueClicks, campaign.id]);
-      await db.query('UPDATE campaign set click_count = click_count + $1, spent = spent + $2, unique_clicks = unique_clicks + $3 WHERE id = $4', [totalClicks, Math.ceil(verifiedClicks * Number(campaign.cpc)), uniqueClicks, campaign.id]);
+      // await db.query('UPDATE campaign set click_count = click_count + $1, spent = spent + $2, unique_clicks = unique_clicks + $3 WHERE id = $4', [totalClicks, Math.ceil(verifiedClicks * Number(campaign.cpc)), uniqueClicks, campaign.id]);
 
       console.log(`update finished for campaign:${campaign.id}`);
     }
@@ -492,6 +512,8 @@ const cronFunction = {
   scrapeFunction,
   dailyAnalyticsUpdate,
   payToAccountManagers,
+
+  payToPublishers,
 
   getPageTitle,
 };

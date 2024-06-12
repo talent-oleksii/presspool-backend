@@ -18,7 +18,7 @@ dotenv.config({ path: './.env' });
 import db from './util/db';
 import log from './util/logger';
 import mailer from './util/mailer';
-import dataController from './controller/dataController';
+import data from './controller/dataController';
 
 AWS.config.update({
     region: 'us-east-1',
@@ -62,7 +62,7 @@ app.listen(PORT, async () => {
 
 
 // campaign to be paid every 14 days.
-cron.schedule('0 0 * * *', async () => { // minute, hour, day, month, day_of_week
+cron.schedule('0 0 * * 5', async () => { // minute, hour, day, month, day_of_week
     // cron.schedule('*/30 * * * * *', async () => {
     await cronFunction.billingFunction();
 });
@@ -70,6 +70,8 @@ cron.schedule('0 0 * * *', async () => { // minute, hour, day, month, day_of_wee
 cron.schedule('0 0 * * 5', async () => {
     // cron.schedule('*/30 * * * * *', async () => {
     await cronFunction.payToAccountManagers();
+
+    await cronFunction.payToPublishers();
 });
 
 // This is for email triggering
@@ -84,7 +86,7 @@ cron.schedule('1 0 * * *', async () => {
 // });
 
 // publish remote.com's EOR campaign by force
-// data.publishCampaign('bernard@remote.com', 204, 227);
+// data.publishCampaign('jared@metabase.com', 254, 284);
 
 // mailer.generateToken();
 // mailer.sendCampaignRequestToCreator('oleksii@presspool.ai', 'Oleksii Karavanov', 'New Age');
@@ -93,3 +95,5 @@ cron.schedule('1 0 * * *', async () => {
 cron.schedule('10 20 * * *', async () => {
     await cronFunction.dailyAnalyticsUpdate();
 });
+
+// mailer.sendCampaignRequestToCreator('kyle@aitoolreport.com', 'Kyle Mair');
