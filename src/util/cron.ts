@@ -398,6 +398,10 @@ const dailyAnalyticsUpdate = async () => {
     if (moment.unix(Number(item.scheduled_date)).valueOf() <= todayTime.valueOf()) {
       await db.query('UPDATE creator_history SET state = $1 WHERE id = $2', ['RUNNING', item.id]);
     }
+
+    if (todayTime.valueOf() > moment.unix(Number(item.scheduled_date)).add(3, 'days').valueOf()) {
+      await db.query('UPDATE creator_history set state = $1 WHERE id = $2', ['FINISHED', item.id]);
+    }
   }
 
   // Calculate yesterday's date for the report
