@@ -392,13 +392,13 @@ const dailyAnalyticsUpdate = async () => {
   console.log('Running daily analytics update...');
 
   // set campaign status as running for assigned to publishers.
-  // const creatorHis = await db.query('SELECT id, scheduled_date FROM creator_history WHERE state = $1', ['ACCEPTED']);
-  // const todayTime = moment().hour(0);
-  // for (const item of creatorHis.rows) {
-  //   if (moment.unix(Number(item.scheduled_date)).valueOf() <= todayTime.valueOf()) {
-  //     await db.query('UPDATE creator_history SET state = $1 WHERE id = $2', ['RUNNING', item.id]);
-  //   }
-  // }
+  const creatorHis = await db.query('SELECT id, scheduled_date FROM creator_history WHERE state = $1', ['ACCEPTED']);
+  const todayTime = moment().hour(0);
+  for (const item of creatorHis.rows) {
+    if (moment.unix(Number(item.scheduled_date)).valueOf() <= todayTime.valueOf()) {
+      await db.query('UPDATE creator_history SET state = $1 WHERE id = $2', ['RUNNING', item.id]);
+    }
+  }
 
   // Calculate yesterday's date for the report
   const today = new Date();
@@ -411,8 +411,8 @@ const dailyAnalyticsUpdate = async () => {
     const client = await initializeClient() as BetaAnalyticsDataClient;
     const propertyId = process.env.GOOGLE_ANALYTIC_PROPERTY_ID as string;
 
-    // const response = await runReport(client, propertyId, stD, enD);
-    const response = await runReport(client, propertyId, '2024-02-18', '2024-05-18');
+    const response = await runReport(client, propertyId, stD, enD);
+    // const response = await runReport(client, propertyId, '2024-02-18', '2024-05-18');
     if (!response) {
       console.error('Failed to fetch report data');
       return;
@@ -458,20 +458,20 @@ const dailyAnalyticsUpdate = async () => {
 
         if (title === 'beehiiv') title = 'Presspool.ai';
 
-        // await db.query('INSERT INTO clicked_history (create_time, ip, campaign_id, device, count, unique_click, duration, user_medium, full_url, newsletter_id, region, city) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)', [
-        //   timeOf,
-        //   country,
-        //   campaign.id,
-        //   device,
-        //   screenPageViews,
-        //   totalUsers,
-        //   userEngagementDuration,
-        //   firstUserMedium,
-        //   item.dimensionValues?.[0]?.value,
-        //   title,
-        //   region,
-        //   city,
-        // ]);
+        await db.query('INSERT INTO clicked_history (create_time, ip, campaign_id, device, count, unique_click, duration, user_medium, full_url, newsletter_id, region, city) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)', [
+          timeOf,
+          country,
+          campaign.id,
+          device,
+          screenPageViews,
+          totalUsers,
+          userEngagementDuration,
+          firstUserMedium,
+          item.dimensionValues?.[0]?.value,
+          title,
+          region,
+          city,
+        ]);
 
         uniqueClicks += Number(totalUsers);
         totalClicks += Number(screenPageViews);
@@ -493,7 +493,7 @@ const dailyAnalyticsUpdate = async () => {
         await db.query('UPDATE campaign SET complete_date = $1 where id = $2', [now, campaign.id]);
       }
       // await db.query('UPDATE campaign set click_count = $1, spent = $2, unique_clicks = $3 WHERE id = $4', [totalClicks, Math.ceil(verifiedClicks * Number(campaign.cpc)), uniqueClicks, campaign.id]);
-      // await db.query('UPDATE campaign set click_count = click_count + $1, spent = spent + $2, unique_clicks = unique_clicks + $3 WHERE id = $4', [totalClicks, Math.ceil(verifiedClicks * Number(campaign.cpc)), uniqueClicks, campaign.id]);
+      await db.query('UPDATE campaign set click_count = click_count + $1, spent = spent + $2, unique_clicks = unique_clicks + $3 WHERE id = $4', [totalClicks, Math.ceil(verifiedClicks * Number(campaign.cpc)), uniqueClicks, campaign.id]);
 
       console.log(`update finished for campaign:${campaign.id}`);
     }
