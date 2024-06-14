@@ -801,15 +801,15 @@ const updateCampaignDetail: RequestHandler = async (
       }
 
       let paymentMethod = '', paymentDetail = '';
-      const proofImage = (await db.query('SELECT paid_proof_image FROM campaign_ui WHERE campaign_id = $1', [id])).rows[0];
-      if (proofImage) {
-        paymentMethod = 'bank/ACH';
-        paymentDetail = proofImage.paid_proof_image;
-      }
       if (req.body.currentCard) {
         paymentMethod = 'card';
         const card = (await db.query('SELECT last4 FROM card_info WHERE card_id = $1', [req.body.currentCard])).rows[0];
         paymentDetail = card ? card.last4 : '';
+      }
+      const proofImage = (await db.query('SELECT paid_proof_image FROM campaign_ui WHERE campaign_id = $1', [id])).rows[0];
+      if (proofImage) {
+        paymentMethod = 'bank/ACH';
+        paymentDetail = proofImage.paid_proof_image;
       }
       // Send Zapier
       await axios.post('https://hooks.zapier.com/hooks/catch/14270825/3luhtgk/', {
