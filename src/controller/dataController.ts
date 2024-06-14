@@ -371,27 +371,27 @@ const addCampaign: RequestHandler = async (req: Request, res: Response) => {
       // sendEmailToCreators(result.rows[0].id);
     }
 
-    let paymentMethod = '', paymentDetail = '';
-    const proofImage = (await db.query('SELECT paid_proof_image FROM campaign_ui WHERE campaign_id = $1', [result.rows[0].id])).rows[0];
-    if (proofImage) {
-      paymentMethod = 'bank/ACH';
-      paymentDetail = proofImage.paid_proof_image;
-    }
-    if (req.body.currentCard) {
-      paymentMethod = 'card';
-      const card = (await db.query('SELECT last4 FROM card_info WHERE card_id = $1', [req.body.currentCard])).rows[0];
-      paymentDetail = card ? card.last4 : '';
-    }
-    // Send Zapier
-    await axios.post('https://hooks.zapier.com/hooks/catch/14270825/3luhtgk/', {
-      type: 'add',
-      state: campaignState,
-      email: req.body.email,
-      campaignName: req.body.campaignName,
-      budget: req.body.currentPrice,
-      paymentMethod,
-      paymentDetail,
-    });
+    // let paymentMethod = '', paymentDetail = '';
+    // const proofImage = (await db.query('SELECT paid_proof_image FROM campaign_ui WHERE campaign_id = $1', [result.rows[0].id])).rows[0];
+    // if (proofImage) {
+    //   paymentMethod = 'bank/ACH';
+    //   paymentDetail = proofImage.paid_proof_image;
+    // }
+    // if (req.body.currentCard) {
+    //   paymentMethod = 'card';
+    //   const card = (await db.query('SELECT last4 FROM card_info WHERE card_id = $1', [req.body.currentCard])).rows[0];
+    //   paymentDetail = card ? card.last4 : '';
+    // }
+    // // Send Zapier
+    // await axios.post('https://hooks.zapier.com/hooks/catch/14270825/3luhtgk/', {
+    //   type: 'add',
+    //   state: campaignState,
+    //   email: req.body.email,
+    //   campaignName: req.body.campaignName,
+    //   budget: req.body.currentPrice,
+    //   paymentMethod,
+    //   paymentDetail,
+    // });
 
     return res.status(StatusCodes.OK).json(data);
   } catch (error: any) {
