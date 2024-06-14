@@ -311,7 +311,7 @@ const getReadyToPublish: RequestHandler = async (
       inner join creator_list on creator_list.id = campaign_creator.creator_id
       inner join publication on publication.publisher_id = creator_list.id
       inner join user_list on campaign.email = user_list.email
-      where creator_list.id = $1 and campaign.complete_date is null and TO_TIMESTAMP(CAST(creator_history.scheduled_date AS bigint))::date > CURRENT_DATE and creator_history.state = 'ACCEPTED'
+      where creator_list.id = $1 and campaign.complete_date is null and TO_TIMESTAMP(CAST(creator_history.scheduled_date AS bigint))::date >= CURRENT_DATE and creator_history.state = 'ACCEPTED'
       group by campaign.id, campaign_ui.id, publication.cpc,publication.average_unique_click,user_list.company, user_list.team_avatar, creator_history.scheduled_date, creator_history.id`,
       [creatorId]
     );

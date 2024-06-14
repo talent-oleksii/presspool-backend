@@ -666,7 +666,7 @@ const getCampaignsByPublicationId: RequestHandler = async (
       WHEN campaign.state = 'active' 
         AND campaign.complete_date IS NOT NULL THEN 'Completed'
       WHEN campaign.complete_date IS NULL 
-        AND TO_TIMESTAMP(CAST(creator_history.scheduled_date AS bigint)) > CURRENT_TIMESTAMP 
+        AND TO_TIMESTAMP(CAST(creator_history.scheduled_date AS bigint))::date >= CURRENT_DATE 
         AND creator_history.state = 'ACCEPTED' THEN 'Scheduled'
       END AS campaign_status
       from campaign 
@@ -685,7 +685,7 @@ const getCampaignsByPublicationId: RequestHandler = async (
       AND creator_history.state = 'RUNNING'`;
       } else if (state === "Scheduled") {
         query += ` and campaign.complete_date IS NULL 
-      AND TO_TIMESTAMP(CAST(creator_history.scheduled_date AS bigint)) > CURRENT_TIMESTAMP 
+      AND TO_TIMESTAMP(CAST(creator_history.scheduled_date AS bigint))::date >= CURRENT_DATE 
       AND creator_history.state = 'ACCEPTED'`;
       } else if (state === "Completed") {
         query += ` and campaign.state = 'active' 
