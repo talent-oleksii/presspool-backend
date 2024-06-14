@@ -758,9 +758,9 @@ const sendSuperAdminNotificationEmail = async (
   conversion: string,
   conversionDetail: string,
   demographic: string,
-  region: string,
-  audience: string,
-  position: string,
+  region: any,
+  audience: any,
+  position: any,
   teamAvatar: string,
   companyEmail: string
 ) => {
@@ -793,7 +793,7 @@ const sendSuperAdminNotificationEmail = async (
     }
 
     let demographics = ``;
-    if (audience.length) {
+    if (position && position.length) {
       for (let index = 0; index < position.length; index++) {
         demographics += `<button
           style="
@@ -810,7 +810,7 @@ const sendSuperAdminNotificationEmail = async (
     }
 
     let regions = ``;
-    if (region.length) {
+    if (region && region.length) {
       for (let index = 0; index < region.length; index++) {
         regions += `<button
           style="
@@ -961,6 +961,7 @@ const sendSuperAdminNotificationEmail = async (
                 </div>
               </div>`;
 
+    console.log('send mail to supers');
     const mailComposer = new MailComposer({
       from: "Zoe Martinez-PressPool Support Team<zoe@presspool.ai>",
       to: email,

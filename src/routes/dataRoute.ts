@@ -27,7 +27,7 @@ const upload = multer({
 // Define routes
 router.get("/newsletter", data.getNewsletter);
 router.get("/pricing", data.getPricing);
-router.post("/campaign", data.addCampaign);
+router.post("/campaign", upload.fields([{ name: 'proofImage' }]), data.addCampaign);
 router.get("/campaign", data.getCampaign);
 router.get("/getCampStatByCampId", data.getCampStatsByCampId);
 router.get("/campaign_list", data.getCampaignList);
@@ -40,12 +40,12 @@ router.get("/campaign_detail", data.getCampaignDetail);
 router.put("/campaign_detail", data.updateCampaignDetail);
 router.post(
   "/campaign_ui",
-  upload.fields([{ name: "image", maxCount: 10 }, { name: "additional_file" }]),
+  upload.fields([{ name: "image", maxCount: 10 }, { name: "additional_file" }, { name: 'proofImage' }]),
   data.addCampaignUI
 );
 router.put(
   "/campaign_ui",
-  upload.fields([{ name: "image", maxCount: 10 }, { name: "additional_file" }]),
+  upload.fields([{ name: "image", maxCount: 10 }, { name: "additional_file" }, { name: 'proofImage' }]),
   data.updateCampaignUI
 );
 

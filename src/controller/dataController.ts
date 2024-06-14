@@ -216,7 +216,6 @@ const addCampaign: RequestHandler = async (req: Request, res: Response) => {
           process.env.PRESSPOOL_AES_KEY as string
         ).toString()
       );
-      console.log('each attempt:', uid);
     } while (uid.includes('%2F'));
     // Get if user payment verified or not
     let campaignState = req.body.state;
@@ -371,6 +370,28 @@ const addCampaign: RequestHandler = async (req: Request, res: Response) => {
 
       // sendEmailToCreators(result.rows[0].id);
     }
+
+    let paymentMethod = '', paymentDetail = '';
+    const proofImage = (await db.query('SELECT paid_proof_image FROM campaign_ui WHERE campaign_id = $1', [result.rows[0].id])).rows[0];
+    if (proofImage) {
+      paymentMethod = 'bank/ACH';
+      paymentDetail = proofImage.paid_proof_image;
+    }
+    if (req.body.currentCard) {
+      paymentMethod = 'card';
+      const card = (await db.query('SELECT last4 FROM card_info WHERE card_id = $1', [req.body.currentCard])).rows[0];
+      paymentDetail = card ? card.last4 : '';
+    }
+    // Send Zapier
+    await axios.post('https://hooks.zapier.com/hooks/catch/14270825/3luhtgk/', {
+      type: 'add',
+      state: campaignState,
+      email: req.body.email,
+      campaignName: req.body.campaignName,
+      budget: req.body.currentPrice,
+      paymentMethod,
+      paymentDetail,
+    });
 
     return res.status(StatusCodes.OK).json(data);
   } catch (error: any) {
@@ -779,6 +800,28 @@ const updateCampaignDetail: RequestHandler = async (
         );
       }
 
+      let paymentMethod = '', paymentDetail = '';
+      const proofImage = (await db.query('SELECT paid_proof_image FROM campaign_ui WHERE campaign_id = $1', [id])).rows[0];
+      if (proofImage) {
+        paymentMethod = 'bank/ACH';
+        paymentDetail = proofImage.paid_proof_image;
+      }
+      if (req.body.currentCard) {
+        paymentMethod = 'card';
+        const card = (await db.query('SELECT last4 FROM card_info WHERE card_id = $1', [req.body.currentCard])).rows[0];
+        paymentDetail = card ? card.last4 : '';
+      }
+      // Send Zapier
+      await axios.post('https://hooks.zapier.com/hooks/catch/14270825/3luhtgk/', {
+        type: 'update',
+        state,
+        email: req.body.email,
+        campaignName: req.body.campaignName,
+        budget: req.body.currentPrice,
+        paymentMethod,
+        paymentDetail,
+      });
+
       const campaignData = await db.query(
         "select *, campaign.id as id, campaign_ui.id as ui_id from campaign left join campaign_ui on campaign.id = campaign_ui.campaign_id where campaign.id = $1",
         [id]
@@ -805,6 +848,9 @@ const addCampaignUI: RequestHandler = async (req: Request, res: Response) => {
         .status(StatusCodes.BAD_REQUEST)
         .json({ message: "No image provided!" });
     const image = (req.files as any)["image"][0].location;
+    const proofImage = (req.files as any)["proofImage"]
+      ? (req.files as any)["proofImage"][0].location
+      : "";
     let additionalFiles = (req.files as any)["additional_file"];
     const {
       email,
@@ -821,7 +867,7 @@ const addCampaignUI: RequestHandler = async (req: Request, res: Response) => {
       : "";
 
     const result = await db.query(
-      "insert into campaign_ui (email, headline, body, cta, image, page_url, no_need_check, additional_files, conversion, conversion_detail) values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) returning *",
+      "insert into campaign_ui (email, headline, body, cta, image, page_url, no_need_check, additional_files, conversion, conversion_detail, paid_proof_image) values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) returning *",
       [
         email,
         headLine,
@@ -833,6 +879,7 @@ const addCampaignUI: RequestHandler = async (req: Request, res: Response) => {
         additionalFiles,
         conversion,
         conversionDetail,
+        proofImage,
       ]
     );
 
@@ -855,6 +902,10 @@ const updateCampaignUI: RequestHandler = async (
     const image = (req.files as any)["image"]
       ? (req.files as any)["image"][0].location
       : "";
+    const proofImage = (req.files as any)["proofImage"]
+      ? (req.files as any)["proofImage"][0].location
+      : "";
+
     const {
       id,
       headLine,
@@ -865,6 +916,11 @@ const updateCampaignUI: RequestHandler = async (
       conversion,
       conversionDetail,
     } = req.body;
+
+    if (proofImage.length > 2) {
+      await db.query('UPDATE campaign_ui SET paid_proof_image = $1 WHERE id = $2', [proofImage, id]);
+    }
+
     let additionalFiles = (req.files as any)["additional_file"];
     additionalFiles = additionalFiles
       ? additionalFiles.map((item: any) => item.location).join(",")
