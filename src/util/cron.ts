@@ -431,7 +431,6 @@ const dailyAnalyticsUpdate = async () => {
     for (const campaign of campaigns.rows) {
       let uniqueClicks = 0, totalClicks = 0, verifiedClicks = 0;
       // await db.query('DELETE FROM clicked_history WHERE campaign_id = $1', [campaign.id]);
-      if (Number(campaign.id) !== 215) continue;
       for (const item of response.rows) {
         const pageUrl = item.dimensionValues?.[0]?.value ? encodeURIComponent(item.dimensionValues[0].value) : '';
         if (!pageUrl.includes(campaign.uid)) continue;
