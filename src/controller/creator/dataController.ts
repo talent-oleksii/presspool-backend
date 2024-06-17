@@ -391,12 +391,12 @@ const getActiveCampaigns: RequestHandler = async (
       SUM(clicked_history.unique_click) verified_clicks
       from campaign 
       left join campaign_ui on campaign.id = campaign_ui.campaign_id
-      left join clicked_history on clicked_history.campaign_id = campaign.id
       inner join campaign_creator on campaign.id = campaign_creator.campaign_id
 	    inner join creator_history on creator_history.campaign_id = campaign_creator.campaign_id and creator_history.creator_id = campaign_creator.creator_id
       inner join creator_list on creator_list.id = campaign_creator.creator_id
       inner join publication on publication.publisher_id = creator_list.id
       inner join user_list on campaign.email = user_list.email
+	    left join clicked_history on clicked_history.campaign_id = campaign.id AND publication.website_url LIKE '%' || clicked_history.user_source || '%'
       where creator_list.id = $1 and campaign.state = 'active' and campaign.complete_date is null and creator_history.state = 'RUNNING'
       group by campaign.id, campaign_ui.id, publication.cpc,publication.average_unique_click,user_list.company, user_list.team_avatar`,
       [creatorId]
@@ -433,11 +433,12 @@ const getCompletedCampaigns: RequestHandler = async (
       SUM(clicked_history.unique_click) verified_clicks
       from campaign 
       left join campaign_ui on campaign.id = campaign_ui.campaign_id
-      left join clicked_history on clicked_history.campaign_id = campaign.id
       inner join campaign_creator on campaign.id = campaign_creator.campaign_id
+	    inner join creator_history on creator_history.campaign_id = campaign_creator.campaign_id and creator_history.creator_id = campaign_creator.creator_id
       inner join creator_list on creator_list.id = campaign_creator.creator_id
       inner join publication on publication.publisher_id = creator_list.id
       inner join user_list on campaign.email = user_list.email
+	    left join clicked_history on clicked_history.campaign_id = campaign.id AND publication.website_url LIKE '%' || clicked_history.user_source || '%'
       where creator_list.id = $1 and campaign.state = 'active' and campaign.complete_date is not null
       group by campaign.id, campaign_ui.id, publication.cpc,publication.average_unique_click,user_list.company, user_list.team_avatar`,
       [creatorId]
