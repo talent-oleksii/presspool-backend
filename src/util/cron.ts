@@ -427,11 +427,10 @@ const dailyAnalyticsUpdate = async () => {
       return;
     }
 
-    const publishers = (await db.query('SELECT cpc, website_url FROM publication')).rows;
+    const publishers = (await db.query('SELECT cpc, newsletter, website_url FROM publication')).rows;
 
     const getCPC = (newsletter: string) => {
       for (const publisher of publishers) {
-        console.log('newsletter:', publisher.website_url, newsletter);
         if (!publisher.website_url) continue;
         if (publisher.website_url.indexOf(newsletter) > -1) {
           return Number(publisher.cpc);
@@ -444,6 +443,21 @@ const dailyAnalyticsUpdate = async () => {
       // if the campaign is running on beehiiv, the below statement should be runned.
       // return 11;
     }
+
+    const getNewsletterName = (newsletter: string) => {
+      console.log('newsletter, ', newsletter);
+      if (newsletter === 'beehiiv' || newsletter === '(not set)' || newsletter === '(direct)' || newsletter === 'aitoolreport.beehiiv.com') return 'Presspool.ai';
+
+      for (const publisher of publishers) {
+        if (!publisher.website_url) continue;
+        if (publisher.website_url.indexOf(newsletter) > -1) {
+          return publisher.newsletter;
+        }
+      }
+
+      // This means newsletter url does not exist on our database
+      return '';
+    };
 
     const campaigns = await db.query('SELECT id, uid, cpc, click_count, price, complete_date FROM campaign');
 
@@ -469,17 +483,16 @@ const dailyAnalyticsUpdate = async () => {
 
         const timeOf = moment(time, 'YYYYMMDD').valueOf();
 
-        // console.log('content', screenPageViews, firstUserManualContent);
-
         let title = '';
-        if (firstUserManualContent.length > 3 && firstUserManualContent.indexOf('.') > -1) {
-          title = await getPageTitle(`https://${firstUserManualContent}`);
-        } else if (firstUserManualContent.length > 3 && firstUserManualContent.indexOf('.') === -1) {
-          title = firstUserManualContent;
-        }
-        // title = firstUserManualContent;
+        title = getNewsletterName(firstUserManualContent);
 
-        if (title === 'beehiiv') title = 'Presspool.ai';
+        if (title === '') {
+          if (firstUserManualContent.length > 3 && firstUserManualContent.indexOf('.') > -1) {
+            title = await getPageTitle(`https://${firstUserManualContent}`);
+          } else if (firstUserManualContent.length > 3 && firstUserManualContent.indexOf('.') === -1) {
+            title = firstUserManualContent;
+          }
+        }
 
         await db.query('INSERT INTO clicked_history (create_time, ip, campaign_id, device, count, unique_click, duration, user_medium, full_url, newsletter_id, region, city, user_source) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)', [
           timeOf,
