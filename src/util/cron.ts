@@ -416,7 +416,7 @@ const dailyAnalyticsUpdate = async () => {
     const propertyId = process.env.GOOGLE_ANALYTIC_PROPERTY_ID as string;
 
     const response = await runReport(client, propertyId, stD, enD);
-    // const response = await runReport(client, propertyId, '2024-02-18', '2024-05-18');
+    // const response = await runReport(client, propertyId, '2024-06-03', enD);
     if (!response) {
       console.error('Failed to fetch report data');
       return;
@@ -426,10 +426,30 @@ const dailyAnalyticsUpdate = async () => {
       console.error('No data received from report-function');
       return;
     }
+
+    const publishers = (await db.query('SELECT cpc, website_url FROM publication')).rows;
+
+    const getCPC = (newsletter: string) => {
+      for (const publisher of publishers) {
+        console.log('newsletter:', publisher.website_url, newsletter);
+        if (!publisher.website_url) continue;
+        if (publisher.website_url.indexOf(newsletter) > -1) {
+          return Number(publisher.cpc);
+        }
+      }
+
+      // This means newsletter url does not exist on our 
+      return 0;
+
+      // if the campaign is running on beehiiv, the below statement should be runned.
+      // return 11;
+    }
+
     const campaigns = await db.query('SELECT id, uid, cpc, click_count, price, complete_date FROM campaign');
 
     for (const campaign of campaigns.rows) {
-      let uniqueClicks = 0, totalClicks = 0, verifiedClicks = 0;
+      let uniqueClicks = 0, totalClicks = 0, verifiedClicks = 0, payAmount = 0;
+      // if (Number(campaign.id) !== 259 && Number(campaign.id) !== 254) continue;
       // await db.query('DELETE FROM clicked_history WHERE campaign_id = $1', [campaign.id]);
       for (const item of response.rows) {
         const pageUrl = item.dimensionValues?.[0]?.value ? encodeURIComponent(item.dimensionValues[0].value) : '';
@@ -461,7 +481,7 @@ const dailyAnalyticsUpdate = async () => {
 
         if (title === 'beehiiv') title = 'Presspool.ai';
 
-        await db.query('INSERT INTO clicked_history (create_time, ip, campaign_id, device, count, unique_click, duration, user_medium, full_url, newsletter_id, region, city) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)', [
+        await db.query('INSERT INTO clicked_history (create_time, ip, campaign_id, device, count, unique_click, duration, user_medium, full_url, newsletter_id, region, city, user_source) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)', [
           timeOf,
           country,
           campaign.id,
@@ -474,15 +494,16 @@ const dailyAnalyticsUpdate = async () => {
           title,
           region,
           city,
+          firstUserManualContent
         ]);
 
         uniqueClicks += Number(totalUsers);
         totalClicks += Number(screenPageViews);
+        const cpc = getCPC(firstUserManualContent);
+        payAmount += Number(totalUsers) * (cpc ? cpc : 0);
         // verifiedClicks += (firstUserMedium === 'newsletter' || firstUserMedium === 'referral') && userEngagementDuration > screenPageViews * 0.37 ? Number(totalUsers) : 0;
         verifiedClicks = uniqueClicks;
       }
-
-      console.log('campagin.id:', campaign.id, totalClicks, uniqueClicks);
 
       const oneDay = moment().add(-1, 'day').valueOf();
       const now = moment().valueOf();
@@ -495,8 +516,10 @@ const dailyAnalyticsUpdate = async () => {
       if (Math.ceil(verifiedClicks * Number(campaign.cpc)) >= Number(campaign.price) && !campaign.complete_date) {
         await db.query('UPDATE campaign SET complete_date = $1 where id = $2', [now, campaign.id]);
       }
-      // await db.query('UPDATE campaign set click_count = $1, spent = $2, unique_clicks = $3 WHERE id = $4', [totalClicks, Math.ceil(verifiedClicks * Number(campaign.cpc)), uniqueClicks, campaign.id]);
-      await db.query('UPDATE campaign set click_count = click_count + $1, spent = spent + $2, unique_clicks = unique_clicks + $3 WHERE id = $4', [totalClicks, Math.ceil(verifiedClicks * Number(campaign.cpc)), uniqueClicks, campaign.id]);
+      // await db.query('UPDATE campaign set click_count = $1, spent = $2, unique_clicks = $3 WHERE id = $4', [totalClicks, Math.ceil(payAmount * 2.5), uniqueClicks, campaign.id]);
+
+      // This multiply 2.5 is for our campaign budget.
+      await db.query('UPDATE campaign set click_count = click_count + $1, spent = spent + $2, unique_clicks = unique_clicks + $3 WHERE id = $4', [totalClicks, Math.ceil(payAmount * 2.5), uniqueClicks, campaign.id]);
 
       console.log(`update finished for campaign:${campaign.id}`);
     }
