@@ -657,8 +657,8 @@ const getCampaignsByPublicationId: RequestHandler = async (
       campaign.url,
       user_list.company,
       user_list.team_avatar,
-      SUM(clicked_history.count) AS total_clicks, 
-      SUM(clicked_history.unique_click) verified_clicks, 
+      COALESCE(SUM(clicked_history.count),0) AS total_clicks, 
+      COALESCE(SUM(clicked_history.unique_click),0) verified_clicks, 
       CASE 
       WHEN campaign.state = 'active' 
         AND campaign.complete_date IS NULL 
@@ -671,12 +671,12 @@ const getCampaignsByPublicationId: RequestHandler = async (
       END AS campaign_status
       from campaign 
       left join campaign_ui on campaign.id = campaign_ui.campaign_id
-      left join clicked_history on clicked_history.campaign_id = campaign.id
       inner join campaign_creator on campaign.id = campaign_creator.campaign_id
       inner join creator_history on creator_history.campaign_id = campaign_creator.campaign_id and creator_history.creator_id = campaign_creator.creator_id
       inner join creator_list on creator_list.id = campaign_creator.creator_id
       inner join publication on publication.publisher_id = creator_list.id
       inner join user_list on campaign.email = user_list.email
+	    left join clicked_history on clicked_history.campaign_id = campaign.id and clicked_history.newsletter_id = publication.newsletter
       where publication.publication_id = $1`;
 
       if (state === "Active") {
