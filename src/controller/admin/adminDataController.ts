@@ -676,7 +676,7 @@ const getCampaignsByPublicationId: RequestHandler = async (
       inner join creator_list on creator_list.id = campaign_creator.creator_id
       inner join publication on publication.publisher_id = creator_list.id
       inner join user_list on campaign.email = user_list.email
-	    left join clicked_history on clicked_history.campaign_id = campaign.id and clicked_history.newsletter_id = publication.newsletter
+	    left join clicked_history on clicked_history.campaign_id = campaign.id AND publication.website_url LIKE '%' || clicked_history.user_source || '%'
       where publication.publication_id = $1`;
 
       if (state === "Active") {
