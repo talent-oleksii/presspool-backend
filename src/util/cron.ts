@@ -445,8 +445,8 @@ const dailyAnalyticsUpdate = async () => {
     }
 
     const getNewsletterName = (newsletter: string) => {
-      console.log('newsletter, ', newsletter);
-      if (newsletter === 'beehiiv' || newsletter === '(not set)' || newsletter === '(direct)' || newsletter === 'aitoolreport.beehiiv.com') return 'Presspool.ai';
+      if (newsletter === '(direct)') return 'Direct';
+      if (newsletter === 'beehiiv' || newsletter === '(not set)' || newsletter === 'aitoolreport.beehiiv.com') return 'Presspool.ai';
 
       for (const publisher of publishers) {
         if (!publisher.website_url) continue;
@@ -463,7 +463,7 @@ const dailyAnalyticsUpdate = async () => {
 
     for (const campaign of campaigns.rows) {
       let uniqueClicks = 0, totalClicks = 0, verifiedClicks = 0, payAmount = 0;
-      // if (Number(campaign.id) !== 259 && Number(campaign.id) !== 254) continue;
+      // if (Number(campaign.id) !== 254 && Number(campaign.id) !== 259) continue;
       // await db.query('DELETE FROM clicked_history WHERE campaign_id = $1', [campaign.id]);
       for (const item of response.rows) {
         const pageUrl = item.dimensionValues?.[0]?.value ? encodeURIComponent(item.dimensionValues[0].value) : '';
@@ -516,6 +516,7 @@ const dailyAnalyticsUpdate = async () => {
         payAmount += Number(totalUsers) * (cpc ? cpc : 0);
         // verifiedClicks += (firstUserMedium === 'newsletter' || firstUserMedium === 'referral') && userEngagementDuration > screenPageViews * 0.37 ? Number(totalUsers) : 0;
         verifiedClicks = uniqueClicks;
+
       }
 
       const oneDay = moment().add(-1, 'day').valueOf();
