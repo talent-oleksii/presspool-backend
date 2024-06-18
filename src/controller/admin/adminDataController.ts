@@ -171,8 +171,16 @@ const getNewsletter: RequestHandler = async (req: Request, res: Response) => {
     const formattedFromDate = fromDateObject.format("YYYY-MM-DD 00:00:00");
     const formattedToDate = toDateObject.format("YYYY-MM-DD 00:00:00");
     let params = [campaignId];
-    let query = `SELECT ch.create_time, ch.newsletter_id name,camp.id, SUM(ch.count) AS total_clicks, SUM(ch.unique_click) unique_clicks, SUM(CASE WHEN (ch.user_medium = 'newsletter' OR ch.user_medium = 'referral') AND ch.duration > ch.count * 0.37 AND ch.duration > 0  THEN ch.unique_click ELSE 0 END) verified_clicks FROM public.clicked_history ch
+    let query = `SELECT MIN(ch.create_time) AS create_time, ch.newsletter_id name,camp.id, 
+    SUM(ch.count) AS total_clicks, 
+    SUM(ch.unique_click) unique_clicks, 
+    SUM(CASE WHEN (ch.user_medium = 'newsletter' OR ch.user_medium = 'referral') AND ch.duration > ch.count * 0.37 AND ch.duration > 0  THEN ch.unique_click ELSE 0 END) verified_clicks,
+    CASE WHEN camp.use_creator = false then 10
+    ELSE COALESCE((publication.cpc * 0.8) * 2.5, 0)
+    END AS cpc
+    FROM public.clicked_history ch
     INNER JOIN public.campaign camp on ch.campaign_id = camp.id
+    left join publication on publication.website_url LIKE '%' || ch.user_source || '%'
     WHERE camp.id = $1`;
 
     if (from && to) {
@@ -181,7 +189,7 @@ const getNewsletter: RequestHandler = async (req: Request, res: Response) => {
       params = [...params, formattedFromDate, formattedToDate];
     }
 
-    query += " GROUP BY ch.create_time, ch.newsletter_id, camp.id";
+    query += " GROUP BY ch.newsletter_id, camp.id, publication.cpc";
     const newsletter = await db.query(query, params);
     return res.status(StatusCodes.OK).json(newsletter.rows);
   } catch (error: any) {
