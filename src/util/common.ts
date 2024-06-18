@@ -16,6 +16,11 @@ export const calculateCampStats = (campaignData: any, clickedData: any) => {
     0
   );
 
+  const totalBilled = campaignData.reduce(
+    (prev: number, item: { billed: any }) => prev + Number(item?.billed ?? 0),
+    0
+  );
+
   const verifiedClicks = clickedData.reduce(
     (
       prev: number,
@@ -39,11 +44,7 @@ export const calculateCampStats = (campaignData: any, clickedData: any) => {
   );
 
   const avgCPC =
-    totalBudget === 0 || verifiedClicks === 0
-      ? 0
-      : totalBudget / verifiedClicks > 11
-        ? 11
-        : totalBudget / verifiedClicks;
+    totalBilled === 0 || uniqueClicks === 0 ? 0 : totalBilled / uniqueClicks;
 
   const totalSpend = avgCPC * verifiedClicks;
   return {
@@ -65,9 +66,9 @@ export const generateToken = (payload: any, expiresIn: string = "1d") => {
 export const generateRandomNumbers = (count: number) => {
   const randomNumbers = [];
   for (let i = 0; i < count; i++) {
-      const randomNumber = Math.floor(Math.random() * 10); // Adjust the range as needed
-      randomNumbers.push(randomNumber);
+    const randomNumber = Math.floor(Math.random() * 10); // Adjust the range as needed
+    randomNumbers.push(randomNumber);
   }
 
-  return randomNumbers.join('');
+  return randomNumbers.join("");
 };
