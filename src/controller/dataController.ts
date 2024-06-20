@@ -61,7 +61,7 @@ const getNewsletter: RequestHandler = async (req: Request, res: Response) => {
     END AS cpc
     FROM public.clicked_history ch
     INNER JOIN public.campaign camp on ch.campaign_id = camp.id
-    left join publication on publication.website_url LIKE '%' || ch.user_source || '%'
+    left join publication on publication.newsletter = ch.newsletter_id
     WHERE camp.email = $1`;
 
     if (from && to) {
