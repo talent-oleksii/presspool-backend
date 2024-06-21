@@ -1401,6 +1401,55 @@ const sendCampaignRequestToCreator = async (
   }
 };
 
+const sendBeehiivPayoutEmail = async (email: string, amount: number) => {
+  try {
+    const mailComposer = new MailComposer({
+      from: "Zoe Martinez-PressPool Support Team<zoe@presspool.ai>",
+      to: email,
+      subject: `Time to Payout to beehiiv`,
+      // text: content,
+      html: `<div>
+      <div style="text-align: center">
+        <img style="width: 115px; height: 40px" src="https://presspool-upload-images.s3.amazonaws.com/logo1.png" alt="logo"/>
+      </div>
+    </div>
+      <hr />
+      <div style="margin: 20px">
+        <span>Hi Admin,</span><br /><br />
+        <span>It's time to pay to Beehiiv. the amount is ${amount}</span><br /><br />
+        <span>Cheers,</span><br />
+        <span>Zoe</span>
+      </div>
+      <hr />
+      <div>
+        <div style="text-align: center">
+          <img style="width: 40px; height: 40px" src="https://presspool-upload-images.s3.amazonaws.com/Presspool+Black+Logo.png" alt="logo"/>
+        </div>
+        <div style="text-align: center">
+          <span>@ 2024 Presspool</span>
+        </div>
+      </div>`,
+      textEncoding: "base64",
+      headers: [
+        {
+          key: "X-Application-Developer",
+          value: "Oleksii Karavanov",
+        },
+        {
+          key: "X-Application-Version",
+          value: "v1.0.0",
+        },
+      ],
+    });
+
+    await sendEmail(mailComposer);
+
+    console.log(`email sent to ${email}`);
+  } catch (error) {
+    log.error(`welcome email seinding error: ${error}`);
+  }
+};
+
 const sendOnboardingFinishEmail = async (userName: string, emailAddress: string, id: string) => {
   try {
     const firstName = userName.split(" ")[0];
@@ -1461,6 +1510,8 @@ const mailer = {
   sendBudgetReachEmail,
   sendPurchaseEmail,
   sendAddTemmateEmail,
+
+  sendBeehiivPayoutEmail,
 
   sendRequestNewsletterEmail,
   sendPaymentMethodDetachedEmail,

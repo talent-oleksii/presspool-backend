@@ -58,6 +58,7 @@ app.listen(PORT, async () => {
     await db.testConnection();
 
     // await cronFunction.dailyAnalyticsUpdate();
+    // await cronFunction.payToPublishers();
 });
 
 
@@ -94,6 +95,7 @@ cron.schedule('1 0 * * *', async () => {
 
 cron.schedule('10 20 * * *', async () => {
     await cronFunction.dailyAnalyticsUpdate();
+    await cronFunction.updateCreatorStatus();
 });
 
 // mailer.sendCampaignRequestToCreator('kyle@aitoolreport.com', 'Kyle Mair');

@@ -177,9 +177,87 @@ const payToAccountManagers = async () => {
 };
 
 const payToPublishers = async () => {
+
+  // # We do not pay to beehiiv acount : admin@presspool.ai
+
   console.log('pay to publishers');
   try {
-    const publishers = await db.query('SELECT * FROM');
+    const publishers = (await db.query('SELECT publication.publication_id, paid, cpc, email, newsletter, average_unique_click FROM publication LEFT JOIN creator_list ON publication.publisher_id = creator_list.id WHERE publication.state = $1', ['APPROVED'])).rows.map(item => ({
+      id: item.publication_id,
+      email: item.email,
+      cpc: Number(item.cpc),
+      newsletter: item.newsletter,
+      maxClick: Number(item.average_unique_click),
+      paid: Number(item.paid),
+    }));
+
+    const payoutList: Array<any> = [];
+    const campaigns = (await db.query('SELECT * FROM campaign WHERE use_creator = $1 and state = $2', [1, 'active'])).rows;
+
+    for (const campaign of campaigns) {
+
+      const clickedHistories = (await db.query('SELECT * FROM clicked_history WHERE campaign_id = $1', [campaign.id])).rows;
+
+      for (const publisher of publishers) {
+        let clickCount = 0;
+        for (const click of clickedHistories) {
+          if (publisher.newsletter === click.newsletter_id)
+            clickCount += Number(click.unique_click);
+        }
+
+        if (clickCount > publisher.maxClick) clickCount = publisher.maxClick;
+
+        // summarize all payouts
+        const index = payoutList.findIndex(item => item.email === publisher.email);
+        if (index <= -1) {
+          payoutList.push({
+            email: publisher.email,
+            cpc: publisher.cpc,
+            click: clickCount,
+            paid: publisher.paid,
+            id: publisher.id,
+          })
+        }
+        else {
+          payoutList.at(index).click += clickCount;
+        }
+      }
+    }
+
+    // Final payment to Publishers
+    const accounts = await stripe.accounts.list({ limit: 1000 });
+    for (const item of payoutList) {
+      // We only pay publishers 80% of full amount.
+      if (item.click <= 0) continue;
+
+
+      // Check if beehiiv account
+      if (item.email === 'admin@presspool.ai') {
+        await mailer.sendBeehiivPayoutEmail(item.email, item.click * item.cpc * 0.8);
+        continue;
+      }
+      const amount = item.click * item.cpc * 0.8 - item.paid;
+
+      for (const account of accounts.data) {
+        if (account.metadata?.work_email === item.email) {
+          try {
+            await stripe.transfers.create({
+              amount: amount * 100,
+              // amount: 100,
+              currency: 'usd',
+              destination: account.id,
+            });
+
+            console.log(`transfer success to publisher - ${item.email}`);
+            await db.query('UPDATE publication SET paid = paid + $1 WHERE id = $2', [amount, item.id]);
+          } catch (error: any) {
+            console.log(`transfer error to publisher ${item.email} `, error);
+            continue;
+          }
+        }
+      }
+    }
+
   } catch (error) {
     console.log('pay out to publishers error:', error);
   }
@@ -246,108 +324,6 @@ async function runReport(client: BetaAnalyticsDataClient, propertyId: any, start
   }
 }
 
-const runRealtimeReport = async (client: BetaAnalyticsDataClient, propertyId: string) => {
-  try {
-    const [response] = await client.runRealtimeReport({
-      property: `properties/${propertyId}`,
-      // dimensions: [{
-      //   name: 'streamId',
-      // }, {
-      //   name: 'countryId'
-      // }, {
-      //   name: 'deviceCategory'
-      // }],
-      // dimensions: [{ name: 'country' }, { name: 'unifiedScreenName' }, { name: 'deviceCategory' }, { name: 'minutesAgo' }],
-      dimensions: [{ name: 'unifiedScreenName' }, { name: 'country' }],
-      metrics: [{ name: 'activeUsers' }, { name: 'screenPageViews' }],
-      // metrics: [{ name: 'eventCount' }],
-      // dimensionFilter: {
-      //   filter: { fieldName: 'pageView' }
-      // },
-      // dimensionFilter: { filter: { fieldName: 'pageLocation' } },
-      // dimensionFilter: {
-      //   filter: { fieldName: 'pageView' }
-      // },
-      // metrics: [{
-      //   name: 'activeUsers'
-      // }, {
-      //   name: 'screenPageViews',
-      // }],
-      minuteRanges: [{ startMinutesAgo: 3 }]
-    });
-
-    return response;
-  } catch (error) {
-    console.log('erro:', error);
-  }
-};
-
-const getCPC = (budget: number) => {
-  // const beehiivBudget = Math.round((budget / ((4 * (1 + 0.10)) / (1 - 0.60))) * 4) - 2;
-  // return budget / (beehiivBudget / 4);
-  return 10;
-};
-
-const scrapeFunction = async () => {
-  console.log('get from google analytics is running...');
-  try {
-    const client: BetaAnalyticsDataClient = await initializeClient() as BetaAnalyticsDataClient;
-    const propertyId: string = process.env.GOOGLE_ANALYTIC_PROPERTY_ID as string;
-
-    const response: any = await runRealtimeReport(client, propertyId);
-
-    if (!response) {
-      console.error('Failed to fetch report data');
-      return;
-    }
-
-    // const result = response.rows.map((item: any) => ({
-    //   fullPageUrl: item.dimensionValues[0].value,
-    //   totalUsers: item.metricValues[0].value,
-    //   sessions: item.metricValues[1].value,
-    //   activeUsers: item.metricValues[2].value,
-    //   newUsers: item.metricValues[3].value,
-    //   screenPageViews: item.metricValues[4].value,
-    // }));
-
-    for (const item of response.rows) {
-      console.log('there is a new data for tracking', item.dimensionValues, item.metricValues);
-      // const id = encodeURIComponent(item.dimensionValues[0].value);
-      // if (id.length <= 7) continue;
-
-      const clickCount = item.metricValues[0].value;
-      const uniqueClick = item.metricValues[1].value;
-      const uid = encodeURIComponent(item.metricValues[0].value);
-      continue;
-      try {
-        if (uid.length > 2) {
-          const campaign = await db.query('SELECT price from campaign where uid = $1', [uid]);
-          if (campaign.rows.length <= 0) continue;
-          const addAmount = Math.ceil(Number(getCPC(5000)) * Number(uniqueClick));
-
-          console.log(`${uid} updated: ${uniqueClick}, ${addAmount}`);
-
-          await db.query('UPDATE campaign SET click_count = click_count + $1, unique_clicks = unique_clicks + $2, spent = spent + $3 WHERE uid = $4', [clickCount, uniqueClick, addAmount, uid]);
-        }
-      } catch (error: any) {
-        console.log('real time report updating error: ', error);
-        continue;
-      }
-
-      // const clickCount = Number(index !== 0 ? item.metricValues[1].value : response.rows[0].metricValues[1].value);
-      // const uniqueClick = Number(index !== 0 ? item.metricValues[2].value : response.rows[0].metricValues[2].value);
-
-      // console.log('id:', id, clickCount, uniqueClick);
-      // const budget = Number((await db.query('SELECT price from campaign where uid = $1', [id])).rows[0].price);
-      // const addAmount = Math.ceil(Number(getCPC(budget)) * Number(uniqueClick));
-
-      // await db.query('UPDATE campaign SET click_count = click_count + $1, unique_clicks = unique_clicks + $2, spent = spent + $3 WHERE uid = $4', [clickCount, uniqueClick, addAmount, id]);
-    }
-  } catch (error) {
-    console.log('error:', error);
-  }
-};
-
 const list: Array<any> = [];
 
 const getPageTitle = async (url: string) => {
@@ -387,6 +363,25 @@ const getPageTitle = async (url: string) => {
     return '';
   }
 }
+
+const updateCreatorStatus = async () => {
+  // set campaign status as running for assigned to publishers.
+  const creatorHis = await db.query('SELECT id, scheduled_date FROM creator_history WHERE state = $1', ['ACCEPTED']);
+  const todayTime = moment().hour(0);
+  for (const item of creatorHis.rows) {
+    const now = todayTime.valueOf();
+    const scheduled = moment.unix(Number(item.scheduled_date)).valueOf();
+    const threeDaysLater = moment.unix(Number(item.scheduled_date)).add(3, 'days').valueOf();
+    console.log('values:', now, scheduled, threeDaysLater);
+    if (moment.unix(Number(item.scheduled_date)).valueOf() <= todayTime.valueOf()) {
+      await db.query('UPDATE creator_history SET state = $1 WHERE id = $2', ['RUNNING', item.id]);
+    }
+
+    if (todayTime.valueOf() > moment.unix(Number(item.scheduled_date)).add(3, 'days').valueOf()) {
+      await db.query('UPDATE creator_history set state = $1 WHERE id = $2', ['FINISHED', item.id]);
+    }
+  }
+};
 
 const dailyAnalyticsUpdate = async () => {
   console.log('Running daily analytics update...');
@@ -530,10 +525,10 @@ const dailyAnalyticsUpdate = async () => {
       if (Math.ceil(verifiedClicks * Number(campaign.cpc)) >= Number(campaign.price) && !campaign.complete_date) {
         await db.query('UPDATE campaign SET complete_date = $1 where id = $2', [now, campaign.id]);
       }
-      // await db.query('UPDATE campaign set click_count = $1, spent = $2, unique_clicks = $3 WHERE id = $4', [totalClicks, Math.ceil(payAmount * 2.5), uniqueClicks, campaign.id]);
+      // await db.query('UPDATE campaign set click_count = $1, spent = $2, unique_clicks = $3 WHERE id = $4', [totalClicks, Math.ceil(payAmount * 2), uniqueClicks, campaign.id]);
 
       // This multiply 2.5 is for our campaign budget.
-      await db.query('UPDATE campaign set click_count = click_count + $1, spent = spent + $2, unique_clicks = unique_clicks + $3 WHERE id = $4', [totalClicks, Math.ceil(payAmount * 2.5), uniqueClicks, campaign.id]);
+      await db.query('UPDATE campaign set click_count = click_count + $1, spent = spent + $2, unique_clicks = unique_clicks + $3 WHERE id = $4', [totalClicks, Math.ceil(payAmount * 2), uniqueClicks, campaign.id]);
 
       console.log(`update finished for campaign:${campaign.id}`);
     }
@@ -549,8 +544,8 @@ const dailyAnalyticsUpdate = async () => {
 const cronFunction = {
   billingFunction,
   mailingFunction,
-  scrapeFunction,
   dailyAnalyticsUpdate,
+  updateCreatorStatus,
   payToAccountManagers,
 
   payToPublishers,
