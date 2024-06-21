@@ -180,7 +180,7 @@ const getNewsletter: RequestHandler = async (req: Request, res: Response) => {
     END AS cpc
     FROM public.clicked_history ch
     INNER JOIN public.campaign camp on ch.campaign_id = camp.id
-    left join publication on publication.website_url LIKE '%' || ch.user_source || '%'
+    left join publication on publication.newsletter = ch.newsletter_id
     WHERE camp.id = $1`;
 
     if (from && to) {
@@ -684,7 +684,7 @@ const getCampaignsByPublicationId: RequestHandler = async (
       inner join creator_list on creator_list.id = campaign_creator.creator_id
       inner join publication on publication.publisher_id = creator_list.id
       inner join user_list on campaign.email = user_list.email
-	    left join clicked_history on clicked_history.campaign_id = campaign.id AND publication.website_url LIKE '%' || clicked_history.user_source || '%'
+	    left join clicked_history on clicked_history.campaign_id = campaign.id AND publication.newsletter = clicked_history.newsletter_id
       where publication.publication_id = $1`;
 
       if (state === "Active") {
