@@ -235,12 +235,16 @@ const getNewsletter: RequestHandler = async (req: Request, res: Response) => {
     const formattedFromDate = fromDateObject.format("YYYY-MM-DD 00:00:00");
     const formattedToDate = toDateObject.format("YYYY-MM-DD 00:00:00");
     let params = [creatorId];
-    let query = `SELECT ch.newsletter_id name,camp.id, SUM(ch.count) AS total_clicks, SUM(ch.unique_click) unique_clicks, SUM(CASE WHEN (ch.user_medium = 'newsletter' OR ch.user_medium = 'referral') AND ch.duration > ch.count * 0.37 AND ch.duration > 0  THEN ch.unique_click ELSE 0 END) verified_clicks FROM public.clicked_history ch
+    let query = `SELECT MIN(ch.create_time) AS create_time, ch.newsletter_id name,camp.id, 
+    SUM(ch.count) AS total_clicks, 
+    SUM(ch.unique_click) unique_clicks, 
+    SUM(CASE WHEN (ch.user_medium = 'newsletter' OR ch.user_medium = 'referral') AND ch.duration > ch.count * 0.37 AND ch.duration > 0  THEN ch.unique_click ELSE 0 END) verified_clicks,
+    COALESCE((publication.cpc * 0.8), 0) AS cpc
+    FROM public.clicked_history ch
     INNER JOIN public.campaign camp on ch.campaign_id = camp.id
-    inner join campaign_creator on camp.id = campaign_creator.campaign_id
-    inner join publication on publication.newsletter = ch.newsletter_id 
-    inner join creator_list cl on publication.publisher_id = cl.id
-    where campaign_creator.creator_id = $1`;
+    left join publication on publication.newsletter = ch.newsletter_id
+	  inner join creator_list cl on publication.publisher_id = cl.id
+    WHERE cl.id = $1`;
 
     if (from && to) {
       query +=
@@ -254,7 +258,7 @@ const getNewsletter: RequestHandler = async (req: Request, res: Response) => {
         .map((id) => "'" + id + "'")
         .join(",")})`;
     }
-    query += " GROUP BY ch.newsletter_id, camp.id";
+    query += " GROUP BY ch.newsletter_id, camp.id, publication.cpc";
     const newsletter = await db.query(query, params);
     return res.status(StatusCodes.OK).json(newsletter.rows);
   } catch (error: any) {
@@ -267,7 +271,7 @@ const getCampaignList: RequestHandler = async (req: Request, res: Response) => {
   try {
     const { creatorId } = req.query;
     const data = await db.query(
-      `SELECT camp.id, name from campaign camp
+      `SELECT distinct camp.id, name from campaign camp
       inner join campaign_creator on camp.id = campaign_creator.campaign_id
       WHERE campaign_creator.creator_id = $1`,
       [creatorId]
